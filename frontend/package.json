@@ -44,5 +44,6 @@
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2"
-  }
+  },
+  "homepage": "https://mmg-webapps.fjfi.cvut.cz/conference-demo"
 }
