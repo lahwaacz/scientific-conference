@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -20,12 +21,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-52pd49we3-&2sh3e2am)s3qea8j1e&h60w(^q#e)6%%bet$9)@'
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", 'django-insecure-52pd49we3-&2sh3e2am)s3qea8j1e&h60w(^q#e)6%%bet$9)@')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",")
 
 
 # Application definition
@@ -80,7 +81,7 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        "NAME": os.getenv("DJANGO_DB_PATH", BASE_DIR / "db.sqlite3"),
     }
 }
 
@@ -116,10 +117,21 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
+# Custom variable to support deployment in a subpath
+RELATIVE_URL_ROOT = os.getenv("RELATIVE_URL_ROOT", "")
+if RELATIVE_URL_ROOT:
+    # Ensure that it ends with "/", but does not start with "/"
+    RELATIVE_URL_ROOT = RELATIVE_URL_ROOT.strip("/") + "/"
 
-STATIC_URL = 'static/'
+STATIC_URL = os.getenv("DJANGO_STATIC_URL") or RELATIVE_URL_ROOT + "static/"
+STATIC_ROOT = os.getenv("DJANGO_STATIC_ROOT", BASE_DIR / "staticfiles")
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+
+MEDIA_URL = RELATIVE_URL_ROOT + "media/"
+MEDIA_ROOT = os.getenv("DJANGO_MEDIA_ROOT", BASE_DIR / "media")
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -172,17 +184,26 @@ REST_FRAMEWORK = {
     ],
 }
 
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",
-]
+# Security
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_PATH = "/" + RELATIVE_URL_ROOT
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_PATH = "/" + RELATIVE_URL_ROOT
+if os.getenv("DJANGO_USE_HTTPS") == "True":
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-
-
-MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-]
+# this may need to be set to avoid CSRF errors due to port forwarding for development
+# https://docs.djangoproject.com/en/5.2/ref/csrf/
+if os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS"):
+    CSRF_TRUSTED_ORIGINS = os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS").split(",")
+else:
+    CSRF_TRUSTED_ORIGINS = [
+        "http://localhost:3000",
+    ]
+CORS_ALLOWED_ORIGINS = CSRF_TRUSTED_ORIGINS
 
 CORS_ALLOW_METHODS = [
     'DELETE',

@@ -22,17 +22,19 @@ from django.conf.urls.static import static
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 
-urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('wel/', ReactView.as_view(), name="something"),
-    path("api/", include("core.urls")),
-# JWT Authentication
-    path('api/auth/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    
+# Support deployment in a subpath
+_prefix = settings.RELATIVE_URL_ROOT or ""
 
-    path('api/admin/sessions/<int:pk>/', update_session),
-    path('api/admin/sessions/<int:pk>/delete/', delete_session),
+urlpatterns = [
+    path(f'{_prefix}admin/', admin.site.urls),
+    path(f'{_prefix}wel/', ReactView.as_view(), name="something"),
+    path(f"{_prefix}api/", include("core.urls")),
+# JWT Authentication
+    path(f'{_prefix}api/auth/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path(f'{_prefix}api/auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+    path(f'{_prefix}api/admin/sessions/<int:pk>/', update_session),
+    path(f'{_prefix}api/admin/sessions/<int:pk>/delete/', delete_session),
 ]
 
 if settings.DEBUG:
