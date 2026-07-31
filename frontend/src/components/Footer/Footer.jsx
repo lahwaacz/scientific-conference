@@ -1,13 +1,14 @@
 import styles from './Footer.module.css';
 import LogoIcon from '../../assets/logoWhite.png';
 import { useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import AdminLoginModal from '../AdminLoginModal/AdminLoginModal';
 import { useConferenceInfo } from './../hooks/useConferenceInfo';
 import { useLockBodyScroll } from './../hooks/useLockBodyScroll';
 
 export default function Footer() {
   const location = useLocation();
+  const navigate = useNavigate();
   const isAdminPage = location.pathname.startsWith("/admin-panel");
   const info = useConferenceInfo();
   const [isAdminOpen, setIsAdminOpen] = useState(false);
@@ -79,7 +80,7 @@ export default function Footer() {
           onClose={() => setIsAdminOpen(false)}
           onSuccess={() => {
             setIsAdminOpen(false);
-            window.location.href = "/admin-panel";
+            navigate("/admin-panel");
           }}
         />
       )}

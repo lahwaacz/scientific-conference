@@ -7,6 +7,11 @@ const RAW_API_BASE_URL =
 
 export const API_BASE_URL = RAW_API_BASE_URL.replace(/\/$/, "");
 
+function reloadAppAtHomePage() {
+  window.location.hash = "/";
+  window.location.reload();
+}
+
 const processQueue = (error, token = null) => {
   failedQueue.forEach(prom => {
     if (error) {
@@ -75,7 +80,7 @@ export async function refreshAccessToken() {
     if (!response.ok) {
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
-      window.location.href = "/";
+      reloadAppAtHomePage();
       return null;
     }
 
@@ -86,7 +91,7 @@ export async function refreshAccessToken() {
     console.error("Token refresh failed:", error);
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
-    window.location.href = "/";
+    reloadAppAtHomePage();
     return null;
   }
 }
@@ -126,7 +131,7 @@ export async function fetchWithAuth(url, options = {}) {
         });
       } else {
         processQueue(new Error("Token refresh failed"), null);
-        window.location.href = "/";
+        reloadAppAtHomePage();
         return response;
       }
     } finally {
