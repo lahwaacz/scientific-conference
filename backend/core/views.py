@@ -1,41 +1,56 @@
-# Create your views here.
+import datetime
+import os
 
-from urllib import request, response
-
-from rest_framework.views import APIView
-from rest_framework import generics
-from rest_framework.response import Response
-from rest_framework.permissions import IsAdminUser
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.decorators import api_view
-from rest_framework import status
-from rest_framework.permissions import AllowAny
-from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.http import HttpResponse
-from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
-from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfgen import canvas
+from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAdminUser
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from .models import *
-from .serializers import *
+from .models import (
+    Abstract,
+    AccommodationInfo,
+    AccommodationOption,
+    ConferenceDay,
+    ConferenceInfo,
+    HikingRoute,
+    HikingStop,
+    Organizer,
+    OrganizingCommittee,
+    Participant,
+    ParticipantSubmission,
+    Session,
+    Talk,
+)
+from .serializers import (
+    AbstractSerializer,
+    AccommodationInfoSerializer,
+    AccommodationOptionSerializer,
+    AccommodationOptionWriteSerializer,
+    ConferenceDaySerializer,
+    ConferenceInfoSerializer,
+    HikingRouteSerializer,
+    HikingStopSerializer,
+    OrganizerSerializer,
+    OrganizingCommitteeSerializer,
+    ParticipantSerializer,
+    ParticipantSubmissionSerializer,
+    SessionSerializer,
+    TalkSerializer,
+    TimelineItemSerializer,
+)
 
 
 def generate_program_pdf(request):
-    from rest_framework_simplejwt.authentication import JWTAuthentication
-    from reportlab.lib.pagesizes import A4
-    from reportlab.lib import colors
-    from reportlab.lib.units import mm
-    from reportlab.pdfgen import canvas
-    from reportlab.pdfbase import pdfmetrics
-    from reportlab.pdfbase.ttfonts import TTFont
-    import os, datetime
-
     try:
         auth = JWTAuthentication()
         result = auth.authenticate(request)
@@ -216,12 +231,6 @@ def generate_program_pdf(request):
     return response
 
 
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-
-
 class AccommodationInfoView(APIView):
     def get(self, request):
         obj, _ = AccommodationInfo.objects.get_or_create(id=1)
@@ -280,15 +289,6 @@ accommodation_info_view = AccommodationInfoView.as_view()
 
 
 def generate_badges_pdf(request):
-    from rest_framework_simplejwt.authentication import JWTAuthentication
-    from reportlab.lib.pagesizes import A4
-    from reportlab.lib import colors
-    from reportlab.lib.units import mm
-    from reportlab.pdfgen import canvas
-    from reportlab.pdfbase import pdfmetrics
-    from reportlab.pdfbase.ttfonts import TTFont
-    import os
-
     try:
         auth = JWTAuthentication()
         result = auth.authenticate(request)
@@ -413,23 +413,6 @@ def generate_badges_pdf(request):
 
     c.save()
     return response
-
-
-class ReactView(APIView):
-    serializer_class = ReactSerializer
-
-    def get(self, request):
-        detail = [
-            {"name": detail.name, "detail": detail.detail}
-            for detail in React.objects.all()
-        ]
-        return Response(detail)
-
-    def post(self, request):
-        serializer = ReactSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
-            return Response(serializer.data)
 
 
 # Program: all days with timeline

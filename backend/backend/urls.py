@@ -17,7 +17,7 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
-from core.views import ReactView, delete_session, update_session
+from core.views import delete_session, update_session
 from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
@@ -28,7 +28,6 @@ _prefix = settings.RELATIVE_URL_ROOT or ""
 
 urlpatterns = [
     path(f"{_prefix}admin/", admin.site.urls),
-    path(f"{_prefix}wel/", ReactView.as_view(), name="something"),
     path(f"{_prefix}api/", include("core.urls")),
     # JWT Authentication
     path(
