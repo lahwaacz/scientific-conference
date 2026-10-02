@@ -1,7 +1,19 @@
 from rest_framework import serializers
 from .models import (
-    React, ConferenceDay, Session,
-    Talk, Participant, Abstract, Organizer, OrganizingCommittee, ParticipantSubmission, AccommodationInfo, AccommodationOption, HikingStop, HikingRoute, ConferenceInfo
+    React,
+    ConferenceDay,
+    Session,
+    Talk,
+    Participant,
+    Abstract,
+    Organizer,
+    OrganizingCommittee,
+    ParticipantSubmission,
+    AccommodationInfo,
+    AccommodationOption,
+    HikingStop,
+    HikingRoute,
+    ConferenceInfo,
 )
 
 
@@ -15,10 +27,9 @@ class ParticipantSerializer(serializers.ModelSerializer):
     abstract_id = serializers.IntegerField(source="abstract.id", read_only=True)
     photo = serializers.ImageField(required=False, allow_null=True)
 
-
     class Meta:
         model = Participant
-        fields = ["id", "name", "affiliation", "email", "abstract_id","photo"]
+        fields = ["id", "name", "affiliation", "email", "abstract_id", "photo"]
 
 
 class AbstractSerializer(serializers.ModelSerializer):
@@ -43,14 +54,10 @@ class TalkSerializer(serializers.ModelSerializer):
     abstract_id = serializers.IntegerField(source="abstract.id", read_only=True)
 
     session = serializers.PrimaryKeyRelatedField(
-        queryset=Session.objects.all(),
-        required=False,
-        allow_null=True
+        queryset=Session.objects.all(), required=False, allow_null=True
     )
     day = serializers.PrimaryKeyRelatedField(
-        queryset=ConferenceDay.objects.all(),
-        required=False,
-        allow_null=True
+        queryset=ConferenceDay.objects.all(), required=False, allow_null=True
     )
 
     class Meta:
@@ -74,7 +81,7 @@ class SessionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Session
-        fields = ["id","day", "chair", "start_time", "end_time", "talks"]
+        fields = ["id", "day", "chair", "start_time", "end_time", "talks"]
 
     def get_talks(self, session):
         qs = session.talks.all().order_by("start_time")
@@ -98,14 +105,17 @@ class ConferenceDaySerializer(serializers.ModelSerializer):
     def get_timeline(self, day):
         items = []
 
-
-        for t in Talk.objects.filter(day=day, session__isnull=True).order_by("start_time"):
-            items.append({
-                "type": t.talk_type,
-                "start_time": t.start_time,
-                "end_time": t.end_time,
-                "data": TalkSerializer(t).data
-            })
+        for t in Talk.objects.filter(day=day, session__isnull=True).order_by(
+            "start_time"
+        ):
+            items.append(
+                {
+                    "type": t.talk_type,
+                    "start_time": t.start_time,
+                    "end_time": t.end_time,
+                    "data": TalkSerializer(t).data,
+                }
+            )
 
         for session in day.sessions.all():
             talks = session.talks.all().order_by("start_time")
@@ -117,20 +127,24 @@ class ConferenceDaySerializer(serializers.ModelSerializer):
                 end = session.end_time
 
             if start:
-                items.append({
-                    "type": "session",
-                    "start_time": start,
-                    "end_time": end,
-                    "data": SessionSerializer(session).data
-                })
+                items.append(
+                    {
+                        "type": "session",
+                        "start_time": start,
+                        "end_time": end,
+                        "data": SessionSerializer(session).data,
+                    }
+                )
 
         items.sort(key=lambda x: x["start_time"])
         return TimelineItemSerializer(items, many=True).data
-    
+
+
 class OrganizerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organizer
         fields = ["id", "name", "department", "email", "photo"]
+
 
 class OrganizingCommitteeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -141,49 +155,76 @@ class OrganizingCommitteeSerializer(serializers.ModelSerializer):
 class AccommodationOptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = AccommodationOption
-        fields = ['id', 'name', 'description', 'url', 'photo', 'order']
+        fields = ["id", "name", "description", "url", "photo", "order"]
+
 
 class AccommodationInfoSerializer(serializers.ModelSerializer):
     options = AccommodationOptionSerializer(many=True, read_only=True)
 
     class Meta:
         model = AccommodationInfo
-        fields = ['id', 'description', 'options']
+        fields = ["id", "description", "options"]
+
 
 class AccommodationOptionWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = AccommodationOption
-        fields = ['id', 'name', 'description', 'url', 'photo', 'order']
+        fields = ["id", "name", "description", "url", "photo", "order"]
+
 
 class ParticipantSubmissionSerializer(serializers.ModelSerializer):
     stay_duration = serializers.ReadOnlyField()
-    
+
     class Meta:
         model = ParticipantSubmission
         fields = [
-            'id', 'name', 'email', 'affiliation', 'photo',
-            'abstract_title', 'abstract_text', 
-            'additional_authors', 'additional_affiliations',
-            'arrival_date', 'departure_date', 'stay_duration',
-            'status', 'submitted_at', 'reviewed_at', 'admin_notes',
-            'published_participant', 'published_abstract', 'info', 'is_student',
+            "id",
+            "name",
+            "email",
+            "affiliation",
+            "photo",
+            "abstract_title",
+            "abstract_text",
+            "additional_authors",
+            "additional_affiliations",
+            "arrival_date",
+            "departure_date",
+            "stay_duration",
+            "status",
+            "submitted_at",
+            "reviewed_at",
+            "admin_notes",
+            "published_participant",
+            "published_abstract",
+            "info",
+            "is_student",
         ]
-        read_only_fields = ['submitted_at', 'reviewed_at', 'published_participant', 'published_abstract', 'stay_duration']
-    
+        read_only_fields = [
+            "submitted_at",
+            "reviewed_at",
+            "published_participant",
+            "published_abstract",
+            "stay_duration",
+        ]
+
     def validate(self, data):
-        arrival = data.get('arrival_date') or (self.instance.arrival_date if self.instance else None)
-        departure = data.get('departure_date') or (self.instance.departure_date if self.instance else None)
-        
+        arrival = data.get("arrival_date") or (
+            self.instance.arrival_date if self.instance else None
+        )
+        departure = data.get("departure_date") or (
+            self.instance.departure_date if self.instance else None
+        )
+
         if departure and arrival and departure <= arrival:
-            raise serializers.ValidationError({
-                'departure_date': 'Departure date must be after arrival date'
-            })
+            raise serializers.ValidationError(
+                {"departure_date": "Departure date must be after arrival date"}
+            )
         return data
-    
+
     def update(self, instance, validated_data):
-        if 'photo' in validated_data:
-            photo = validated_data.pop('photo')
-            
+        if "photo" in validated_data:
+            photo = validated_data.pop("photo")
+
             # If photo is explicitly set to None, delete existing photo
             if photo is None and instance.photo:
                 instance.photo.delete(save=False)
@@ -193,25 +234,25 @@ class ParticipantSubmissionSerializer(serializers.ModelSerializer):
                 if instance.photo:
                     instance.photo.delete(save=False)
                 instance.photo = photo
-        
+
         # Update all other fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-        
+
         instance.save()
 
-        if instance.status == 'approved' and instance.published_participant:
+        if instance.status == "approved" and instance.published_participant:
             self._update_published_data(instance)
-        
+
         return instance
-    
+
     def _update_published_data(self, instance):
         # Update Participant
         participant = instance.published_participant
         participant.name = instance.name
         participant.email = instance.email
         participant.affiliation = instance.affiliation
-        
+
         # Handle photo update
         if instance.photo:
             participant.photo = instance.photo
@@ -219,21 +260,23 @@ class ParticipantSubmissionSerializer(serializers.ModelSerializer):
             if participant.photo:
                 participant.photo.delete(save=False)
             participant.photo = None
-        
+
         participant.save()
-        
+
         if instance.abstract_title or instance.abstract_text:
             all_authors = instance.name
             if instance.additional_authors:
                 all_authors += f", {instance.additional_authors}"
-            
+
             all_affiliations = instance.affiliation
             if instance.additional_affiliations:
                 all_affiliations += f"\n{instance.additional_affiliations}"
-            
+
             if instance.published_abstract:
                 abstract = instance.published_abstract
-                abstract.title = instance.abstract_title or f"Presentation by {instance.name}"
+                abstract.title = (
+                    instance.abstract_title or f"Presentation by {instance.name}"
+                )
                 abstract.text = instance.abstract_text
                 abstract.authors = all_authors
                 abstract.department = all_affiliations
@@ -250,33 +293,37 @@ class ParticipantSubmissionSerializer(serializers.ModelSerializer):
                 instance.save()
         if abstract:
             try:
-                talk = abstract.talk  
+                talk = abstract.talk
                 talk.title = abstract.title
                 talk.participant = participant
                 talk.save()
             except Exception:
                 from .models import Talk
+
                 Talk.objects.create(
                     title=abstract.title,
                     participant=participant,
                     abstract=abstract,
-                    talk_type='talk',
+                    talk_type="talk",
                     is_scheduled=False,
                 )
+
 
 class HikingStopSerializer(serializers.ModelSerializer):
     class Meta:
         model = HikingStop
-        fields = '__all__'
+        fields = "__all__"
+
 
 class HikingRouteSerializer(serializers.ModelSerializer):
     stops = HikingStopSerializer(many=True, read_only=True)
 
     class Meta:
         model = HikingRoute
-        fields = '__all__'
+        fields = "__all__"
+
 
 class ConferenceInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = ConferenceInfo
-        fields = '__all__'
+        fields = "__all__"
