@@ -19,7 +19,6 @@
     "pk": 1,
     "fields": {
       "session": 1,
-      "speaker": "Tomáš Halada",
       "title": "TNL-SPH: Solving free surface flows…",
       "start_time": "14:10",
       "end_time": "14:30"
