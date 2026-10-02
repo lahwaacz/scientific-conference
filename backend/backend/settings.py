@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",  # DRF
+    "rest_framework_simplejwt.token_blacklist",  # refresh-token blacklist (BLACKLIST_AFTER_ROTATION)
     "core.apps.CoreConfig",  # core app
     "corsheaders",  # for CORS
 ]
