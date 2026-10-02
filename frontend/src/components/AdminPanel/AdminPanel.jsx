@@ -14,7 +14,7 @@ import { fab } from '@fortawesome/free-brands-svg-icons';
 export default function AdminPanel() {
   library.add(fas, far, fab);
 
-  const [data, setData] = useState(null);
+  const [, setData] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState({

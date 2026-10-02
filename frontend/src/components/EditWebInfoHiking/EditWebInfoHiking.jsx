@@ -11,7 +11,7 @@ export default function EditWebInfoHiking() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedRoute, setSavedRoute] = useState(null);
-  const [error, setError] = useState('');
+  const [error] = useState('');
   const [modal, setModal] = useState({
     isOpen: false,
     title: '',

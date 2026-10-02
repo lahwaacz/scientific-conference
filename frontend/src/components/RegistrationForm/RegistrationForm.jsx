@@ -42,7 +42,7 @@ function useModal() {
 
 export default function RegistrationForm() {
   const info = useConferenceInfo();
-  const { modal, showAlert, showConfirm } = useModal();
+  const { modal, showAlert } = useModal();
 
   const [formData, setFormData] = useState({
     name: "",

@@ -16,7 +16,7 @@ export default function EditWebInfoAccommodation() {
   const [savingOptions, setSavingOptions] = useState(false);
   const [savedInfo, setSavedInfo] = useState(false);
   const [savedOptions, setSavedOptions] = useState(false);
-  const [error, setError] = useState('');
+  const [error] = useState('');
 
   const [modal, setModal] = useState({
     isOpen: false,

@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import avatar from '../../assets/avatar.png';
 import Title from '../ui/Title/Title';
 import Modal from '../ui/Modal/Modal';
-import { useNavigate } from 'react-router-dom';
+
 import { fetchWithAuth, buildMediaUrl } from '../../utils/api.js';
 
 export default function EditSubmissionModal({ submission, onClose, onSave }) {
@@ -22,7 +22,7 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
   });
 
   const [photo, setPhoto] = useState(null);
-  const navigate = useNavigate();
+
   const [photoPreview, setPhotoPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [wordCount, setWordCount] = useState(0);

@@ -17,7 +17,7 @@ export default function ParticipantsInfo() {
   }, []);
 
   async function fetchSubmissions() {
-    const token = localStorage.getItem("access_token");
+
     try {
        const res = await fetchWithAuth('/api/admin/submissions/?status=');
       const data = await res.json();

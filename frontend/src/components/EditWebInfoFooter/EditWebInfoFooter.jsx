@@ -4,7 +4,7 @@ import styles from './EditWebInfoFooter.module.css';
 import Title from '../ui/Title/Title';
 import Loader from '../ui/Loader/Loader';
 import { fetchWithAuth } from '../../utils/api';
-import Modal from '../ui/Modal/Modal';
+
 
 
 export default function EditWebInfoFooter() {
