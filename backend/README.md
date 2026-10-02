@@ -23,43 +23,25 @@ The backend is responsible for managing conference-related data such as particip
 
 ## Requirements
 
-- Python 3.x
-- pip
-- Virtual environment recommended
+- Python 3.13+
+- [uv](https://docs.astral.sh/uv/)
 
 ## Setup
 
-1. Create a virtual environment:
+1. Install dependencies and create the virtual environment
+   (from `uv.lock`, into `backend/.venv`):
    ```bash
-   python -m venv venv
+   uv sync
    ```
 
-2. Activate the virtual environment:
-
-   **Windows**
+2. Apply database migrations:
    ```bash
-   venv\Scripts\activate
+   uv run python manage.py migrate
    ```
 
-   **Linux/macOS**
+3. Create a superuser if needed:
    ```bash
-   source venv/bin/activate
-   ```
-
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. Apply database migrations:
-   ```bash
-   python manage.py makemigrations
-   python manage.py migrate
-   ```
-
-5. Create a superuser if needed:
-   ```bash
-   python manage.py createsuperuser
+   uv run python manage.py createsuperuser
    ```
 
 ## Running the Development Server
@@ -67,7 +49,7 @@ The backend is responsible for managing conference-related data such as particip
 Start the backend server with:
 
 ```bash
-python manage.py runserver
+uv run python manage.py runserver
 ```
 
 By default, the development server runs on `http://127.0.0.1:8000/`.
@@ -118,5 +100,12 @@ The backend contains automated tests for core data and API behavior, including:
 Run the test suite with:
 
 ```bash
-python manage.py test
+uv run pytest
+```
+
+Lint and type checks:
+
+```bash
+uv run ruff check .
+uv run pyright
 ```

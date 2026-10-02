@@ -48,31 +48,22 @@ Demo URL: `https://mmg-webapps.fjfi.cvut.cz/conference-demo/`
 
 ### Backend
 
-1. Create a virtual environment:
+The backend uses [uv](https://docs.astral.sh/uv/) for dependency management
+(commands run from the `backend/` directory).
+
+1. Install dependencies (creates `backend/.venv` from `uv.lock`):
    ```bash
-   python -m venv venv
+   uv sync
    ```
 
-2. Activate the environment:
-
-   **Windows**
+2. Apply database migrations:
    ```bash
-   venv\Scripts\activate
+   uv run python manage.py migrate
    ```
 
-   **Linux/macOS**
+3. Run the backend server:
    ```bash
-   source venv/bin/activate
-   ```
-
-3. Install backend dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. Run the backend server:
-   ```bash
-   python manage.py runserver
+   uv run python manage.py runserver
    ```
 
 ### Frontend

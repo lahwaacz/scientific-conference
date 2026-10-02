@@ -1,0 +1,50 @@
+[project]
+name = "scientific-conference-backend"
+version = "0.1.0"
+description = "Django + DRF backend for the scientific conference app"
+requires-python = ">=3.13"
+dependencies = [
+    "django>=5.2,<6",
+    "django-cors-headers>=4.9",
+    "djangorestframework>=3.16",
+    "djangorestframework-simplejwt>=5.5",
+    "reportlab>=4.5",
+]
+
+[dependency-groups]
+dev = [
+    "django-stubs[compatible-mypy]>=5.2",
+    "ruff>=0.15",
+    "pyright[nodejs]>=1.1.402",
+    "pytest>=8",
+    "pytest-django>=4.11",
+]
+
+[tool.ruff]
+target-version = "py313"
+
+[tool.ruff.lint]
+extend-select = ["I", "B", "SIM", "BLE", "EXE", "RUF"]
+# Django/DRF class attributes (queryset, permission_classes, model fields)
+# are deliberately mutable class defaults, not ClassVar candidates.
+ignore = ["RUF012"]
+allowed-confusables = ["–"]
+
+[tool.pyright]
+typeCheckingMode = "basic"
+pythonVersion = "3.13"
+exclude = [
+    "**/migrations",
+    ".venv",
+]
+# Reverse relations and runtime-injected attributes need the mypy plugin,
+# which pyright cannot run (django-stubs is types-only there).
+reportAttributeAccessIssue = "none"
+# Django-admin idiom: func.short_description = "..." attribute assignment.
+reportFunctionMemberAccess = "none"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "backend.settings"
+pythonpath = ["."]
+testpaths = ["core"]
+python_files = ["test_*.py", "*_test.py", "tests.py"]

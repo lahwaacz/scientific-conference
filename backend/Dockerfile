@@ -4,8 +4,9 @@ FROM python:3.14
 COPY . /project
 WORKDIR /project
 
-# install required Python packages
-RUN pip install --no-cache-dir -r requirements.txt
+# install uv, then dependencies from the locked set (no dev group)
+COPY --from=ghcr.io/astral-sh/uv:0.12.22 /uv /bin/uv
+RUN uv sync --frozen --no-dev
 
 # NOTE: this does not work with gunicorn - it does not serve static files
 # collect static files into the STATIC_ROOT directory
@@ -26,5 +27,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 EXPOSE 8000
 
 # collect static files, perform database migrations and run the webserver
-#CMD python manage.py collectstatic --no-input --clear && python manage.py migrate && gunicorn backend.wsgi:application --bind 0.0.0.0:8000
-CMD python manage.py migrate && python manage.py runserver 0.0.0.0:8000
+#CMD .venv/bin/python manage.py collectstatic --no-input --clear && .venv/bin/python manage.py migrate && gunicorn backend.wsgi:application --bind 0.0.0.0:8000
+CMD .venv/bin/python manage.py migrate && .venv/bin/python manage.py runserver 0.0.0.0:8000
