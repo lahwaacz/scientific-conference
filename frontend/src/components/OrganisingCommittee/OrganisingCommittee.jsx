@@ -1,4 +1,4 @@
-import styles from './OrginisingCommittee.module.css';
+import styles from './OrganisingCommittee.module.css';
 import HomeCard from '../ui/HomeCard/HomeCard';
 import Separator from '../ui/Separator/Separator';
 import Title from '../ui/Title/Title';

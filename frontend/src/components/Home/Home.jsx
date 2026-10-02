@@ -1,6 +1,6 @@
 import Hero from '../Hero/Hero';
 import Registration from '../Registration/Registration';
-import OrganisingCommittee from '../OrginisingCommittee/OrginisingCommittee';
+import OrganisingCommittee from '../OrganisingCommittee/OrganisingCommittee';
 import Organisers from '../Organisers/Organisers';
 import styles from './Home.module.css';
 
