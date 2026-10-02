@@ -5,15 +5,20 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('core', '0004_talk_is_scheduled_alter_talk_end_time_and_more'),
+        ("core", "0004_talk_is_scheduled_alter_talk_end_time_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='talk',
-            name='abstract',
-            field=models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='talk', to='core.abstract'),
+            model_name="talk",
+            name="abstract",
+            field=models.OneToOneField(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="talk",
+                to="core.abstract",
+            ),
         ),
     ]

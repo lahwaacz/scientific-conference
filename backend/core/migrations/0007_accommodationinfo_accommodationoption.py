@@ -5,35 +5,62 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('core', '0006_participantsubmission_info_and_more'),
+        ("core", "0006_participantsubmission_info_and_more"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='AccommodationInfo',
+            name="AccommodationInfo",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('description', models.TextField(blank=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("description", models.TextField(blank=True)),
             ],
             options={
-                'verbose_name': 'Accommodation Info',
+                "verbose_name": "Accommodation Info",
             },
         ),
         migrations.CreateModel(
-            name='AccommodationOption',
+            name="AccommodationOption",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=200)),
-                ('description', models.CharField(blank=True, max_length=500)),
-                ('url', models.URLField(blank=True)),
-                ('photo', models.ImageField(blank=True, null=True, upload_to='accommodation/')),
-                ('order', models.PositiveIntegerField(default=0)),
-                ('info', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='options', to='core.accommodationinfo')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=200)),
+                ("description", models.CharField(blank=True, max_length=500)),
+                ("url", models.URLField(blank=True)),
+                (
+                    "photo",
+                    models.ImageField(
+                        blank=True, null=True, upload_to="accommodation/"
+                    ),
+                ),
+                ("order", models.PositiveIntegerField(default=0)),
+                (
+                    "info",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="options",
+                        to="core.accommodationinfo",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['order'],
+                "ordering": ["order"],
             },
         ),
     ]

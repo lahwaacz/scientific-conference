@@ -5,35 +5,89 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('core', '0001_initial'),
+        ("core", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='ParticipantSubmission',
+            name="ParticipantSubmission",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=255)),
-                ('email', models.EmailField(max_length=254)),
-                ('affiliation', models.CharField(max_length=500)),
-                ('photo', models.ImageField(blank=True, null=True, upload_to='submissions/photos/')),
-                ('abstract_title', models.CharField(blank=True, max_length=500)),
-                ('abstract_text', models.TextField(blank=True)),
-                ('additional_authors', models.CharField(blank=True, help_text='Co-authors', max_length=500)),
-                ('additional_affiliations', models.TextField(blank=True, help_text='Affiliations of co-authors')),
-                ('arrival_date', models.DateField()),
-                ('departure_date', models.DateField()),
-                ('status', models.CharField(choices=[('pending', 'Pending Review'), ('approved', 'Approved'), ('rejected', 'Rejected')], default='pending', max_length=20)),
-                ('submitted_at', models.DateTimeField(auto_now_add=True)),
-                ('reviewed_at', models.DateTimeField(blank=True, null=True)),
-                ('admin_notes', models.TextField(blank=True, help_text='Internal notes for admins')),
-                ('published_abstract', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='submission', to='core.abstract')),
-                ('published_participant', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='submission', to='core.participant')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=255)),
+                ("email", models.EmailField(max_length=254)),
+                ("affiliation", models.CharField(max_length=500)),
+                (
+                    "photo",
+                    models.ImageField(
+                        blank=True, null=True, upload_to="submissions/photos/"
+                    ),
+                ),
+                ("abstract_title", models.CharField(blank=True, max_length=500)),
+                ("abstract_text", models.TextField(blank=True)),
+                (
+                    "additional_authors",
+                    models.CharField(
+                        blank=True, help_text="Co-authors", max_length=500
+                    ),
+                ),
+                (
+                    "additional_affiliations",
+                    models.TextField(
+                        blank=True, help_text="Affiliations of co-authors"
+                    ),
+                ),
+                ("arrival_date", models.DateField()),
+                ("departure_date", models.DateField()),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("pending", "Pending Review"),
+                            ("approved", "Approved"),
+                            ("rejected", "Rejected"),
+                        ],
+                        default="pending",
+                        max_length=20,
+                    ),
+                ),
+                ("submitted_at", models.DateTimeField(auto_now_add=True)),
+                ("reviewed_at", models.DateTimeField(blank=True, null=True)),
+                (
+                    "admin_notes",
+                    models.TextField(blank=True, help_text="Internal notes for admins"),
+                ),
+                (
+                    "published_abstract",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="submission",
+                        to="core.abstract",
+                    ),
+                ),
+                (
+                    "published_participant",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="submission",
+                        to="core.participant",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-submitted_at'],
+                "ordering": ["-submitted_at"],
             },
         ),
     ]

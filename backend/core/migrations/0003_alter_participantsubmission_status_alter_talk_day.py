@@ -5,20 +5,29 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('core', '0002_participantsubmission'),
+        ("core", "0002_participantsubmission"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='participantsubmission',
-            name='status',
-            field=models.CharField(choices=[('pending', 'Pending Review'), ('approved', 'Published')], default='pending', max_length=20),
+            model_name="participantsubmission",
+            name="status",
+            field=models.CharField(
+                choices=[("pending", "Pending Review"), ("approved", "Published")],
+                default="pending",
+                max_length=20,
+            ),
         ),
         migrations.AlterField(
-            model_name='talk',
-            name='day',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='items', to='core.conferenceday'),
+            model_name="talk",
+            name="day",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="items",
+                to="core.conferenceday",
+            ),
         ),
     ]

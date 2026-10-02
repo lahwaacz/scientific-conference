@@ -5,38 +5,63 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('core', '0007_accommodationinfo_accommodationoption'),
+        ("core", "0007_accommodationinfo_accommodationoption"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='HikingRoute',
+            name="HikingRoute",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=200)),
-                ('way_description', models.TextField(blank=True)),
-                ('map_url', models.URLField(blank=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=200)),
+                ("way_description", models.TextField(blank=True)),
+                ("map_url", models.URLField(blank=True)),
             ],
             options={
-                'verbose_name': 'Hiking Route',
-                'ordering': ['name'],
+                "verbose_name": "Hiking Route",
+                "ordering": ["name"],
             },
         ),
         migrations.CreateModel(
-            name='HikingStop',
+            name="HikingStop",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=200)),
-                ('description', models.TextField(blank=True)),
-                ('photo', models.ImageField(blank=True, null=True, upload_to='hiking/')),
-                ('order', models.PositiveIntegerField(default=0)),
-                ('route', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='stops', to='core.hikingroute')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=200)),
+                ("description", models.TextField(blank=True)),
+                (
+                    "photo",
+                    models.ImageField(blank=True, null=True, upload_to="hiking/"),
+                ),
+                ("order", models.PositiveIntegerField(default=0)),
+                (
+                    "route",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="stops",
+                        to="core.hikingroute",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Hiking Stop',
-                'ordering': ['order'],
+                "verbose_name": "Hiking Stop",
+                "ordering": ["order"],
             },
         ),
     ]

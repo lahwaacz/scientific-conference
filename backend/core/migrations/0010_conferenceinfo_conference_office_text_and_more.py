@@ -4,45 +4,57 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('core', '0009_conferenceinfo'),
+        ("core", "0009_conferenceinfo"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='conferenceinfo',
-            name='conference_office_text',
-            field=models.TextField(blank=True, default='D. Landovská, Department of Software Engineering, Faculty of Nuclear Sciences and Physical Engineering, Czech Technical University in Prague'),
+            model_name="conferenceinfo",
+            name="conference_office_text",
+            field=models.TextField(
+                blank=True,
+                default="D. Landovská, Department of Software Engineering, Faculty of Nuclear Sciences and Physical Engineering, Czech Technical University in Prague",
+            ),
         ),
         migrations.AddField(
-            model_name='conferenceinfo',
-            name='copyright_text',
-            field=models.CharField(blank=True, default='©2025 MMG, FNSPE CTU in Prague', max_length=200),
+            model_name="conferenceinfo",
+            name="copyright_text",
+            field=models.CharField(
+                blank=True, default="©2025 MMG, FNSPE CTU in Prague", max_length=200
+            ),
         ),
         migrations.AddField(
-            model_name='conferenceinfo',
-            name='grant_text',
-            field=models.TextField(blank=True, default='This workshop was supported by the Grant Agency of the Czech Technical University in Prague, grant No. SVK 44/25/F4.'),
+            model_name="conferenceinfo",
+            name="grant_text",
+            field=models.TextField(
+                blank=True,
+                default="This workshop was supported by the Grant Agency of the Czech Technical University in Prague, grant No. SVK 44/25/F4.",
+            ),
         ),
         migrations.AddField(
-            model_name='conferenceinfo',
-            name='info_desk_email',
-            field=models.EmailField(blank=True, default='pauspetr@cvut.cz', max_length=254),
+            model_name="conferenceinfo",
+            name="info_desk_email",
+            field=models.EmailField(
+                blank=True, default="pauspetr@cvut.cz", max_length=254
+            ),
         ),
         migrations.AddField(
-            model_name='conferenceinfo',
-            name='poster_url',
+            model_name="conferenceinfo",
+            name="poster_url",
             field=models.URLField(blank=True),
         ),
         migrations.AddField(
-            model_name='conferenceinfo',
-            name='venue_text',
-            field=models.TextField(blank=True, default='Faculty of Nuclear Sciences and Physical Engineering, Pohraniční 1288/1, 405 02 Děčín and MS Teams online'),
+            model_name="conferenceinfo",
+            name="venue_text",
+            field=models.TextField(
+                blank=True,
+                default="Faculty of Nuclear Sciences and Physical Engineering, Pohraniční 1288/1, 405 02 Děčín and MS Teams online",
+            ),
         ),
         migrations.AddField(
-            model_name='conferenceinfo',
-            name='website_url',
+            model_name="conferenceinfo",
+            name="website_url",
             field=models.URLField(blank=True),
         ),
     ]

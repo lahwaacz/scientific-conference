@@ -5,100 +5,234 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='ConferenceDay',
+            name="ConferenceDay",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date', models.DateField()),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("date", models.DateField()),
             ],
             options={
-                'ordering': ['date'],
+                "ordering": ["date"],
             },
         ),
         migrations.CreateModel(
-            name='Organizer',
+            name="Organizer",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=255)),
-                ('department', models.CharField(blank=True, max_length=500)),
-                ('email', models.EmailField(blank=True, max_length=254)),
-                ('photo', models.ImageField(blank=True, null=True, upload_to='organizers/')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=255)),
+                ("department", models.CharField(blank=True, max_length=500)),
+                ("email", models.EmailField(blank=True, max_length=254)),
+                (
+                    "photo",
+                    models.ImageField(blank=True, null=True, upload_to="organizers/"),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='OrganizingCommittee',
+            name="OrganizingCommittee",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=255)),
-                ('department', models.CharField(blank=True, max_length=500)),
-                ('email', models.EmailField(blank=True, max_length=254)),
-                ('photo', models.ImageField(blank=True, null=True, upload_to='organizingCommittee/')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=255)),
+                ("department", models.CharField(blank=True, max_length=500)),
+                ("email", models.EmailField(blank=True, max_length=254)),
+                (
+                    "photo",
+                    models.ImageField(
+                        blank=True, null=True, upload_to="organizingCommittee/"
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='Participant',
+            name="Participant",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=255)),
-                ('affiliation', models.CharField(blank=True, max_length=500)),
-                ('email', models.EmailField(blank=True, max_length=254)),
-                ('photo', models.ImageField(blank=True, null=True, upload_to='participants/')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=255)),
+                ("affiliation", models.CharField(blank=True, max_length=500)),
+                ("email", models.EmailField(blank=True, max_length=254)),
+                (
+                    "photo",
+                    models.ImageField(blank=True, null=True, upload_to="participants/"),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='React',
+            name="React",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=30)),
-                ('detail', models.CharField(max_length=500)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=30)),
+                ("detail", models.CharField(max_length=500)),
             ],
         ),
         migrations.CreateModel(
-            name='Abstract',
+            name="Abstract",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=500)),
-                ('text', models.TextField(blank=True)),
-                ('authors', models.CharField(blank=True, max_length=500)),
-                ('department', models.CharField(blank=True, max_length=255)),
-                ('participant', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='abstract', to='core.participant')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("title", models.CharField(max_length=500)),
+                ("text", models.TextField(blank=True)),
+                ("authors", models.CharField(blank=True, max_length=500)),
+                ("department", models.CharField(blank=True, max_length=255)),
+                (
+                    "participant",
+                    models.OneToOneField(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="abstract",
+                        to="core.participant",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='Session',
+            name="Session",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('chair', models.CharField(blank=True, max_length=255)),
-                ('start_time', models.TimeField(blank=True, null=True)),
-                ('end_time', models.TimeField(blank=True, null=True)),
-                ('day', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='sessions', to='core.conferenceday')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("chair", models.CharField(blank=True, max_length=255)),
+                ("start_time", models.TimeField(blank=True, null=True)),
+                ("end_time", models.TimeField(blank=True, null=True)),
+                (
+                    "day",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="sessions",
+                        to="core.conferenceday",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['start_time'],
+                "ordering": ["start_time"],
             },
         ),
         migrations.CreateModel(
-            name='Talk',
+            name="Talk",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('talk_type', models.CharField(choices=[('talk', 'Talk'), ('break', 'Break'), ('event', 'Event')], default='talk', max_length=20)),
-                ('title', models.CharField(max_length=255)),
-                ('start_time', models.TimeField()),
-                ('end_time', models.TimeField()),
-                ('abstract', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='talk', to='core.abstract')),
-                ('day', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='items', to='core.conferenceday')),
-                ('participant', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='talks', to='core.participant')),
-                ('session', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='talks', to='core.session')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "talk_type",
+                    models.CharField(
+                        choices=[
+                            ("talk", "Talk"),
+                            ("break", "Break"),
+                            ("event", "Event"),
+                        ],
+                        default="talk",
+                        max_length=20,
+                    ),
+                ),
+                ("title", models.CharField(max_length=255)),
+                ("start_time", models.TimeField()),
+                ("end_time", models.TimeField()),
+                (
+                    "abstract",
+                    models.OneToOneField(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="talk",
+                        to="core.abstract",
+                    ),
+                ),
+                (
+                    "day",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="items",
+                        to="core.conferenceday",
+                    ),
+                ),
+                (
+                    "participant",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="talks",
+                        to="core.participant",
+                    ),
+                ),
+                (
+                    "session",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="talks",
+                        to="core.session",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['start_time'],
+                "ordering": ["start_time"],
             },
         ),
     ]

@@ -4,28 +4,47 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('core', '0008_hikingroute_hikingstop'),
+        ("core", "0008_hikingroute_hikingstop"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='ConferenceInfo',
+            name="ConferenceInfo",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(default='Workshop on Scientific Computing', max_length=200)),
-                ('year', models.PositiveIntegerField(default=2025)),
-                ('date_start', models.DateField(blank=True, null=True)),
-                ('date_end', models.DateField(blank=True, null=True)),
-                ('location', models.CharField(default='Děčín', max_length=200)),
-                ('description', models.TextField(blank=True)),
-                ('registration_instructions', models.TextField(blank=True)),
-                ('registration_deadline', models.DateField(blank=True, null=True)),
-                ('registration_fee_note', models.CharField(blank=True, default='Conference fee is free of charge', max_length=300)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "title",
+                    models.CharField(
+                        default="Workshop on Scientific Computing", max_length=200
+                    ),
+                ),
+                ("year", models.PositiveIntegerField(default=2025)),
+                ("date_start", models.DateField(blank=True, null=True)),
+                ("date_end", models.DateField(blank=True, null=True)),
+                ("location", models.CharField(default="Děčín", max_length=200)),
+                ("description", models.TextField(blank=True)),
+                ("registration_instructions", models.TextField(blank=True)),
+                ("registration_deadline", models.DateField(blank=True, null=True)),
+                (
+                    "registration_fee_note",
+                    models.CharField(
+                        blank=True,
+                        default="Conference fee is free of charge",
+                        max_length=300,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Conference Info',
+                "verbose_name": "Conference Info",
             },
         ),
     ]

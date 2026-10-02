@@ -4,30 +4,38 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('core', '0010_conferenceinfo_conference_office_text_and_more'),
+        ("core", "0010_conferenceinfo_conference_office_text_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='conferenceinfo',
-            name='program_local_registration_text',
-            field=models.TextField(blank=True, default='Registration for local participants takes place at the conference venue: Thursday: from 13:00 to 14:00 + during coffee breaks between the sessions'),
+            model_name="conferenceinfo",
+            name="program_local_registration_text",
+            field=models.TextField(
+                blank=True,
+                default="Registration for local participants takes place at the conference venue: Thursday: from 13:00 to 14:00 + during coffee breaks between the sessions",
+            ),
         ),
         migrations.AddField(
-            model_name='conferenceinfo',
-            name='program_poster_talks_text',
-            field=models.TextField(blank=True, default='Each poster will be briefly introduced in a short 1–3 min presentation.'),
+            model_name="conferenceinfo",
+            name="program_poster_talks_text",
+            field=models.TextField(
+                blank=True,
+                default="Each poster will be briefly introduced in a short 1–3 min presentation.",
+            ),
         ),
         migrations.AddField(
-            model_name='conferenceinfo',
-            name='program_regular_talks_text',
-            field=models.TextField(blank=True, default='Oral presentation duration is 20 min = 15 min talk + 5 min for discussion.'),
+            model_name="conferenceinfo",
+            name="program_regular_talks_text",
+            field=models.TextField(
+                blank=True,
+                default="Oral presentation duration is 20 min = 15 min talk + 5 min for discussion.",
+            ),
         ),
         migrations.AlterField(
-            model_name='conferenceinfo',
-            name='year',
+            model_name="conferenceinfo",
+            name="year",
             field=models.PositiveIntegerField(default=2026),
         ),
     ]

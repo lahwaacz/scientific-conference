@@ -4,15 +4,17 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('core', '0011_conferenceinfo_program_local_registration_text_and_more'),
+        ("core", "0011_conferenceinfo_program_local_registration_text_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='conferenceinfo',
-            name='venue_map_embed_url',
-            field=models.TextField(blank=True, default='https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2522.8151323874063!2d14.21346707611837!3d50.77900046365381!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47099fd1ace90813%3A0x7d351b85e2789db!2sCTU%20Decin!5e0!3m2!1sru!2scz!4v1777641891915!5m2!1sru!2scz'),
+            model_name="conferenceinfo",
+            name="venue_map_embed_url",
+            field=models.TextField(
+                blank=True,
+                default="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2522.8151323874063!2d14.21346707611837!3d50.77900046365381!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47099fd1ace90813%3A0x7d351b85e2789db!2sCTU%20Decin!5e0!3m2!1sru!2scz!4v1777641891915!5m2!1sru!2scz",
+            ),
         ),
     ]

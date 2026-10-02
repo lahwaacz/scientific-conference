@@ -56,7 +56,7 @@ def generate_program_pdf(request):
         result = auth.authenticate(request)
         if result is None or not result[0].is_staff:
             return HttpResponse(status=403)
-    except Exception:
+    except Exception:  # noqa: BLE001
         return HttpResponse(status=403)
 
     font_path = os.path.join(os.path.dirname(__file__), "fonts", "DejaVuSans.ttf")
@@ -94,7 +94,6 @@ def generate_program_pdf(request):
 
     BLUE = colors.Color(0 / 255, 101 / 255, 189 / 255)
     DARK = colors.Color(30 / 255, 30 / 255, 30 / 255)
-    GRAY = colors.Color(80 / 255, 80 / 255, 80 / 255)
 
     DAYS_EN = [
         "Monday",
@@ -294,7 +293,7 @@ def generate_badges_pdf(request):
         result = auth.authenticate(request)
         if result is None or not result[0].is_staff:
             return HttpResponse(status=403)
-    except Exception:
+    except Exception:  # noqa: BLE001
         return HttpResponse(status=403)
 
     font_path = os.path.join(os.path.dirname(__file__), "fonts", "DejaVuSans.ttf")
@@ -621,9 +620,9 @@ def publish_submission(request, pk):
             },
             status=200,
         )
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         traceback.print_exc()  # Для отладки
-        return Response({"error": f"Failed to publish: {str(e)}"}, status=500)
+        return Response({"error": f"Failed to publish: {e!s}"}, status=500)
 
 
 class UnscheduledTalkDeleteView(generics.DestroyAPIView):

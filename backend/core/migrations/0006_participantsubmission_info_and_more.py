@@ -4,20 +4,21 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('core', '0005_alter_talk_abstract'),
+        ("core", "0005_alter_talk_abstract"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='participantsubmission',
-            name='info',
-            field=models.TextField(blank=True, help_text='Additional info from participant'),
+            model_name="participantsubmission",
+            name="info",
+            field=models.TextField(
+                blank=True, help_text="Additional info from participant"
+            ),
         ),
         migrations.AddField(
-            model_name='participantsubmission',
-            name='is_student',
+            model_name="participantsubmission",
+            name="is_student",
             field=models.BooleanField(default=False),
         ),
     ]

@@ -4,25 +4,24 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('core', '0003_alter_participantsubmission_status_alter_talk_day'),
+        ("core", "0003_alter_participantsubmission_status_alter_talk_day"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='talk',
-            name='is_scheduled',
+            model_name="talk",
+            name="is_scheduled",
             field=models.BooleanField(default=False),
         ),
         migrations.AlterField(
-            model_name='talk',
-            name='end_time',
+            model_name="talk",
+            name="end_time",
             field=models.TimeField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='talk',
-            name='start_time',
+            model_name="talk",
+            name="start_time",
             field=models.TimeField(blank=True, null=True),
         ),
     ]

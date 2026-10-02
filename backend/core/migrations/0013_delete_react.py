@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("core", "0012_conferenceinfo_venue_map_embed_url"),
     ]
