@@ -1,5 +1,6 @@
 import datetime
 import os
+import traceback
 
 from django.http import HttpResponse
 from reportlab.lib import colors
@@ -46,7 +47,6 @@ from .serializers import (
     ParticipantSubmissionSerializer,
     SessionSerializer,
     TalkSerializer,
-    TimelineItemSerializer,
 )
 
 
@@ -622,8 +622,6 @@ def publish_submission(request, pk):
             status=200,
         )
     except Exception as e:
-        import traceback
-
         traceback.print_exc()  # Для отладки
         return Response({"error": f"Failed to publish: {str(e)}"}, status=500)
 
