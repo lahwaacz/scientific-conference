@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from .models import (
-    React,
     ConferenceDay,
     Session,
     Talk,
@@ -15,12 +14,6 @@ from .models import (
     HikingRoute,
     ConferenceInfo,
 )
-
-
-class ReactSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = React
-        fields = ["name", "detail"]
 
 
 class ParticipantSerializer(serializers.ModelSerializer):
