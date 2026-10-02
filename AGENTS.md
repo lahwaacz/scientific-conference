@@ -48,7 +48,7 @@ Codegraph covers Python only (JS unindexed); refs via pyright LSP.
 | `ParticipantSubmission.publish()` | method | backend/core/models.py:209 | core workflow | creates Participant + Abstract + unscheduled Talk |
 | `generate_program_pdf` / `generate_badges_pdf` | function | backend/core/views.py:53,291 | 2 endpoints | reportlab PDFs; need `core/fonts/*.ttf` |
 | ~39 DRF views | classes | backend/core/views.py | wired in core/urls.py | public `AllowAny` + admin `IsAdminUser` |
-| `App` | component | frontend/src/App.js:36 | entry | HashRouter + all routes + layout shell |
+| `App` | component | frontend/src/App.js:35 | entry | HashRouter + all routes + layout shell |
 | `fetchWithAuth` / `buildApiUrl` / `buildMediaUrl` | functions | frontend/src/utils/api.js | ~26 files | sole API client; 401-refresh queue |
 
 ## CONVENTIONS

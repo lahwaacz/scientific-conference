@@ -2,7 +2,7 @@
 
 ## OVERVIEW
 
-Create React App (react-scripts 5.0.1) + React 19 SPA; NOT Vite despite the Dockerfile comment saying so.
+Create React App (react-scripts 5.0.1) + React 19 SPA.
 
 ## STRUCTURE
 
@@ -21,7 +21,7 @@ frontend/
 ├── .env.development         # REACT_APP_BACKEND_API_BASE_URL=http://localhost:8000
 ├── .env.production          # empty by design
 ├── nginx.conf               # NOT installed in image (Dockerfile:43 COPY commented out)
-└── Dockerfile               # build ARG for backend URL, see anti-patterns
+└── Dockerfile               # build ARG for backend URL, exported via ENV; override with --build-arg
 ```
 
 ## WHERE TO LOOK
@@ -54,5 +54,4 @@ Root AGENTS.md already bans BrowserRouter/`window.location.href`, hardcoded URLs
 - Symptom of a broken prefix guard: `http://hosthttp://host/api/...` — check `startsWith('http')` guards in configuredFetch.js/api.js first.
 - `buildMediaUrl` strips a leading `conference-demo/` from media paths (api.js:55-57). Deployment-specific hack; do not remove.
 - `isRefreshing`/`failedQueue` module-level singletons in api.js are a deliberate 401 refresh queue; naive cleanup breaks admin sessions mid-edit.
-- axios is imported in App.js but never used. Dead dependency; do not start using it.
 - Only test file: `RegistrationForm.test.jsx`. Mock pattern: jest.mock hooks + global fetch.
