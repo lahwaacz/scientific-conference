@@ -33,7 +33,7 @@ frontend/
 | Public site section | `src/components/<Name>/` | Home, Hero, Program, Registration, Abstracts, Venue, Hiking, Accommodation... |
 | Admin feature | `src/components/Admin*`, `Edit*` | AdminPanel, AdminLoginModal, ProtectedRoute, EditProgram, EditParticipants, EditSubmissionModal, EditWebInfo + 7 section editors |
 | Shared primitives | `src/components/ui/` | Modal, Loader, Separator, Title, HomeCard, AbstractCard, ParticipantsCard |
-| Custom hooks | `src/components/hooks/` | useConferenceInfo, useLockBodyScroll (frontend/README.md wrongly claims src/hooks/ and src/ui/ top-level; trust the tree) |
+| Custom hooks | `src/components/hooks/` | useConferenceInfo, useLockBodyScroll |
 | Styling | `<Name>/<Name>.module.css` | colocated CSS Module per component |
 
 ## CONVENTIONS

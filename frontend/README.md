@@ -22,8 +22,8 @@ The application communicates with the Django backend through a REST API and is s
 
 - `src/` — application source code.
 - `src/components/` — reusable UI and page components.
-- `src/ui/` — shared interface components.
-- `src/hooks/` — custom hooks.
+- `src/components/ui/` — shared interface components.
+- `src/components/hooks/` — custom hooks.
 - `src/utils/` — API utilities and helper functions.
 - `public/` — static public assets.
 - `.env.development` — local development environment variables.
