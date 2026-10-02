@@ -154,7 +154,7 @@ The **Unscheduled Talks** section displays published submissions whose presentat
 
 The **Move to Unscheduled** action moves a talk from the schedule back to the **Unscheduled Talks** section. The talk becomes invisible in the public part of the website until it is assigned again.
 
-![Unscheduled talks](./assets/uncheduledtalks.png)
+![Unscheduled talks](./assets/unscheduledtalks.png)
 
 ### Assign a Talk to the Schedule
 
@@ -355,7 +355,7 @@ The option with the lowest order number is shown first on the public website.
 
 After all changes, select **Save** at the end of the card.
 
-![Accommodation section](./assets/editaccomodation.png)
+![Accommodation section](./assets/editaccommodation.png)
 
 ### Hiking Subsection
 
