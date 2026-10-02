@@ -1,4 +1,5 @@
 import datetime
+import io
 import os
 import traceback
 
@@ -74,7 +75,8 @@ def generate_program_pdf(request):
     response["Content-Disposition"] = 'attachment; filename="program.pdf"'
 
     page_width, page_height = A4
-    c = canvas.Canvas(response, pagesize=A4)
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer, pagesize=A4)
 
     margin_left = 20 * mm
     margin_right = 20 * mm
@@ -227,6 +229,7 @@ def generate_program_pdf(request):
         y -= DAY_AFTER
 
     c.save()
+    response.write(buffer.getvalue())
     return response
 
 
@@ -312,7 +315,8 @@ def generate_badges_pdf(request):
 
     page_width, page_height = A4
 
-    c = canvas.Canvas(response, pagesize=A4)
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer, pagesize=A4)
 
     badge_w = 85 * mm
     badge_h = 54 * mm
@@ -411,6 +415,7 @@ def generate_badges_pdf(request):
             c.showPage()
 
     c.save()
+    response.write(buffer.getvalue())
     return response
 
 
