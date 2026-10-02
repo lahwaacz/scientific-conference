@@ -195,8 +195,9 @@ if os.getenv("DJANGO_USE_HTTPS") == "True":
 
 # this may need to be set to avoid CSRF errors due to port forwarding for development
 # https://docs.djangoproject.com/en/5.2/ref/csrf/
-if os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS"):
-    CSRF_TRUSTED_ORIGINS = os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS").split(",")
+_csrf_origins = os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "")
+if _csrf_origins:
+    CSRF_TRUSTED_ORIGINS = _csrf_origins.split(",")
 else:
     CSRF_TRUSTED_ORIGINS = [
         "http://localhost:3000",

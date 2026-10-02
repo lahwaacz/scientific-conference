@@ -7,16 +7,16 @@ from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import (
-    ParticipantSubmission,
-    Participant,
     Abstract,
-    Talk,
     ConferenceDay,
+    Participant,
+    ParticipantSubmission,
+    Talk,
 )
 from .serializers import ParticipantSubmissionSerializer
 
 
-class ParticipantSubmissionModelTests(TestCase):
+class TestParticipantSubmissionModel(TestCase):
     def test_publish_creates_participant_abstract_and_unscheduled_talk(self):
         submission = ParticipantSubmission.objects.create(
             name="Alice Smith",
@@ -34,6 +34,8 @@ class ParticipantSubmissionModelTests(TestCase):
         self.assertEqual(submission.status, "approved")
         self.assertIsNotNone(submission.published_participant)
         self.assertIsNotNone(submission.published_abstract)
+        assert abstract is not None
+        assert talk is not None
 
         self.assertEqual(Participant.objects.count(), 1)
         self.assertEqual(Abstract.objects.count(), 1)
@@ -57,7 +59,7 @@ class ParticipantSubmissionModelTests(TestCase):
         self.assertEqual(submission.stay_duration, 3)
 
 
-class ParticipantSubmissionSerializerTests(TestCase):
+class TestParticipantSubmissionSerializer(TestCase):
     def test_departure_date_must_be_after_arrival_date(self):
         data = {
             "name": "Carol White",
@@ -96,7 +98,7 @@ class ParticipantSubmissionSerializerTests(TestCase):
         self.assertTrue(serializer.is_valid(), serializer.errors)
 
 
-class SubmissionAPITests(APITestCase):
+class TestSubmissionAPI(APITestCase):
     def test_create_submission(self):
         url = reverse("submission-create")
         data = {
@@ -117,10 +119,12 @@ class SubmissionAPITests(APITestCase):
 
         self.assertEqual(response.status_code, 201)
         self.assertEqual(ParticipantSubmission.objects.count(), 1)
-        self.assertEqual(ParticipantSubmission.objects.first().status, "pending")
+        created = ParticipantSubmission.objects.first()
+        assert created is not None
+        self.assertEqual(created.status, "pending")
 
 
-class PublishSubmissionAPITests(APITestCase):
+class TestPublishSubmissionAPI(APITestCase):
     def setUp(self):
         self.admin = User.objects.create_user(
             username="admin",
@@ -128,9 +132,7 @@ class PublishSubmissionAPITests(APITestCase):
             is_staff=True,
         )
         refresh = RefreshToken.for_user(self.admin)
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}"
-        )
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
 
         self.submission = ParticipantSubmission.objects.create(
             name="Eva Brown",
@@ -161,7 +163,7 @@ class PublishSubmissionAPITests(APITestCase):
         self.assertIn(response.status_code, [401, 403])
 
 
-class TalkSchedulingTests(TestCase):
+class TestTalkScheduling(TestCase):
     def test_talk_becomes_scheduled_when_day_and_time_are_set(self):
         day = ConferenceDay.objects.create(date=date(2026, 9, 10))
         talk = Talk.objects.create(

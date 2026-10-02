@@ -1,18 +1,19 @@
 from rest_framework import serializers
+
 from .models import (
-    ConferenceDay,
-    Session,
-    Talk,
-    Participant,
     Abstract,
-    Organizer,
-    OrganizingCommittee,
-    ParticipantSubmission,
     AccommodationInfo,
     AccommodationOption,
-    HikingStop,
-    HikingRoute,
+    ConferenceDay,
     ConferenceInfo,
+    HikingRoute,
+    HikingStop,
+    Organizer,
+    OrganizingCommittee,
+    Participant,
+    ParticipantSubmission,
+    Session,
+    Talk,
 )
 
 
@@ -81,13 +82,6 @@ class SessionSerializer(serializers.ModelSerializer):
         return TalkSerializer(qs, many=True).data
 
 
-class TimelineItemSerializer(serializers.Serializer):
-    type = serializers.CharField()
-    start_time = serializers.TimeField()
-    end_time = serializers.TimeField()
-    data = serializers.JSONField()
-
-
 class ConferenceDaySerializer(serializers.ModelSerializer):
     timeline = serializers.SerializerMethodField()
 
@@ -130,7 +124,7 @@ class ConferenceDaySerializer(serializers.ModelSerializer):
                 )
 
         items.sort(key=lambda x: x["start_time"])
-        return TimelineItemSerializer(items, many=True).data
+        return items
 
 
 class OrganizerSerializer(serializers.ModelSerializer):
@@ -290,7 +284,7 @@ class ParticipantSubmissionSerializer(serializers.ModelSerializer):
                 talk.title = abstract.title
                 talk.participant = participant
                 talk.save()
-            except Exception:
+            except Exception:  # noqa: BLE001
                 from .models import Talk
 
                 Talk.objects.create(
