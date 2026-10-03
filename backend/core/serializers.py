@@ -1,3 +1,5 @@
+import datetime
+
 from rest_framework import serializers
 
 from .models import (
@@ -123,7 +125,12 @@ class ConferenceDaySerializer(serializers.ModelSerializer):
                     }
                 )
 
-        items.sort(key=lambda x: x["start_time"])
+        items.sort(
+            key=lambda x: (
+                x["start_time"] is None,
+                x["start_time"] or datetime.time.min,
+            )
+        )
         return items
 
 
