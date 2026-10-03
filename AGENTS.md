@@ -101,7 +101,7 @@ docker build frontend/                # -> ghcr.io/<repo>-frontend
 
 ## NOTES
 
-- EditProgram.jsx (836 lines) and api.js URL helpers are the highest-churn, zero-test areas — refactors there are unprotected; add care/tests.
+- EditProgram.jsx (~1100 lines) and api.js URL helpers are the highest-churn areas. Both have real tests now (EditProgram lifecycle + api client suites), but the component depth (DaySchedule/TalkCard interactions) is still thin territory — refactor with care.
 - `.env.production` is intentionally EMPTY; prod backend URL comes from the frontend Dockerfile `ARG`, exported as `ENV` to `npm run build` (default still hardcoded, flagged FIXME — override with `--build-arg`).
 - Backend prod image runs `manage.py runserver`, not gunicorn. Media files in prod must be served externally; Django serves media only in DEBUG.
 - JWT: 1h access / 7d refresh — lifetimes were a deliberate fix (f064a9e); shortening logs admins out mid-edit.

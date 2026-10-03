@@ -55,4 +55,4 @@ Root AGENTS.md already bans BrowserRouter/`window.location.href`, hardcoded URLs
 - Symptom of a broken prefix guard: `http://hosthttp://host/api/...` — check `startsWith('http')` guards in configuredFetch.js/api.js first.
 - `buildMediaUrl` strips a leading `conference-demo/` from media paths (api.js:55-57). Deployment-specific hack; do not remove.
 - `isRefreshing`/`failedQueue` module-level singletons in api.js are a deliberate 401 refresh queue; naive cleanup breaks admin sessions mid-edit.
-- Only test file: `RegistrationForm.test.jsx`. Mock pattern: jest.mock hooks + global fetch.
+- Tests run via `CI=true npm test` across 10 suites (~48). Mocking pattern: jest.mock on `utils/api` (fetchWithAuth) + global.fetch; localStorage/location mocked inline. `react-router-dom` v7 is ESM-only and jest cannot resolve it: tests use `src/testUtils/reactRouterDomStub.jsx` via `moduleNameMapper` (package.json `jest` key). Extend the stub when a test needs more router surface.
