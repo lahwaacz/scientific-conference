@@ -68,7 +68,7 @@ Codegraph covers Python only (JS unindexed); refs via pyright LSP.
 - NEVER hardcode backend URLs in components — always `buildApiUrl`/`buildMediaUrl`/`fetchWithAuth` (fix 7209ddc swept 20+ files for this).
 - NEVER "fix" the dual fetch-prefixing (`configuredFetch.js` global patch + `buildApiUrl`): they coexist only via `startsWith('http')` guards; touching one side risks double-prefixed URLs.
 - NEVER commit `.venv/`, `db.sqlite3`, `media/`, `staticfiles/` (a venv was once committed: 4c321da).
-- Do not assume CI verifies anything: the only workflow builds+pushes Docker images on push to `main`. No test/lint gate — run both test suites locally before pushing.
+- `.github/workflows/quality.yml` runs ruff/pyright/pytest + biome/jest on push to `main` and PRs. The Docker publish workflow does NOT depend on it — a red quality run does not block image pushes.
 - Do not treat cascade deletes as accidental: deleting a ConferenceDay deletes its Sessions+Talks; deleting an Abstract deletes its Talk (the FK sits on Talk); deleting a HikingRoute deletes its Stops. NOTE: deleting a day or an unscheduled talk ORPHANS the linked abstract — deliberate admin choice (2026-10-03); do not add cascades unilaterally. The admin guide documents these as rules (`ADMINISTRATOR_GUIDE.md:196`,`:375`); backend guards exist deliberately (e.g. `UnscheduledTalkDeleteView` 400).
 - Do not uncomment dormant Docker lines blindly: `backend/Dockerfile` collectstatic/gunicorn and `frontend/Dockerfile` nginx.conf COPY are disabled on purpose.
 - If the app is extended, update `ADMINISTRATOR_GUIDE.md` (guide rule, line 471).
