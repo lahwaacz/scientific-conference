@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import styles from "./EditWebInfoFooter.module.css";
-import Title from "../ui/Title/Title";
-import Loader from "../ui/Loader/Loader";
 import { fetchWithAuth } from "../../utils/api";
+import Loader from "../ui/Loader/Loader";
+import Title from "../ui/Title/Title";
+import styles from "./EditWebInfoFooter.module.css";
 
 export default function EditWebInfoFooter() {
   const [form, setForm] = useState(null);

@@ -1,8 +1,8 @@
-import styles from "./Registration.module.css";
-import Separator from "../ui/Separator/Separator";
-import Title from "../ui/Title/Title";
 import { Link } from "react-router-dom";
 import { useConferenceInfo } from "./../hooks/useConferenceInfo";
+import Separator from "../ui/Separator/Separator";
+import Title from "../ui/Title/Title";
+import styles from "./Registration.module.css";
 
 export default function Registration() {
   const info = useConferenceInfo();

@@ -1,12 +1,18 @@
-import styles from "./AdminLoginModal.module.css";
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { fetchWithAuth } from "../../utils/api";
+import styles from "./AdminLoginModal.module.css";
 
 export default function AdminLoginModal({ onSuccess, onClose }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const passwordRef = useRef(null);
+
+  useEffect(() => {
+    passwordRef.current?.focus();
+  }, []);
 
   useEffect(() => {
     const scrollbarWidth =
@@ -48,15 +54,22 @@ export default function AdminLoginModal({ onSuccess, onClose }) {
       localStorage.setItem("refresh_token", data.refresh);
 
       onSuccess();
-    } catch (err) {
+    } catch {
       setError("Connection error");
       setLoading(false);
     }
   }
 
+  // biome-ignore-start lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: backdrop close/stopPropagation are redundant with the close button; dialog role carries semantics.
   return createPortal(
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+    <div className={styles.overlay} onClick={onClose} role="presentation">
+      <div
+        className={styles.modal}
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Admin login"
+      >
         <button
           className={styles.closeBtn}
           onClick={onClose}
@@ -76,7 +89,7 @@ export default function AdminLoginModal({ onSuccess, onClose }) {
             onChange={(e) => setPassword(e.target.value)}
             disabled={loading}
             className={styles.input}
-            autoFocus
+            ref={passwordRef}
           />
 
           {error && <p className={styles.error}>{error}</p>}
@@ -89,4 +102,5 @@ export default function AdminLoginModal({ onSuccess, onClose }) {
     </div>,
     document.body
   );
+  // biome-ignore-end lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: end of backdrop scope
 }

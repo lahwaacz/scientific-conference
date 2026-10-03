@@ -1,15 +1,15 @@
-import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import styles from "./AdminPanel.module.css";
-import Loader from "../ui/Loader/Loader";
-import Title from "../ui/Title/Title";
-import Modal from "../ui/Modal/Modal";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { library } from "@fortawesome/fontawesome-svg-core";
-import { fetchWithAuth } from "../../utils/api";
-import { fas } from "@fortawesome/free-solid-svg-icons";
-import { far } from "@fortawesome/free-regular-svg-icons";
 import { fab } from "@fortawesome/free-brands-svg-icons";
+import { far } from "@fortawesome/free-regular-svg-icons";
+import { fas } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { fetchWithAuth } from "../../utils/api";
+import Loader from "../ui/Loader/Loader";
+import Modal from "../ui/Modal/Modal";
+import Title from "../ui/Title/Title";
+import styles from "./AdminPanel.module.css";
 
 export default function AdminPanel() {
   library.add(fas, far, fab);

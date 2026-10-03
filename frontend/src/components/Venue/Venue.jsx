@@ -1,7 +1,7 @@
-import styles from "./Venue.module.css";
-import Title from "../ui/Title/Title";
-import Loader from "../ui/Loader/Loader";
 import { useConferenceInfo } from "./../hooks/useConferenceInfo";
+import Loader from "../ui/Loader/Loader";
+import Title from "../ui/Title/Title";
+import styles from "./Venue.module.css";
 
 export default function Venue() {
   const info = useConferenceInfo();

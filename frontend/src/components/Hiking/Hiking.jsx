@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import styles from "./Hiking.module.css";
-import Title from "../ui/Title/Title";
-import Loader from "../ui/Loader/Loader";
 import { buildApiUrl } from "../../utils/api";
+import Loader from "../ui/Loader/Loader";
+import Title from "../ui/Title/Title";
+import styles from "./Hiking.module.css";
 
 export default function Hiking() {
   const [routes, setRoutes] = useState([]);

@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import styles from "./EditParticipants.module.css";
-import Title from "../ui/Title/Title";
 import avatar from "../../assets/avatar.png";
-import Loader from "../ui/Loader/Loader";
-import { fetchWithAuth, buildMediaUrl } from "../../utils/api";
-import EditSubmissionModal from "../EditSubmissionModal/EditSubmissionModal";
-import Modal from "../ui/Modal/Modal";
+import { buildMediaUrl, fetchWithAuth } from "../../utils/api";
 import { markProgramDirty } from "../../utils/programRefresh";
+import EditSubmissionModal from "../EditSubmissionModal/EditSubmissionModal";
+import Loader from "../ui/Loader/Loader";
+import Modal from "../ui/Modal/Modal";
+import Title from "../ui/Title/Title";
+import styles from "./EditParticipants.module.css";
 
 export default function EditParticipants() {
   const [submissions, setSubmissions] = useState([]);

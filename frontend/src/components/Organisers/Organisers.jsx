@@ -1,9 +1,9 @@
-import styles from "./Organisers.module.css";
-import HomeCard from "../ui/HomeCard/HomeCard";
-import Title from "../ui/Title/Title";
 import { useEffect, useState } from "react";
-import Loader from "../ui/Loader/Loader";
 import { buildApiUrl } from "../../utils/api";
+import HomeCard from "../ui/HomeCard/HomeCard";
+import Loader from "../ui/Loader/Loader";
+import Title from "../ui/Title/Title";
+import styles from "./Organisers.module.css";
 
 export default function Organisers() {
   const [organisers, setOrganisers] = useState([]);

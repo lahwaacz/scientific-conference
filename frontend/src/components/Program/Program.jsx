@@ -1,11 +1,11 @@
-import styles from "./Program.module.css";
-import Title from "../ui/Title/Title";
-import ProgramDay from "./ProgramDay";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import Loader from "../ui/Loader/Loader";
-import { useConferenceInfo } from "./../hooks/useConferenceInfo";
 import { buildApiUrl } from "../../utils/api";
+import { useConferenceInfo } from "./../hooks/useConferenceInfo";
+import Loader from "../ui/Loader/Loader";
+import Title from "../ui/Title/Title";
+import styles from "./Program.module.css";
+import ProgramDay from "./ProgramDay";
 
 export default function Program() {
   const [data, setData] = useState([]);

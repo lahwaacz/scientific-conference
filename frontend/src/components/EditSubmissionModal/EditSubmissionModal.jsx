@@ -1,11 +1,10 @@
-import styles from "./EditSubmissionModal.module.css";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import avatar from "../../assets/avatar.png";
-import Title from "../ui/Title/Title";
+import { buildMediaUrl, fetchWithAuth } from "../../utils/api.js";
 import Modal from "../ui/Modal/Modal";
-
-import { fetchWithAuth, buildMediaUrl } from "../../utils/api.js";
+import Title from "../ui/Title/Title";
+import styles from "./EditSubmissionModal.module.css";
 
 export default function EditSubmissionModal({ submission, onClose, onSave }) {
   const [formData, setFormData] = useState({
@@ -256,9 +255,16 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
   };
   if (!submission) return null;
 
+  // biome-ignore-start lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: backdrop close/stopPropagation are redundant with the close button; dialog role carries semantics.
   return createPortal(
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+    <div className={styles.overlay} onClick={onClose} role="presentation">
+      <div
+        className={styles.modal}
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Edit submission"
+      >
         <button className={styles.closeBtn} onClick={onClose} type="button">
           ×
         </button>
@@ -281,7 +287,7 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
             ) : (
               <img
                 src={avatar}
-                alt="No photo"
+                alt="Portrait placeholder"
                 className={styles.avatarPlaceholder}
               />
             )}
@@ -446,4 +452,5 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
     </div>,
     document.body
   );
+  // biome-ignore-end lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: end of backdrop scope
 }

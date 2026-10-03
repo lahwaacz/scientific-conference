@@ -1,9 +1,9 @@
-import styles from "./RegistrationForm.module.css";
-import { useState, useCallback } from "react";
-import Title from "../ui/Title/Title";
+import { useCallback, useState } from "react";
+import { buildApiUrl } from "../../utils/api";
 import { useConferenceInfo } from "../hooks/useConferenceInfo";
 import Modal from "../ui/Modal/Modal";
-import { buildApiUrl } from "../../utils/api";
+import Title from "../ui/Title/Title";
+import styles from "./RegistrationForm.module.css";
 
 function useModal() {
   const [modal, setModal] = useState({ isOpen: false });

@@ -1,10 +1,10 @@
-import styles from "./Footer.module.css";
-import LogoIcon from "../../assets/logoWhite.png";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import LogoIcon from "../../assets/logoWhite.png";
 import AdminLoginModal from "../AdminLoginModal/AdminLoginModal";
 import { useConferenceInfo } from "./../hooks/useConferenceInfo";
 import { useLockBodyScroll } from "./../hooks/useLockBodyScroll";
+import styles from "./Footer.module.css";
 
 export default function Footer() {
   const location = useLocation();
@@ -92,9 +92,13 @@ export default function Footer() {
       <div className={styles.bottomRow}>
         <p className={styles.bottomText}>{info?.copyright_text || ""}</p>
         {!isAdminPage && (
-          <a href="#" className={styles.adminLink} onClick={openAdmin}>
+          <button
+            type="button"
+            className={styles.adminLink}
+            onClick={openAdmin}
+          >
             Administration
-          </a>
+          </button>
         )}
       </div>
 

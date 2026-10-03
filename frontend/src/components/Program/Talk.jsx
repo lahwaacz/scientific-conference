@@ -1,5 +1,5 @@
-import styles from "./Program.module.css";
 import { Link } from "react-router-dom";
+import styles from "./Program.module.css";
 
 export default function Talk({ talk }) {
   const isBreak = talk.talk_type === "break" || talk.talk_type === "event";

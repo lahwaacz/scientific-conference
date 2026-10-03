@@ -1,7 +1,7 @@
 import Hero from "../Hero/Hero";
-import Registration from "../Registration/Registration";
-import OrganisingCommittee from "../OrganisingCommittee/OrganisingCommittee";
 import Organisers from "../Organisers/Organisers";
+import OrganisingCommittee from "../OrganisingCommittee/OrganisingCommittee";
+import Registration from "../Registration/Registration";
 import styles from "./Home.module.css";
 
 export default function Home() {

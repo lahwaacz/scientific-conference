@@ -1,5 +1,5 @@
-import Talk from "./Talk";
 import styles from "./Program.module.css";
+import Talk from "./Talk";
 
 export default function Session({ session }) {
   return (

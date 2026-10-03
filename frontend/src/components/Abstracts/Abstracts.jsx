@@ -1,10 +1,10 @@
-import styles from "./Abstracts.module.css";
-import Title from "../ui/Title/Title";
-import AbstractCard from "../ui/AbstractCard/AbstractCard";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import Loader from "../ui/Loader/Loader";
 import { buildApiUrl } from "../../utils/api";
+import AbstractCard from "../ui/AbstractCard/AbstractCard";
+import Loader from "../ui/Loader/Loader";
+import Title from "../ui/Title/Title";
+import styles from "./Abstracts.module.css";
 
 export default function Abstracts() {
   const [abstracts, setAbstracts] = useState([]);

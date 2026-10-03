@@ -1,6 +1,6 @@
-import Talk from "./Talk";
-import Session from "./Session";
 import styles from "./Program.module.css";
+import Session from "./Session";
+import Talk from "./Talk";
 
 export default function ProgramDay({ day }) {
   return (

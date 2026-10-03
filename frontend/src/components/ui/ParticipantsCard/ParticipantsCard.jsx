@@ -1,7 +1,7 @@
-import styles from "./ParticipantsCard.module.css";
-import avatar from "../../../assets/avatar.png";
 import { useNavigate } from "react-router-dom";
+import avatar from "../../../assets/avatar.png";
 import { buildMediaUrl } from "../../../utils/api";
+import styles from "./ParticipantsCard.module.css";
 
 export default function ParticipantsCard({
   name,

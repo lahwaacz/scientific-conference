@@ -1,9 +1,9 @@
-import { Link, useNavigate } from "react-router-dom";
-import styles from "./EditWebInfo.module.css";
-import Title from "../ui/Title/Title";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { fas } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Link, useNavigate } from "react-router-dom";
+import Title from "../ui/Title/Title";
+import styles from "./EditWebInfo.module.css";
 
 library.add(fas);
 

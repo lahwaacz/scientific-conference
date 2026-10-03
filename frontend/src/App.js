@@ -1,33 +1,32 @@
 import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { HashRouter as Router, Routes, Route } from "react-router-dom";
-import ScrollToTop from "./components/ui/ScrollToTop";
-import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
+import { Route, HashRouter as Router, Routes } from "react-router-dom";
+import Accommodation from "./components/Accommodation/Accommodation";
+import AdminPanel from "./components/AdminPanel/AdminPanel";
 
 import Container from "./components/Container/Container";
-import Header from "./components/Header/Header";
-import Footer from "./components/Footer/Footer";
-
-import HomePage from "./pages/HomePage";
-import Participants from "./pages/ParticipantsPage";
-import AbstractsPage from "./pages/AbstractsPage";
-import RegistrationPage from "./pages/RegistrationPage";
-import ProgramPage from "./pages/ProgramPage";
-import AdminPanel from "./components/AdminPanel/AdminPanel";
-import ParticipantsInfo from "./components/ParticipantsInfo/ParticipantsInfo";
 import EditParticipants from "./components/EditParticipants/EditParticipants";
 import EditProgram from "./components/EditProgram/EditProgram";
 import EditWebInfo from "./components/EditWebInfo/EditWebInfo";
-import Venue from "./components/Venue/Venue";
-import Accommodation from "./components/Accommodation/Accommodation";
-import Hiking from "./components/Hiking/Hiking";
-import EditWebInfoHome from "./components/EditWebInfoHome/EditWebInfoHome";
-import EditWebInfoRegistration from "./components/EditWebInfoRegistration/EditWebInfoRegistration";
-import EditWebInfoProgram from "./components/EditWebInfoProgram/EditWebInfoProgram";
-import EditWebInfoVenue from "./components/EditWebInfoVenue/EditWebInfoVenue";
 import EditWebInfoAccommodation from "./components/EditWebInfoAccommodation/EditWebInfoAccommodation";
-import EditWebInfoHiking from "./components/EditWebInfoHiking/EditWebInfoHiking";
 import EditWebInfoFooter from "./components/EditWebInfoFooter/EditWebInfoFooter";
+import EditWebInfoHiking from "./components/EditWebInfoHiking/EditWebInfoHiking";
+import EditWebInfoHome from "./components/EditWebInfoHome/EditWebInfoHome";
+import EditWebInfoProgram from "./components/EditWebInfoProgram/EditWebInfoProgram";
+import EditWebInfoRegistration from "./components/EditWebInfoRegistration/EditWebInfoRegistration";
+import EditWebInfoVenue from "./components/EditWebInfoVenue/EditWebInfoVenue";
+import Footer from "./components/Footer/Footer";
+import Header from "./components/Header/Header";
+import Hiking from "./components/Hiking/Hiking";
+import ParticipantsInfo from "./components/ParticipantsInfo/ParticipantsInfo";
+import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
+import ScrollToTop from "./components/ui/ScrollToTop";
+import Venue from "./components/Venue/Venue";
+import AbstractsPage from "./pages/AbstractsPage";
+import HomePage from "./pages/HomePage";
+import Participants from "./pages/ParticipantsPage";
+import ProgramPage from "./pages/ProgramPage";
+import RegistrationPage from "./pages/RegistrationPage";
 
 function App() {
   return (

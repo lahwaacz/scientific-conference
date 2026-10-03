@@ -1,9 +1,9 @@
-import styles from "./Participants.module.css";
-import Title from "../ui/Title/Title";
-import ParticipantsCard from "../ui/ParticipantsCard/ParticipantsCard";
 import { useEffect, useState } from "react";
-import Loader from "../ui/Loader/Loader";
 import { buildApiUrl } from "../../utils/api";
+import Loader from "../ui/Loader/Loader";
+import ParticipantsCard from "../ui/ParticipantsCard/ParticipantsCard";
+import Title from "../ui/Title/Title";
+import styles from "./Participants.module.css";
 
 export default function Participants() {
   const [participants, setParticipants] = useState([]);

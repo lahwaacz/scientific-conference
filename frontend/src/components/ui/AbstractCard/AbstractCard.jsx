@@ -1,5 +1,5 @@
-import styles from "./AbstractCard.module.css";
 import { useNavigate } from "react-router-dom";
+import styles from "./AbstractCard.module.css";
 
 export default function AbstractCard({
   id,

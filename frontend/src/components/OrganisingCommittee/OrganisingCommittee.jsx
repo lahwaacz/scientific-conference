@@ -1,10 +1,10 @@
-import styles from "./OrganisingCommittee.module.css";
-import HomeCard from "../ui/HomeCard/HomeCard";
-import Separator from "../ui/Separator/Separator";
-import Title from "../ui/Title/Title";
-import Loader from "../ui/Loader/Loader";
 import { useEffect, useState } from "react";
 import { buildApiUrl } from "../../utils/api";
+import HomeCard from "../ui/HomeCard/HomeCard";
+import Loader from "../ui/Loader/Loader";
+import Separator from "../ui/Separator/Separator";
+import Title from "../ui/Title/Title";
+import styles from "./OrganisingCommittee.module.css";
 
 export default function OrganisingCommittee() {
   const [organisers, setOrganisers] = useState([]);

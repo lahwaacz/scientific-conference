@@ -1,5 +1,5 @@
-import styles from "./Hero.module.css";
 import { useConferenceInfo } from "./../hooks/useConferenceInfo";
+import styles from "./Hero.module.css";
 
 export default function Hero() {
   const info = useConferenceInfo();

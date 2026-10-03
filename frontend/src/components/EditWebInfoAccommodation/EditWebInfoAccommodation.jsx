@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import styles from "./EditWebInfoAccommodation.module.css";
-import Title from "../ui/Title/Title";
+import { buildMediaUrl, fetchWithAuth } from "../../utils/api";
 import Loader from "../ui/Loader/Loader";
-import { fetchWithAuth, buildMediaUrl } from "../../utils/api";
 import Modal from "../ui/Modal/Modal";
+import Title from "../ui/Title/Title";
+import styles from "./EditWebInfoAccommodation.module.css";
 
 export default function EditWebInfoAccommodation() {
   const [description, setDescription] = useState("");

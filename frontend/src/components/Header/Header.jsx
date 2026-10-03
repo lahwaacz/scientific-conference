@@ -1,8 +1,8 @@
-import styles from "./Header.module.css";
-import { ReactComponent as LogoIcon } from "../../assets/logo.svg";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { ReactComponent as LogoIcon } from "../../assets/logo.svg";
 import { useLockBodyScroll } from "./../hooks/useLockBodyScroll";
+import styles from "./Header.module.css";
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -15,6 +15,7 @@ export default function Header() {
     document.body.style.overflow = menuOpen ? "hidden" : "";
   }, [menuOpen]);
 
+  // biome-ignore-start lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: backdrop overlay and hover wrapper exist only as pointer shortcuts; the burger toggle and arrow buttons carry every interaction.
   return (
     <header className={styles.header}>
       <div className={styles.inner}>
@@ -37,12 +38,19 @@ export default function Header() {
           )}
         </button>
 
-        {menuOpen && <div className={styles.overlay} onClick={closeMenu} />}
+        {menuOpen && (
+          <div
+            className={styles.overlay}
+            onClick={closeMenu}
+            role="presentation"
+          />
+        )}
 
         <Navbar isOpen={menuOpen} onNavigate={closeMenu} />
       </div>
     </header>
   );
+  // biome-ignore-end lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: Header scope ends
 }
 
 function Logo({ onNavigate }) {
@@ -79,6 +87,8 @@ function Navbar({ isOpen, onNavigate }) {
   const handleClick = () => {
     setDropdownOpen((prev) => !prev);
   };
+
+  // biome-ignore-start lint/a11y/noStaticElementInteractions: hover-only wrapper; the arrow button carries the interaction.
 
   return (
     <nav className={`${styles.navBar} ${isOpen ? styles.navBarOpen : ""}`}>
@@ -137,16 +147,19 @@ function Navbar({ isOpen, onNavigate }) {
             >
               Venue
             </Link>
-            <span
+            <button
+              type="button"
               className={styles.arrow}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 handleClick();
               }}
+              aria-label="Toggle venue submenu"
+              aria-expanded={dropdownOpen}
             >
               ▼
-            </span>
+            </button>
           </div>
 
           {dropdownOpen && (
@@ -171,4 +184,5 @@ function Navbar({ isOpen, onNavigate }) {
       </div>
     </nav>
   );
+  // biome-ignore-end lint/a11y/noStaticElementInteractions: Navbar scope ends
 }

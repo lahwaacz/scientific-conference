@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import styles from "./Accommodation.module.css";
-import Title from "../ui/Title/Title";
-import Loader from "../ui/Loader/Loader";
 import { buildApiUrl, buildMediaUrl } from "../../utils/api";
+import Loader from "../ui/Loader/Loader";
+import Title from "../ui/Title/Title";
+import styles from "./Accommodation.module.css";
 
 export default function Accommodation() {
   const [data, setData] = useState(null);

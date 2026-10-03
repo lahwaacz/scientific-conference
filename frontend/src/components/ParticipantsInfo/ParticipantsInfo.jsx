@@ -1,11 +1,11 @@
+import { faCircleCheck } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import styles from "./ParticipantsInfo.module.css";
-import Title from "../ui/Title/Title";
-import Loader from "../ui/Loader/Loader";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCircleCheck } from "@fortawesome/free-solid-svg-icons";
 import { fetchWithAuth } from "../../utils/api.js";
+import Loader from "../ui/Loader/Loader";
+import Title from "../ui/Title/Title";
+import styles from "./ParticipantsInfo.module.css";
 
 export default function ParticipantsInfo() {
   const [submissions, setSubmissions] = useState([]);

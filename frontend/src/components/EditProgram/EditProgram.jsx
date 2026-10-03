@@ -1,13 +1,13 @@
-import { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import styles from "./EditProgram.module.css";
-import Title from "../ui/Title/Title";
-import Loader from "../ui/Loader/Loader";
-import { clearProgramDirty } from "../../utils/programRefresh";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPenToSquare } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { buildApiUrl, fetchWithAuth } from "../../utils/api";
+import { clearProgramDirty } from "../../utils/programRefresh";
+import Loader from "../ui/Loader/Loader";
 import Modal from "../ui/Modal/Modal";
-import { fetchWithAuth, buildApiUrl } from "../../utils/api";
+import Title from "../ui/Title/Title";
+import styles from "./EditProgram.module.css";
 
 function TimeSelect({ onChange }) {
   const [hours, setHours] = useState("");
@@ -292,7 +292,7 @@ export default function EditProgram() {
         await showAlert("Talk scheduled successfully!", "Success");
         fetchData();
       } else await showAlert("Failed to schedule talk", "Error");
-    } catch (error) {
+    } catch {
       await showAlert("Connection error", "Error");
     }
   }
@@ -372,7 +372,7 @@ export default function EditProgram() {
         const data = await res.json();
         await showAlert(`Failed to add day: ${JSON.stringify(data)}`, "Error");
       }
-    } catch (error) {
+    } catch {
       await showAlert("Connection error", "Error");
     }
   }
