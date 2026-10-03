@@ -18,8 +18,8 @@ frontend/
 │   ├── utils/programRefresh.js  # localStorage dirty flag, re-fetch program after admin edits
 │   ├── pages/               # 5 thin route wrappers (Home, Program, Abstracts, Participants, Registration)
 │   └── components/          # 32 dirs, real logic lives here
-├── .env.development         # REACT_APP_BACKEND_API_BASE_URL=http://localhost:8000
-├── .env.production          # empty by design
+├── .env.development         # REACT_APP_BACKEND_API_BASE_URL=http://localhost:8000 + DISABLE_ESLINT_PLUGIN=true
+├── .env.production          # DISABLE_ESLINT_PLUGIN=true only (backend URL comes from Dockerfile ARG)
 ├── nginx.conf               # NOT installed in image (Dockerfile:43 COPY commented out)
 └── Dockerfile               # build ARG for backend URL, exported via ENV; override with --build-arg
 ```
@@ -45,7 +45,9 @@ frontend/
 - Auth: JWT access_token/refresh_token in localStorage; fetchWithAuth handles 401 refresh.
 - All API/media URLs through buildApiUrl/buildMediaUrl/fetchWithAuth. Never a literal URL in a component.
 - Env via `REACT_APP_BACKEND_API_BASE_URL` (CRA env, baked at build). `import.meta.env` does not exist here.
-- Tooling: Biome handles both format and lint (`biome.json` here; runs over `src/`, JS/JSX only — CSS linting is off). `npm run lint` is a 0-errors/0-warnings gate; `npm run format:check` the format gate. CRA's builtin ESLint plugin is disabled via `DISABLE_ESLINT_PLUGIN` in the start/build scripts.
+- Tooling: Biome handles both format and lint (`biome.json` here; runs over `src/`, JS/JSX only — CSS linting is off). `npm run lint` is a 0-errors gate (info-level diagnostics do not fail the command; keep them at zero too); `npm run format:check` the format gate. CRA's builtin ESLint plugin is disabled via `DISABLE_ESLINT_PLUGIN=true`, set in `.env.development` and `.env.production` (not the npm scripts — POSIX env prefixes break on Windows shells). react-scripts matches the value exactly (`=== 'true'`); a misspelled or differently-cased value silently leaves the plugin on.
+- Lint debt (known, accepted): `noLabelWithoutControl` and `useButtonType` are off — labels are not always programmatically associated with controls, and `<button>`s may lack an explicit `type`. Re-enable either only after fixing the underlying markup.
+- react-router-dom: imported as `react-router-dom` throughout `src/`. Upstream removes this package in RR v8 (the code moves to `react-router`); an import rewrite will be needed when upgrading past v7.
 
 ## ANTI-PATTERNS (THIS APP)
 

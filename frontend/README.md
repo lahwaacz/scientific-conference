@@ -65,13 +65,14 @@ For local development, the backend is configured in `.env.development`:
 REACT_APP_BACKEND_API_BASE_URL=http://localhost:8000
 ```
 
-For production builds, `.env.production` should contain the URL of the deployed backend server.  
+Both env files also set `DISABLE_ESLINT_PLUGIN=true`, which disables CRA's builtin ESLint plugin (linting is handled by Biome instead; react-scripts requires the value to be exactly `true`).
+
+For production builds, the backend URL comes from the `REACT_APP_BACKEND_API_BASE_URL` build ARG in the Dockerfile; `.env.production` intentionally holds no URL.
 After changing environment variables, restart the development server or rebuild the frontend to apply the updates.
 
 API requests are constructed centrally in `src/utils/api.js`.
 
-
-If the project is deployed on another server, this value should be updated accordingly.
+If the project is deployed on another server, the backend URL should be updated via the Dockerfile build ARG (`--build-arg REACT_APP_BACKEND_API_BASE_URL=...`).
 
 ## Production Build
 

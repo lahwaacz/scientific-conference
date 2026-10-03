@@ -91,7 +91,7 @@ npm install
 npm run start                         # :3000, uses .env.development
 CI=true npm test                      # one-shot Jest
 npm run build                         # compile (ESLint plugin disabled)
-npm run lint                          # Biome lint (0 errors, 0 warnings gate)
+npm run lint                          # Biome lint (0 errors gate; infos don't fail)
 npm run format:check                  # Biome format gate
 
 # Docker (as CI does)
@@ -102,7 +102,7 @@ docker build frontend/                # -> ghcr.io/<repo>-frontend
 ## NOTES
 
 - EditProgram.jsx (~1100 lines) and api.js URL helpers are the highest-churn areas. Both have real tests now (EditProgram lifecycle + api client suites), but the component depth (DaySchedule/TalkCard interactions) is still thin territory — refactor with care.
-- `.env.production` is intentionally EMPTY; prod backend URL comes from the frontend Dockerfile `ARG`, exported as `ENV` to `npm run build` (default still hardcoded, flagged FIXME — override with `--build-arg`).
+- `.env.production` holds only `DISABLE_ESLINT_PLUGIN=true` (CRA needs exactly `=== 'true'`); prod backend URL comes from the frontend Dockerfile `ARG`, exported as `ENV` to `npm run build` (default still hardcoded, flagged FIXME — override with `--build-arg`).
 - Backend prod image runs `manage.py runserver`, not gunicorn. Media files in prod must be served externally; Django serves media only in DEBUG.
 - JWT: 1h access / 7d refresh — lifetimes were a deliberate fix (f064a9e); shortening logs admins out mid-edit.
 - Demo: `https://mmg-webapps.fjfi.cvut.cz/conference-demo/`
