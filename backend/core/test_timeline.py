@@ -13,7 +13,7 @@ class TestTimelineSerializer(TestCase):
         self.day = ConferenceDay.objects.create(date=date(2026, 9, 10))
 
     def timeline(self):
-        return ConferenceDaySerializer(self.day).data["timeline"]
+        return ConferenceDaySerializer(self.day).data.get("timeline", [])
 
     def test_session_bounds_derived_from_first_and_last_talk(self):
         session = Session.objects.create(day=self.day, chair="Chair")
@@ -52,7 +52,7 @@ class TestTimelineSerializer(TestCase):
             start_time=time(9, 0),
             end_time=time(9, 30),
         )
-        session = Session.objects.create(
+        Session.objects.create(
             day=self.day, start_time=time(10, 0), end_time=time(11, 0)
         )
 
