@@ -57,8 +57,9 @@ class TestDayAdmin(AdminTestCase):
         self.assertEqual(Session.objects.count(), 0)
         self.assertEqual(Talk.objects.count(), 0)
         # Talk.abstract is a CASCADE FK from Talk to Abstract, so deleting
-        # a day (and its talks) currently orphans the abstract. Whether the
-        # delete should cascade onto abstracts is an open admin decision.
+        # a day (and its talks) leaves the abstract behind. Deliberate:
+        # the admin keeps orphaned abstracts (backend/AGENTS.md); do not
+        # add a cascade here without an admin decision.
         self.assertEqual(Abstract.objects.count(), 1)
         self.assertEqual(Participant.objects.count(), 1)
 

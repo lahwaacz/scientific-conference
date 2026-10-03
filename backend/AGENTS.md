@@ -57,6 +57,8 @@ backend/
 
 - `ConferenceDayDeleteView.destroy` (views.py:659) calls bare `day.delete()` with no guard; `UnscheduledTalkDeleteView` 400s on scheduled talks. Both deliberate — cascade rules and rationale live in root AGENTS.md; keep guards as they are. Beware: Talk→Abstract FK direction means day/talk deletes orphan the Abstract row.
 - `AccommodationOptionEditView` and `HikingStopEditView` call `objects.get(pk)` unguarded in patch/delete: unknown pks surface as 500, never 404. Deliberate security choice — keep; tests pin the 500.
+- `ParticipantListView` and `AbstractListView` are `ListCreateAPIView` under the global `AllowAny`: POST creates rows for ANYONE. Deliberate public surface (admin decision 2026-10-03, may be revisited for security); do not add permission_classes without a fresh decision.
+- Deleting a conference day or an unscheduled talk orphans the linked `Abstract` (FK sits on Talk). Deliberate admin choice (2026-10-03); do not add delete cascades.
 - PDF generators (`generate_program_pdf`, `generate_badges_pdf`) build into `io.BytesIO`, then write bytes into the response — do not pass the HttpResponse to canvas directly (pyright compatibility, bytes unchanged).
 - Single-row config tables (`ConferenceInfo`, `AccommodationInfo`) rely on `get_or_create(id=1)` by convention, not DB constraints.
 - `traceback.print_exc()` debug calls and Russian comments exist in models/views/settings — leave them.

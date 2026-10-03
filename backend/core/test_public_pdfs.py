@@ -85,8 +85,9 @@ class TestPublicLists(TestCase):
         names = [p["name"] for p in response.data]
         self.assertEqual(names, ["Ann", "Zed"])
 
-        # The admin decision about restricting this endpoint is still
-        # open; for now the public write path is pinned as-is.
+        # Public writes are deliberate (backend/AGENTS.md); may be
+        # revisited for security later, but do not restrict without a
+        # fresh admin decision.
         response = self.client.post(
             "/api/participants/", {"name": "Newcomer"}, format="json"
         )
@@ -100,7 +101,7 @@ class TestPublicLists(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
 
-        # Same open decision as /api/participants/ POST: pinned as-is.
+        # Deliberate public write path, same as /api/participants/.
         response = self.client.post(
             "/api/abstracts/",
             {"title": "Gamma", "authors_string": "A. Uthor"},
