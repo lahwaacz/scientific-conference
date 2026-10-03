@@ -267,7 +267,7 @@ export default function EditParticipants() {
                       {sub.abstract_text ? (
                         <p className={styles.abstractText}>
                           {sub.abstract_text.length > 200
-                            ? sub.abstract_text.substring(0, 200) + "..."
+                            ? `${sub.abstract_text.substring(0, 200)}...`
                             : sub.abstract_text}
                         </p>
                       ) : (

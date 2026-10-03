@@ -41,14 +41,7 @@
       },
       "correctness": {
         "noUnusedFunctionParameters": "off",
-        "useExhaustiveDependencies": "off",
-        "noUnusedImports": "off"
-      },
-      "style": {
-        "noDescendingSpecificity": "off"
-      },
-      "complexity": {
-        "noImportantStyles": "off"
+        "useExhaustiveDependencies": "off"
       }
     }
   }

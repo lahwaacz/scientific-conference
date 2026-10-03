@@ -14,7 +14,7 @@ export function useLockBodyScroll(isLocked) {
       document.body.style.top = "";
       document.body.style.width = "";
       document.body.style.overflow = "";
-      window.scrollTo(0, parseInt(scrollY || "0") * -1);
+      window.scrollTo(0, parseInt(scrollY || "0", 10) * -1);
     }
   }, [isLocked]);
 }
