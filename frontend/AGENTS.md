@@ -45,6 +45,7 @@ frontend/
 - Auth: JWT access_token/refresh_token in localStorage; fetchWithAuth handles 401 refresh.
 - All API/media URLs through buildApiUrl/buildMediaUrl/fetchWithAuth. Never a literal URL in a component.
 - Env via `REACT_APP_BACKEND_API_BASE_URL` (CRA env, baked at build). `import.meta.env` does not exist here.
+- Tooling: Biome handles both format and lint (`biome.json` here; runs over `src/`, JS/JSX only — CSS linting is off). `npm run lint` is a 0-errors/0-warnings gate; `npm run format:check` the format gate. CRA's builtin ESLint plugin is disabled via `DISABLE_ESLINT_PLUGIN` in the start/build scripts.
 
 ## ANTI-PATTERNS (THIS APP)
 

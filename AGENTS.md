@@ -89,8 +89,10 @@ uv run python manage.py loaddata program.json  # seed (undocumented fixture)
 # Frontend (workdir frontend/)
 npm install
 npm run start                         # :3000, uses .env.development
-CI=true npm test                      # one-shot Jest (only 1 test file exists)
-npm run build                         # compile + implicit ESLint gate
+CI=true npm test                      # one-shot Jest
+npm run build                         # compile (ESLint plugin disabled)
+npm run lint                          # Biome lint (0 errors, 0 warnings gate)
+npm run format:check                  # Biome format gate
 
 # Docker (as CI does)
 docker build backend/                 # -> ghcr.io/<repo>-backend

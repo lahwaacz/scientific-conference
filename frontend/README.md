@@ -86,7 +86,14 @@ npm run build
 To run the frontend test suite, use:
 
 ```bash
-npm test
+CI=true npm test
+```
+
+Lint and format checks (Biome):
+
+```bash
+npm run lint
+npm run format:check
 ```
 
 ## Main Features
