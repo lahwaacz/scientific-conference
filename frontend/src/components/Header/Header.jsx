@@ -73,6 +73,7 @@ function Logo({ onNavigate }) {
 
 function Navbar({ isOpen, onNavigate }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [pinnedOpen, setPinnedOpen] = useState(false);
   let timeout;
 
   const open = () => {
@@ -81,11 +82,15 @@ function Navbar({ isOpen, onNavigate }) {
   };
 
   const close = () => {
+    if (pinnedOpen) {
+      return;
+    }
     timeout = setTimeout(() => setDropdownOpen(false), 250);
   };
 
   const handleClick = () => {
-    setDropdownOpen((prev) => !prev);
+    setDropdownOpen(!pinnedOpen);
+    setPinnedOpen(!pinnedOpen);
   };
 
   // biome-ignore-start lint/a11y/noStaticElementInteractions: hover-only wrapper; the arrow button carries the interaction.
