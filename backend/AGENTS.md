@@ -51,7 +51,7 @@ backend/
 - `views.py` uses explicit imports — do not reintroduce `from .models import *` / `from .serializers import *`.
 - Media uploads via `ImageField` under MEDIA_ROOT (per-model `upload_to` subdirs: participants/, organizers/, organizingCommittee/, accommodation/, submissions/photos/, hiking/).
 - Tests: `uv run pytest` with pytest-django (`DJANGO_SETTINGS_MODULE` from pyproject). `python_files` includes the Django-style `tests.py`; new suites go in `test_<domain>.py` with `Test*`-prefixed classes.
-- Lint/typing: `uv run ruff check .` (extend-select I,B,SIM,BLE,EXE,RUF; RUF012 off for Django class attrs) and `uv run pyright` (django-stubs; attribute-access/function-member rules off — pyright can't run the stubs' mypy plugin). Config lives in pyproject.toml.
+- Lint/typing: `uv run ruff check .` (extend-select I,B,SIM,BLE,EXE,RUF; RUF012 off for Django class attrs) and `uv run pyright` (django-stubs; attribute-access/function-member rules off — pyright can't run the stubs' mypy plugin; `venvPath`/`venv` also set here). Config lives in pyproject.toml.
 
 ## ANTI-PATTERNS (THIS APP)
 

@@ -33,6 +33,8 @@ allowed-confusables = ["–"]
 [tool.pyright]
 typeCheckingMode = "basic"
 pythonVersion = "3.13"
+venvPath = "."
+venv = ".venv"
 exclude = [
     "**/migrations",
     ".venv",
