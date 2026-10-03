@@ -26,6 +26,11 @@
     "lint": "biome lint src",
     "check": "biome check src"
   },
+  "jest": {
+    "moduleNameMapper": {
+      "^react-router-dom$": "<rootDir>/src/testUtils/reactRouterDomStub.jsx"
+    }
+  },
   "browserslist": {
     "production": [
       ">0.2%",
