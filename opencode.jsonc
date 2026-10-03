@@ -1,0 +1,23 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "playwright": {
+      "type": "local",
+      // https://playwright.dev/docs/getting-started-mcp
+      "command": [
+        "npx",
+        "@playwright/mcp@0.0.83",
+        "--headless",
+        "--browser=chromium",
+        "--executable-path=/usr/bin/chromium",
+        "--isolated",
+        "--output-dir=/tmp/opencode"
+      ],
+      "enabled": true,
+      // ~/.config is a read-only mount, Chrome>=128 needs to write a crashpad db under $XDG_CONFIG_HOME (crbug 40259944)
+      "environment": {
+        "XDG_CONFIG_HOME": "/tmp/opencode/.chromium-mcp-config"
+      }
+    }
+  }
+}
