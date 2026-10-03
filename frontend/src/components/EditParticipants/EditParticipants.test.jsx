@@ -1,0 +1,106 @@
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import "@testing-library/jest-dom";
+import { fetchWithAuth } from "../../utils/api";
+import { isProgramDirty } from "../../utils/programRefresh";
+import EditParticipants from "./EditParticipants";
+
+jest.mock("../../utils/api", () => ({
+  ...jest.requireActual("../../utils/api"),
+  fetchWithAuth: jest.fn(),
+}));
+
+const pendingSubmission = {
+  id: 11,
+  name: "Pending Person",
+  email: "pending@example.com",
+  affiliation: "CTU",
+  abstract_title: "Wear Methods",
+  abstract_text: "text",
+  arrival_date: "2026-09-10",
+  departure_date: "2026-09-12",
+  submitted_at: "2026-09-01",
+  stay_duration: 2,
+  status: "pending",
+};
+
+const approvedSubmission = {
+  ...pendingSubmission,
+  id: 12,
+  name: "Approved Person",
+  status: "approved",
+};
+
+function listResponse(items) {
+  return { ok: true, json: async () => items };
+}
+
+describe("EditParticipants workflows", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    fetchWithAuth.mockReset();
+  });
+
+  test("loads pending submissions and refetches when the filter changes", async () => {
+    fetchWithAuth
+      .mockResolvedValueOnce(listResponse([pendingSubmission]))
+      .mockResolvedValueOnce(listResponse([]));
+
+    render(<EditParticipants />);
+
+    expect(await screen.findByText("Pending Person")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Published" }));
+
+    await waitFor(() => expect(fetchWithAuth).toHaveBeenCalledTimes(2));
+    expect(fetchWithAuth.mock.calls[1][0]).toBe(
+      "/api/admin/submissions/?status=approved"
+    );
+  });
+
+  test("publish confirmation posts to publish/ and refetches the list", async () => {
+    fetchWithAuth
+      .mockResolvedValueOnce(listResponse([pendingSubmission]))
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce(listResponse([]));
+
+    render(<EditParticipants />);
+    fireEvent.click(await screen.findByRole("button", { name: "Publish" }));
+
+    expect(await screen.findByText("Publish submission")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(await screen.findByText("Success")).toBeInTheDocument();
+    expect(
+      fetchWithAuth.mock.calls.some(
+        ([url, opts]) =>
+          url === "/api/admin/submissions/11/publish/" && opts.method === "POST"
+      )
+    ).toBe(true);
+    expect(fetchWithAuth).toHaveBeenCalledTimes(3);
+  });
+
+  test("deleting an approved submission marks the program dirty and warns", async () => {
+    fetchWithAuth
+      .mockResolvedValueOnce(listResponse([approvedSubmission]))
+      .mockResolvedValueOnce({ ok: true, status: 204 })
+      .mockResolvedValueOnce(listResponse([]));
+
+    render(<EditParticipants />);
+    fireEvent.click(await screen.findByRole("button", { name: "Delete" }));
+
+    expect(
+      await screen.findByText(/will also remove the published Participant/i)
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(
+      await screen.findByText(/removed from the public site/i)
+    ).toBeInTheDocument();
+    expect(
+      fetchWithAuth.mock.calls.some(
+        ([url, opts]) =>
+          url === "/api/admin/submissions/12/" && opts.method === "DELETE"
+      )
+    ).toBe(true);
+    expect(isProgramDirty()).toBe(true);
+  });
+});
