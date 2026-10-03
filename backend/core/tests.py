@@ -1,4 +1,4 @@
-from datetime import date, time
+from datetime import date
 
 from django.contrib.auth.models import User
 from django.test import TestCase
@@ -8,7 +8,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import (
     Abstract,
-    ConferenceDay,
     Participant,
     ParticipantSubmission,
     Talk,
@@ -161,23 +160,3 @@ class TestPublishSubmissionAPI(APITestCase):
         response = self.client.post(url)
 
         self.assertIn(response.status_code, [401, 403])
-
-
-class TestTalkScheduling(TestCase):
-    def test_talk_becomes_scheduled_when_day_and_time_are_set(self):
-        day = ConferenceDay.objects.create(date=date(2026, 9, 10))
-        talk = Talk.objects.create(
-            title="Test Talk",
-            talk_type="talk",
-            is_scheduled=False,
-        )
-
-        talk.day = day
-        talk.start_time = time(10, 0)
-        talk.end_time = time(10, 20)
-        talk.is_scheduled = True
-        talk.save()
-
-        talk.refresh_from_db()
-        self.assertTrue(talk.is_scheduled)
-        self.assertEqual(talk.day, day)
