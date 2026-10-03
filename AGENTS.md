@@ -46,7 +46,7 @@ Codegraph covers Python only (JS unindexed); refs via pyright LSP.
 |--------|------|----------|------|------|
 | `ConferenceInfo` | model | backend/core/models.py:333 | 7 | single-row site config (`get_or_create(id=1)`) |
 | `ParticipantSubmission.publish()` | method | backend/core/models.py:209 | core workflow | creates Participant + Abstract + unscheduled Talk |
-| `generate_program_pdf` / `generate_badges_pdf` | function | backend/core/views.py:53,291 | 2 endpoints | reportlab PDFs; need `core/fonts/*.ttf` |
+| `generate_program_pdf` / `generate_badges_pdf` | function | backend/core/views.py:54,293 | 2 endpoints | reportlab PDFs; need `core/fonts/*.ttf` |
 | ~39 DRF views | classes | backend/core/views.py | wired in core/urls.py | public `AllowAny` + admin `IsAdminUser` |
 | `App` | component | frontend/src/App.js:35 | entry | HashRouter + all routes + layout shell |
 | `fetchWithAuth` / `buildApiUrl` / `buildMediaUrl` | functions | frontend/src/utils/api.js | ~26 files | sole API client; 401-refresh queue |
@@ -69,20 +69,22 @@ Codegraph covers Python only (JS unindexed); refs via pyright LSP.
 - NEVER "fix" the dual fetch-prefixing (`configuredFetch.js` global patch + `buildApiUrl`): they coexist only via `startsWith('http')` guards; touching one side risks double-prefixed URLs.
 - NEVER commit `.venv/`, `db.sqlite3`, `media/`, `staticfiles/` (a venv was once committed: 4c321da).
 - Do not assume CI verifies anything: the only workflow builds+pushes Docker images on push to `main`. No test/lint gate — run both test suites locally before pushing.
-- Do not treat cascade deletes as accidental: deleting a ConferenceDay deletes its Sessions+Talks; deleting a Talk deletes its Abstract; deleting a HikingRoute deletes its Stops. The admin guide documents these as rules (`ADMINISTRATOR_GUIDE.md:196`,`:375`); backend guards exist deliberately (e.g. `UnscheduledTalkDeleteView` 400).
+- Do not treat cascade deletes as accidental: deleting a ConferenceDay deletes its Sessions+Talks; deleting an Abstract deletes its Talk (the FK sits on Talk); deleting a HikingRoute deletes its Stops. NOTE: deleting a day or an unscheduled talk currently ORPHANS the linked abstract — semantics pending admin decision; do not "fix" unilaterally. The admin guide documents these as rules (`ADMINISTRATOR_GUIDE.md:196`,`:375`); backend guards exist deliberately (e.g. `UnscheduledTalkDeleteView` 400).
 - Do not uncomment dormant Docker lines blindly: `backend/Dockerfile` collectstatic/gunicorn and `frontend/Dockerfile` nginx.conf COPY are disabled on purpose.
 - If the app is extended, update `ADMINISTRATOR_GUIDE.md` (guide rule, line 471).
 
 ## COMMANDS
 
 ```bash
-# Backend (workdir backend/; venv at repo root .venv/)
-pip install -r requirements.txt
-python manage.py makemigrations && python manage.py migrate
-python manage.py createsuperuser
-python manage.py runserver            # :8000
-python manage.py test                 # backend suite (core/tests.py)
-python manage.py loaddata program.json  # seed (undocumented fixture)
+# Backend (workdir backend/; uv-managed env in backend/.venv/)
+uv sync                               # install deps from uv.lock
+uv run python manage.py makemigrations && uv run python manage.py migrate
+uv run python manage.py createsuperuser
+uv run python manage.py runserver     # :8000
+uv run pytest                         # backend suite (pytest-django)
+uv run ruff check . && uv run ruff format --check .
+uv run pyright                        # type check via django-stubs
+uv run python manage.py loaddata program.json  # seed (undocumented fixture)
 
 # Frontend (workdir frontend/)
 npm install

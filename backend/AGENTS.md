@@ -18,10 +18,15 @@ backend/
 │   ├── signals.py          # email on publish; wired via CoreConfig.ready() (apps.py)
 │   ├── migrations/         # 13 migrations
 │   ├── fixtures/program.json  # seed data
+│   ├── tests.py            # original suites (Django TestCase, pytest runs them)
+│   ├── test_*.py           # pytest-django suites by domain (schedule,
+│   │                       # publishing, timeline, signals, admin, public, PDF)
 │   └── fonts/DejaVu*.ttf   # required by reportlab PDF generation
 ├── manage.py
 ├── Dockerfile
-└── requirements.txt        # UTF-8, one `pkg==version` pin per line
+├── pyproject.toml          # deps + dev group + ruff/pyright/pytest config
+├── uv.lock                 # locked dependency set (uv)
+└── .python-version         # pinned interpreter (3.13)
 ```
 
 ## WHERE TO LOOK
@@ -45,10 +50,14 @@ backend/
 - Model changes require `makemigrations` (13 migrations so far).
 - `views.py` uses explicit imports — do not reintroduce `from .models import *` / `from .serializers import *`.
 - Media uploads via `ImageField` under MEDIA_ROOT (per-model `upload_to` subdirs: participants/, organizers/, organizingCommittee/, accommodation/, submissions/photos/, hiking/).
+- Tests: `uv run pytest` with pytest-django (`DJANGO_SETTINGS_MODULE` from pyproject). `python_files` includes the Django-style `tests.py`; new suites go in `test_<domain>.py` with `Test*`-prefixed classes.
+- Lint/typing: `uv run ruff check .` (extend-select I,B,SIM,BLE,EXE,RUF; RUF012 off for Django class attrs) and `uv run pyright` (django-stubs; attribute-access/function-member rules off — pyright can't run the stubs' mypy plugin). Config lives in pyproject.toml.
 
 ## ANTI-PATTERNS (THIS APP)
 
-- `ConferenceDayDeleteView.destroy` (views.py:659) calls bare `day.delete()` with no guard; `UnscheduledTalkDeleteView` 400s on scheduled talks. Both deliberate — cascade rules and rationale live in root AGENTS.md; keep guards as they are.
+- `ConferenceDayDeleteView.destroy` (views.py:659) calls bare `day.delete()` with no guard; `UnscheduledTalkDeleteView` 400s on scheduled talks. Both deliberate — cascade rules and rationale live in root AGENTS.md; keep guards as they are. Beware: Talk→Abstract FK direction means day/talk deletes orphan the Abstract row.
+- `AccommodationOptionEditView` and `HikingStopEditView` call `objects.get(pk)` unguarded in patch/delete: unknown pks surface as 500, never 404. Deliberate security choice — keep; tests pin the 500.
+- PDF generators (`generate_program_pdf`, `generate_badges_pdf`) build into `io.BytesIO`, then write bytes into the response — do not pass the HttpResponse to canvas directly (pyright compatibility, bytes unchanged).
 - Single-row config tables (`ConferenceInfo`, `AccommodationInfo`) rely on `get_or_create(id=1)` by convention, not DB constraints.
 - `traceback.print_exc()` debug calls and Russian comments exist in models/views/settings — leave them.
 - Signals: publish email fires on status transition to approved via `_old_status` captured in pre_save — `QuerySet.update()`/bulk paths silently skip it, and `fail_silently=False` means mail errors raise inside the publish request.
