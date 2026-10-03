@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import styles from './ParticipantsInfo.module.css';
-import Title from '../ui/Title/Title';
-import Loader from '../ui/Loader/Loader';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCircleCheck } from '@fortawesome/free-solid-svg-icons';
-import {fetchWithAuth} from '../../utils/api.js';
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import styles from "./ParticipantsInfo.module.css";
+import Title from "../ui/Title/Title";
+import Loader from "../ui/Loader/Loader";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCircleCheck } from "@fortawesome/free-solid-svg-icons";
+import { fetchWithAuth } from "../../utils/api.js";
 
 export default function ParticipantsInfo() {
   const [submissions, setSubmissions] = useState([]);
@@ -17,9 +17,8 @@ export default function ParticipantsInfo() {
   }, []);
 
   async function fetchSubmissions() {
-
     try {
-       const res = await fetchWithAuth('/api/admin/submissions/?status=');
+      const res = await fetchWithAuth("/api/admin/submissions/?status=");
       const data = await res.json();
       setSubmissions(data);
     } catch (error) {
@@ -30,11 +29,14 @@ export default function ParticipantsInfo() {
   }
 
   const total = submissions.length;
-  const withAbstract = submissions.filter(s => s.abstract_title).length;
+  const withAbstract = submissions.filter((s) => s.abstract_title).length;
 
   return (
     <div className={styles.container}>
-      <button onClick={() => navigate("/admin-panel")} className={styles.backBtn}>
+      <button
+        onClick={() => navigate("/admin-panel")}
+        className={styles.backBtn}
+      >
         ← Back
       </button>
 
@@ -45,7 +47,8 @@ export default function ParticipantsInfo() {
       ) : (
         <div className={styles.fadeIn}>
           <p className={styles.summary}>
-            Participants: <strong>{total}</strong>, with abstract: <strong>{withAbstract}</strong>
+            Participants: <strong>{total}</strong>, with abstract:{" "}
+            <strong>{withAbstract}</strong>
           </p>
 
           <div className={styles.tableWrapper}>
@@ -65,22 +68,32 @@ export default function ParticipantsInfo() {
                   <tr key={sub.id}>
                     <td>{idx + 1}</td>
                     <td className={styles.nameCell}>{sub.name}</td>
-                    <td style={{ textAlign: 'center', padding: '10px 0' }}>
-                      {sub.is_student
-                        ? <FontAwesomeIcon icon={faCircleCheck} className={styles.checkIcon} />
-                        : ''}
+                    <td style={{ textAlign: "center", padding: "10px 0" }}>
+                      {sub.is_student ? (
+                        <FontAwesomeIcon
+                          icon={faCircleCheck}
+                          className={styles.checkIcon}
+                        />
+                      ) : (
+                        ""
+                      )}
                     </td>
-                    <td style={{ textAlign: 'center', padding: '10px 0' }}>
-                      {sub.abstract_title
-                        ? <FontAwesomeIcon icon={faCircleCheck} className={styles.checkIcon} />
-                        : ''}
+                    <td style={{ textAlign: "center", padding: "10px 0" }}>
+                      {sub.abstract_title ? (
+                        <FontAwesomeIcon
+                          icon={faCircleCheck}
+                          className={styles.checkIcon}
+                        />
+                      ) : (
+                        ""
+                      )}
                     </td>
                     <td>
                       {sub.arrival_date && sub.departure_date
                         ? `${formatDate(sub.arrival_date)} – ${formatDate(sub.departure_date)}`
-                        : '—'}
+                        : "—"}
                     </td>
-                    <td className={styles.infoCell}>{sub.info || ''}</td>
+                    <td className={styles.infoCell}>{sub.info || ""}</td>
                   </tr>
                 ))}
               </tbody>
@@ -94,5 +107,5 @@ export default function ParticipantsInfo() {
 
 function formatDate(dateStr) {
   const d = new Date(dateStr);
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }

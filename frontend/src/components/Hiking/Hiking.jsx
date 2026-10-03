@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
-import styles from './Hiking.module.css';
-import Title from '../ui/Title/Title';
-import Loader from '../ui/Loader/Loader';
-import { buildApiUrl } from '../../utils/api';
+import { useEffect, useState } from "react";
+import styles from "./Hiking.module.css";
+import Title from "../ui/Title/Title";
+import Loader from "../ui/Loader/Loader";
+import { buildApiUrl } from "../../utils/api";
 
 export default function Hiking() {
   const [routes, setRoutes] = useState([]);
@@ -10,8 +10,11 @@ export default function Hiking() {
 
   useEffect(() => {
     fetch(buildApiUrl("/api/hiking/"))
-      .then(r => r.json())
-      .then(data => { setRoutes(data); setLoading(false); })
+      .then((r) => r.json())
+      .then((data) => {
+        setRoutes(data);
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
   }, []);
 
@@ -23,19 +26,18 @@ export default function Hiking() {
         <Loader />
       ) : (
         <div className={styles.fadeIn}>
-
           {routes.length === 0 && (
             <p className={styles.empty}>No hiking routes available yet.</p>
           )}
 
-          {routes.map(route => (
+          {routes.map((route) => (
             <div key={route.id} className={styles.route}>
-
               <h2 className={styles.routeName}>{route.name.toUpperCase()}</h2>
 
               {route.way_description && (
                 <p className={styles.routeWay}>
-                  <span className={styles.label}>Way:</span> {route.way_description}
+                  <span className={styles.label}>Way:</span>{" "}
+                  {route.way_description}
                 </p>
               )}
 
@@ -52,7 +54,7 @@ export default function Hiking() {
 
               {route.stops && route.stops.length > 0 && (
                 <div className={styles.stops}>
-                  {route.stops.map(stop => (
+                  {route.stops.map((stop) => (
                     <div key={stop.id} className={styles.stopRow}>
                       {stop.photo && (
                         <img
@@ -62,19 +64,21 @@ export default function Hiking() {
                         />
                       )}
                       <div className={styles.stopInfo}>
-                        <h3 className={styles.stopName}>{stop.name.toUpperCase()}</h3>
+                        <h3 className={styles.stopName}>
+                          {stop.name.toUpperCase()}
+                        </h3>
                         {stop.description && (
-                          <p className={styles.stopDescription}>— {stop.description}</p>
+                          <p className={styles.stopDescription}>
+                            — {stop.description}
+                          </p>
                         )}
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-
             </div>
           ))}
-
         </div>
       )}
     </div>

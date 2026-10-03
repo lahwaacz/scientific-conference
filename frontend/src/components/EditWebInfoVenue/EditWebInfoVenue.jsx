@@ -1,39 +1,38 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import styles from './EditWebInfoVenue.module.css';
-import Title from '../ui/Title/Title';
-import Loader from '../ui/Loader/Loader';
-import { fetchWithAuth } from '../../utils/api';
-
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import styles from "./EditWebInfoVenue.module.css";
+import Title from "../ui/Title/Title";
+import Loader from "../ui/Loader/Loader";
+import { fetchWithAuth } from "../../utils/api";
 
 export default function EditWebInfoVenue() {
   const [form, setForm] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   useEffect(() => {
     fetchWithAuth(`/api/conference-info/`)
-      .then(r => r.json())
-      .then(data => {
+      .then((r) => r.json())
+      .then((data) => {
         setForm(data);
         setLoading(false);
       });
   }, []);
 
   function handleChange(e) {
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
     setSaved(false);
   }
 
   async function handleSave(e) {
     e.preventDefault();
     setSaving(true);
-    setError('');
+    setError("");
     try {
       const res = await fetchWithAuth(`/api/conference-info/edit/`, {
-        method: 'PATCH',
+        method: "PATCH",
         body: JSON.stringify({
           venue_text: form.venue_text,
           venue_map_embed_url: form.venue_map_embed_url,
@@ -43,7 +42,7 @@ export default function EditWebInfoVenue() {
       if (!res.ok) throw new Error();
       setSaved(true);
     } catch {
-      setError('Failed to save. Please try again.');
+      setError("Failed to save. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -61,7 +60,10 @@ export default function EditWebInfoVenue() {
         <Loader />
       ) : (
         <>
-          <form onSubmit={handleSave} className={`${styles.form} ${styles.fadeIn}`}>
+          <form
+            onSubmit={handleSave}
+            className={`${styles.form} ${styles.fadeIn}`}
+          >
             <section className={styles.section}>
               <h2 className={styles.sectionTitle}>Venue</h2>
 
@@ -70,7 +72,7 @@ export default function EditWebInfoVenue() {
                 <textarea
                   name="venue_text"
                   rows={5}
-                  value={form.venue_text || ''}
+                  value={form.venue_text || ""}
                   onChange={handleChange}
                 />
               </div>
@@ -82,7 +84,7 @@ export default function EditWebInfoVenue() {
                 </small>
                 <input
                   name="venue_map_embed_url"
-                  value={form.venue_map_embed_url || ''}
+                  value={form.venue_map_embed_url || ""}
                   onChange={handleChange}
                   placeholder="https://www.google.com/maps/embed?pb=..."
                 />
@@ -92,9 +94,15 @@ export default function EditWebInfoVenue() {
             {error && <p className={styles.error}>{error}</p>}
 
             <div className={styles.actions}>
-              {saved && <span className={styles.savedMsg}>✓ Saved successfully</span>}
-              <button type="submit" className={styles.saveButton} disabled={saving}>
-                {saving ? 'Saving...' : 'SAVE CHANGES'}
+              {saved && (
+                <span className={styles.savedMsg}>✓ Saved successfully</span>
+              )}
+              <button
+                type="submit"
+                className={styles.saveButton}
+                disabled={saving}
+              >
+                {saving ? "Saving..." : "SAVE CHANGES"}
               </button>
             </div>
           </form>

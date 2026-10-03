@@ -1,11 +1,11 @@
-import styles from './EditSubmissionModal.module.css';
+import styles from "./EditSubmissionModal.module.css";
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import avatar from '../../assets/avatar.png';
-import Title from '../ui/Title/Title';
-import Modal from '../ui/Modal/Modal';
+import avatar from "../../assets/avatar.png";
+import Title from "../ui/Title/Title";
+import Modal from "../ui/Modal/Modal";
 
-import { fetchWithAuth, buildMediaUrl } from '../../utils/api.js';
+import { fetchWithAuth, buildMediaUrl } from "../../utils/api.js";
 
 export default function EditSubmissionModal({ submission, onClose, onSave }) {
   const [formData, setFormData] = useState({
@@ -28,26 +28,27 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
   const [wordCount, setWordCount] = useState(0);
   const [modal, setModal] = useState({
     isOpen: false,
-    title: '',
-    message: '',
+    title: "",
+    message: "",
     onConfirm: null,
-    type: 'default'
+    type: "default",
   });
 
   function openModal(config) {
     setModal({
       isOpen: true,
-      ...config
+      ...config,
     });
   }
 
   function closeModal() {
-    setModal(prev => ({ ...prev, isOpen: false }));
+    setModal((prev) => ({ ...prev, isOpen: false }));
   }
 
   useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    document.body.style.overflow = "hidden";
+    const scrollbarWidth =
+      window.innerWidth - document.documentElement.clientWidth;
     document.body.style.paddingRight = `${scrollbarWidth}px`;
 
     if (submission) {
@@ -69,193 +70,205 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
       }
 
       if (submission.abstract_text) {
-        const words = submission.abstract_text.trim().split(/\s+/).filter(w => w.length > 0);
+        const words = submission.abstract_text
+          .trim()
+          .split(/\s+/)
+          .filter((w) => w.length > 0);
         setWordCount(words.length);
       }
     }
 
     return () => {
-      document.body.style.overflow = '';
-      document.body.style.paddingRight = '';
+      document.body.style.overflow = "";
+      document.body.style.paddingRight = "";
     };
   }, [submission]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
 
     if (name === "abstract_text") {
-      const words = value.trim().split(/\s+/).filter(w => w.length > 0);
+      const words = value
+        .trim()
+        .split(/\s+/)
+        .filter((w) => w.length > 0);
       setWordCount(words.length);
     }
   };
 
   const handlePhotoChange = (e) => {
-  const file = e.target.files[0];
+    const file = e.target.files[0];
 
-  if (file) {
-    if (!file.type.startsWith('image/')) {
-      openModal({
-        title: "Invalid file",
-        message: "Please select a valid image file.",
-        type: "danger",
-        onConfirm: closeModal
-      });
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      openModal({
-        title: "File too large",
-        message: "Photo size must not exceed 5MB.",
-        type: "danger",
-        onConfirm: closeModal
-      });
-      return;
-    }
-
-    setPhoto(file);
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPhotoPreview(reader.result);
-    };
-    reader.readAsDataURL(file);
-  }
- };
-
-  const removePhoto = async () => {
-  setLoading(true);
-
-  try {
-    const response = await fetchWithAuth(`/api/admin/submissions/${submission.id}/`, {
-      method: 'PATCH',
-      body: JSON.stringify({
-        photo: null
-      }),
-    });
-
-    if (response.ok) {
-      const updated = await response.json();
-
-      setPhoto(null);
-      setPhotoPreview(null);
-
-      const fileInput = document.querySelector('input[type="file"]');
-      if (fileInput) {
-        fileInput.value = '';
+    if (file) {
+      if (!file.type.startsWith("image/")) {
+        openModal({
+          title: "Invalid file",
+          message: "Please select a valid image file.",
+          type: "danger",
+          onConfirm: closeModal,
+        });
+        return;
       }
 
-      openModal({
-        title: "Success",
-        message: "Photo removed successfully!",
-        type: "success",
-        onConfirm: () => {
-          closeModal();
-          onSave(updated);
-        }
-      });
-    } else {
-      const errorText = await response.text();
-      openModal({
-        title: "Error",
-        message: errorText || "Failed to remove photo.",
-        type: "danger",
-        onConfirm: closeModal
-      });
+      if (file.size > 5 * 1024 * 1024) {
+        openModal({
+          title: "File too large",
+          message: "Photo size must not exceed 5MB.",
+          type: "danger",
+          onConfirm: closeModal,
+        });
+        return;
+      }
+
+      setPhoto(file);
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
     }
-  } catch (error) {
-    openModal({
-      title: "Connection error",
-      message: error.message || "Server is unreachable.",
-      type: "danger",
-      onConfirm: closeModal
-    });
-  } finally {
-    setLoading(false);
-  }
-};
+  };
+
+  const removePhoto = async () => {
+    setLoading(true);
+
+    try {
+      const response = await fetchWithAuth(
+        `/api/admin/submissions/${submission.id}/`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            photo: null,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const updated = await response.json();
+
+        setPhoto(null);
+        setPhotoPreview(null);
+
+        const fileInput = document.querySelector('input[type="file"]');
+        if (fileInput) {
+          fileInput.value = "";
+        }
+
+        openModal({
+          title: "Success",
+          message: "Photo removed successfully!",
+          type: "success",
+          onConfirm: () => {
+            closeModal();
+            onSave(updated);
+          },
+        });
+      } else {
+        const errorText = await response.text();
+        openModal({
+          title: "Error",
+          message: errorText || "Failed to remove photo.",
+          type: "danger",
+          onConfirm: closeModal,
+        });
+      }
+    } catch (error) {
+      openModal({
+        title: "Connection error",
+        message: error.message || "Server is unreachable.",
+        type: "danger",
+        onConfirm: closeModal,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
+    e.preventDefault();
+    setLoading(true);
 
-  try {
-    let response;
+    try {
+      let response;
 
-    if (photo) {
-      const submitData = new FormData();
-      Object.keys(formData).forEach(key => {
-        if (formData[key] !== null && formData[key] !== undefined) {
-          submitData.append(key, formData[key]);
-        }
-      });
-      submitData.append('photo', photo);
+      if (photo) {
+        const submitData = new FormData();
+        Object.keys(formData).forEach((key) => {
+          if (formData[key] !== null && formData[key] !== undefined) {
+            submitData.append(key, formData[key]);
+          }
+        });
+        submitData.append("photo", photo);
 
-      response = await fetchWithAuth(`/api/admin/submissions/${submission.id}/`, {
-        method: 'PUT',
-        body: submitData,
-      });
-    } else {
-      response = await fetchWithAuth(`/api/admin/submissions/${submission.id}/`, {
-        method: 'PATCH',
-        body: JSON.stringify(formData),
-      });
-    }
+        response = await fetchWithAuth(
+          `/api/admin/submissions/${submission.id}/`,
+          {
+            method: "PUT",
+            body: submitData,
+          }
+        );
+      } else {
+        response = await fetchWithAuth(
+          `/api/admin/submissions/${submission.id}/`,
+          {
+            method: "PATCH",
+            body: JSON.stringify(formData),
+          }
+        );
+      }
 
-    if (response.ok) {
-      const updated = await response.json();
+      if (response.ok) {
+        const updated = await response.json();
+        openModal({
+          title: "Success",
+          message: "Changes saved successfully!",
+          type: "success",
+          onConfirm: () => {
+            closeModal();
+            onSave(updated);
+            onClose();
+          },
+        });
+      } else {
+        const errorText = await response.text();
+        openModal({
+          title: "Save failed",
+          message: errorText || `Failed to save (${response.status}).`,
+          type: "danger",
+          onConfirm: closeModal,
+        });
+      }
+    } catch (error) {
       openModal({
-        title: "Success",
-        message: "Changes saved successfully!",
-        type: "success",
-        onConfirm: () => {
-          closeModal();
-          onSave(updated);
-          onClose();
-        }
-      });
-    } else {
-      const errorText = await response.text();
-      openModal({
-        title: "Save failed",
-        message: errorText || `Failed to save (${response.status}).`,
+        title: "Connection error",
+        message: error.message || "Server is unreachable.",
         type: "danger",
-        onConfirm: closeModal
+        onConfirm: closeModal,
       });
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    openModal({
-      title: "Connection error",
-      message: error.message || "Server is unreachable.",
-      type: "danger",
-      onConfirm: closeModal
-    });
-  } finally {
-    setLoading(false);
-  }
-};
+  };
   if (!submission) return null;
 
   return createPortal(
     <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={e => e.stopPropagation()}>
-        <button
-          className={styles.closeBtn}
-          onClick={onClose}
-          type="button"
-        >
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <button className={styles.closeBtn} onClick={onClose} type="button">
           ×
         </button>
 
         <Title text="Edit Submission" />
 
-        {submission.status === 'approved' && (
+        {submission.status === "approved" && (
           <div className={styles.approvedNotice}>
-            This submission is published. Changes will update the public Participant and Abstract.
+            This submission is published. Changes will update the public
+            Participant and Abstract.
           </div>
         )}
 
@@ -266,7 +279,11 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
                 <img src={photoPreview} alt="Preview" />
               </div>
             ) : (
-              <img src={avatar} alt="No photo" className={styles.avatarPlaceholder} />
+              <img
+                src={avatar}
+                alt="No photo"
+                className={styles.avatarPlaceholder}
+              />
             )}
 
             <div className={styles.photoButtons}>
@@ -275,7 +292,7 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
                   type="file"
                   accept="image/*"
                   onChange={handlePhotoChange}
-                  style={{ display: 'none' }}
+                  style={{ display: "none" }}
                 />
                 Change Photo
               </label>
@@ -408,7 +425,11 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
             <button type="submit" disabled={loading} className={styles.saveBtn}>
               {loading ? "Saving..." : "Save Changes"}
             </button>
-            <button type="button" onClick={onClose} className={styles.cancelBtn}>
+            <button
+              type="button"
+              onClick={onClose}
+              className={styles.cancelBtn}
+            >
               Cancel
             </button>
           </div>

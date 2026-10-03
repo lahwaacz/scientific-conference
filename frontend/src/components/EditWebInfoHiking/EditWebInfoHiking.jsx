@@ -1,40 +1,43 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import styles from './EditWebInfoHiking.module.css';
-import Title from '../ui/Title/Title';
-import Loader from '../ui/Loader/Loader';
-import { fetchWithAuth, buildMediaUrl } from '../../utils/api';
-import Modal from '../ui/Modal/Modal';
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import styles from "./EditWebInfoHiking.module.css";
+import Title from "../ui/Title/Title";
+import Loader from "../ui/Loader/Loader";
+import { fetchWithAuth, buildMediaUrl } from "../../utils/api";
+import Modal from "../ui/Modal/Modal";
 
 export default function EditWebInfoHiking() {
   const [routes, setRoutes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedRoute, setSavedRoute] = useState(null);
-  const [error] = useState('');
+  const [error] = useState("");
   const [modal, setModal] = useState({
     isOpen: false,
-    title: '',
-    message: '',
+    title: "",
+    message: "",
     onConfirm: null,
-    type: 'default'
+    type: "default",
   });
 
   function openModal(config) {
     setModal({
       isOpen: true,
-      ...config
+      ...config,
     });
   }
 
   function closeModal() {
-    setModal(prev => ({ ...prev, isOpen: false }));
+    setModal((prev) => ({ ...prev, isOpen: false }));
   }
 
   useEffect(() => {
     fetchWithAuth(`/api/hiking/`)
-      .then(r => r.json())
-      .then(data => { setRoutes(data); setLoading(false); });
+      .then((r) => r.json())
+      .then((data) => {
+        setRoutes(data);
+        setLoading(false);
+      });
   }, []);
 
   function handleRouteChange(routeIndex, field, value) {
@@ -44,7 +47,10 @@ export default function EditWebInfoHiking() {
   }
 
   function addRoute() {
-    setRoutes([...routes, { name: '', way_description: '', map_url: '', stops: [], _isNew: true }]);
+    setRoutes([
+      ...routes,
+      { name: "", way_description: "", map_url: "", stops: [], _isNew: true },
+    ]);
   }
 
   async function deleteRoute(routeIndex) {
@@ -53,48 +59,48 @@ export default function EditWebInfoHiking() {
     try {
       if (route.id) {
         const res = await fetchWithAuth(`/api/hiking/admin/`, {
-          method: 'DELETE',
+          method: "DELETE",
           body: JSON.stringify({ id: route.id }),
         });
 
         if (!res.ok && res.status !== 204) {
           const errorText = await res.text();
           openModal({
-            title: 'Delete failed',
-            message: errorText || 'Failed to delete route.',
-            type: 'danger',
-            onConfirm: closeModal
+            title: "Delete failed",
+            message: errorText || "Failed to delete route.",
+            type: "danger",
+            onConfirm: closeModal,
           });
           return;
         }
       }
 
-      setRoutes(prev => prev.filter((_, i) => i !== routeIndex));
+      setRoutes((prev) => prev.filter((_, i) => i !== routeIndex));
 
       openModal({
-        title: 'Success',
-        message: 'Route deleted successfully.',
-        type: 'success',
-        onConfirm: closeModal
+        title: "Success",
+        message: "Route deleted successfully.",
+        type: "success",
+        onConfirm: closeModal,
       });
     } catch (error) {
       openModal({
-        title: 'Connection error',
-        message: error.message || 'Server is unreachable.',
-        type: 'danger',
-        onConfirm: closeModal
+        title: "Connection error",
+        message: error.message || "Server is unreachable.",
+        type: "danger",
+        onConfirm: closeModal,
       });
     }
   }
   function confirmDeleteRoute(routeIndex) {
     openModal({
-      title: 'Delete route',
-      message: 'Delete this route and all its stops?',
-      type: 'danger',
+      title: "Delete route",
+      message: "Delete this route and all its stops?",
+      type: "danger",
       onConfirm: async () => {
         closeModal();
         await deleteRoute(routeIndex);
-      }
+      },
     });
   }
 
@@ -107,21 +113,21 @@ export default function EditWebInfoHiking() {
 
       if (route.id) {
         res = await fetchWithAuth(`/api/hiking/admin/`, {
-          method: 'PATCH',
+          method: "PATCH",
           body: JSON.stringify({
             id: route.id,
             name: route.name,
             way_description: route.way_description,
-            map_url: route.map_url
+            map_url: route.map_url,
           }),
         });
       } else {
-        res = await fetchWithAuth('/api/hiking/admin/', {
-          method: 'POST',
+        res = await fetchWithAuth("/api/hiking/admin/", {
+          method: "POST",
           body: JSON.stringify({
             name: route.name,
             way_description: route.way_description,
-            map_url: route.map_url
+            map_url: route.map_url,
           }),
         });
       }
@@ -129,10 +135,10 @@ export default function EditWebInfoHiking() {
       if (!res.ok) {
         const errorText = await res.text();
         openModal({
-          title: 'Save failed',
-          message: errorText || 'Failed to save route.',
-          type: 'danger',
-          onConfirm: closeModal
+          title: "Save failed",
+          message: errorText || "Failed to save route.",
+          type: "danger",
+          onConfirm: closeModal,
         });
         return;
       }
@@ -144,17 +150,17 @@ export default function EditWebInfoHiking() {
       setSavedRoute(routeIndex);
 
       openModal({
-        title: 'Success',
-        message: 'Route saved successfully.',
-        type: 'success',
-        onConfirm: closeModal
+        title: "Success",
+        message: "Route saved successfully.",
+        type: "success",
+        onConfirm: closeModal,
       });
     } catch (error) {
       openModal({
-        title: 'Connection error',
-        message: error.message || 'Server is unreachable.',
-        type: 'danger',
-        onConfirm: closeModal
+        title: "Connection error",
+        message: error.message || "Server is unreachable.",
+        type: "danger",
+        onConfirm: closeModal,
       });
     } finally {
       setSaving(false);
@@ -172,7 +178,11 @@ export default function EditWebInfoHiking() {
   function handleStopPhoto(routeIndex, stopIndex, file) {
     const updated = [...routes];
     const stops = [...updated[routeIndex].stops];
-    stops[stopIndex] = { ...stops[stopIndex], _photoFile: file, _photoPreview: URL.createObjectURL(file) };
+    stops[stopIndex] = {
+      ...stops[stopIndex],
+      _photoFile: file,
+      _photoPreview: URL.createObjectURL(file),
+    };
     updated[routeIndex] = { ...updated[routeIndex], stops };
     setRoutes(updated);
   }
@@ -180,7 +190,7 @@ export default function EditWebInfoHiking() {
   function addStop(routeIndex) {
     const updated = [...routes];
     const stops = [...(updated[routeIndex].stops || [])];
-    stops.push({ name: '', description: '', photo: null, order: stops.length });
+    stops.push({ name: "", description: "", photo: null, order: stops.length });
     updated[routeIndex] = { ...updated[routeIndex], stops };
     setRoutes(updated);
   }
@@ -191,22 +201,22 @@ export default function EditWebInfoHiking() {
     try {
       if (stop.id) {
         const res = await fetchWithAuth(`/api/hiking/stops/${stop.id}/`, {
-          method: 'DELETE'
+          method: "DELETE",
         });
 
         if (!res.ok && res.status !== 204) {
           const errorText = await res.text();
           openModal({
-            title: 'Delete failed',
-            message: errorText || 'Failed to delete stop.',
-            type: 'danger',
-            onConfirm: closeModal
+            title: "Delete failed",
+            message: errorText || "Failed to delete stop.",
+            type: "danger",
+            onConfirm: closeModal,
           });
           return;
         }
       }
 
-      setRoutes(prev => {
+      setRoutes((prev) => {
         const updated = [...prev];
         updated[routeIndex] = {
           ...updated[routeIndex],
@@ -216,43 +226,46 @@ export default function EditWebInfoHiking() {
       });
 
       openModal({
-        title: 'Success',
-        message: 'Stop deleted successfully.',
-        type: 'success',
-        onConfirm: closeModal
+        title: "Success",
+        message: "Stop deleted successfully.",
+        type: "success",
+        onConfirm: closeModal,
       });
     } catch (error) {
       openModal({
-        title: 'Connection error',
-        message: error.message || 'Server is unreachable.',
-        type: 'danger',
-        onConfirm: closeModal
+        title: "Connection error",
+        message: error.message || "Server is unreachable.",
+        type: "danger",
+        onConfirm: closeModal,
       });
     }
   }
   function confirmDeleteStop(routeIndex, stopIndex) {
     openModal({
-      title: 'Delete stop',
-      message: 'Delete this stop?',
-      type: 'danger',
+      title: "Delete stop",
+      message: "Delete this stop?",
+      type: "danger",
       onConfirm: async () => {
         closeModal();
         await deleteStop(routeIndex, stopIndex);
-      }
+      },
     });
   }
 
   async function saveStop(stop, routeId) {
     const fd = new FormData();
-    fd.append('name', stop.name || '');
-    fd.append('description', stop.description || '');
-    fd.append('order', stop.order ?? 0);
-    fd.append('route', routeId);
-    if (stop._photoFile) fd.append('photo', stop._photoFile);
+    fd.append("name", stop.name || "");
+    fd.append("description", stop.description || "");
+    fd.append("order", stop.order ?? 0);
+    fd.append("route", routeId);
+    if (stop._photoFile) fd.append("photo", stop._photoFile);
     if (stop.id) {
-      return fetchWithAuth(`/api/hiking/stops/${stop.id}/`, { method: 'PATCH', body: fd });
+      return fetchWithAuth(`/api/hiking/stops/${stop.id}/`, {
+        method: "PATCH",
+        body: fd,
+      });
     } else {
-      return fetchWithAuth(`/api/hiking/stops/`, { method: 'POST', body: fd });
+      return fetchWithAuth(`/api/hiking/stops/`, { method: "POST", body: fd });
     }
   }
 
@@ -261,10 +274,10 @@ export default function EditWebInfoHiking() {
 
     if (!route.id) {
       openModal({
-        title: 'Route required',
-        message: 'Save the route first before adding stops.',
-        type: 'danger',
-        onConfirm: closeModal
+        title: "Route required",
+        message: "Save the route first before adding stops.",
+        type: "danger",
+        onConfirm: closeModal,
       });
       return;
     }
@@ -272,39 +285,41 @@ export default function EditWebInfoHiking() {
     setSaving(true);
 
     try {
-      const results = await Promise.all(route.stops.map(s => saveStop(s, route.id)));
+      const results = await Promise.all(
+        route.stops.map((s) => saveStop(s, route.id))
+      );
 
       for (const res of results) {
         if (!res.ok) {
           const errorText = await res.text();
           openModal({
-            title: 'Save failed',
-            message: errorText || 'Failed to save stops.',
-            type: 'danger',
-            onConfirm: closeModal
+            title: "Save failed",
+            message: errorText || "Failed to save stops.",
+            type: "danger",
+            onConfirm: closeModal,
           });
           return;
         }
       }
 
-      const updatedStops = await Promise.all(results.map(r => r.json()));
+      const updatedStops = await Promise.all(results.map((r) => r.json()));
       const updated = [...routes];
       updated[routeIndex] = { ...updated[routeIndex], stops: updatedStops };
       setRoutes(updated);
       setSavedRoute(`stops-${routeIndex}`);
 
       openModal({
-        title: 'Success',
-        message: 'Stops saved successfully.',
-        type: 'success',
-        onConfirm: closeModal
+        title: "Success",
+        message: "Stops saved successfully.",
+        type: "success",
+        onConfirm: closeModal,
       });
     } catch (error) {
       openModal({
-        title: 'Connection error',
-        message: error.message || 'Server is unreachable.',
-        type: 'danger',
-        onConfirm: closeModal
+        title: "Connection error",
+        message: error.message || "Server is unreachable.",
+        type: "danger",
+        onConfirm: closeModal,
       });
     } finally {
       setSaving(false);
@@ -313,102 +328,210 @@ export default function EditWebInfoHiking() {
 
   return (
     <div className={styles.container}>
-      <Link to="/admin-panel/edit-web-info" className={styles.backButton}>← BACK</Link>
+      <Link to="/admin-panel/edit-web-info" className={styles.backButton}>
+        ← BACK
+      </Link>
       <Title text="Edit Hiking" />
 
       {loading ? (
         <Loader />
       ) : (
         <div className={styles.fadeIn}>
-
           {error && <p className={styles.error}>{error}</p>}
 
           {routes.length === 0 && (
-            <p className={styles.emptyMsg} style={{ marginTop: 24 }}>No routes added yet.</p>
+            <p className={styles.emptyMsg} style={{ marginTop: 24 }}>
+              No routes added yet.
+            </p>
           )}
 
           {routes.map((route, ri) => (
             <section key={route.id ?? `new-${ri}`} className={styles.section}>
-
               <div className={styles.routeHeader}>
-                <h2 className={styles.sectionTitle}>{route.name || `Route ${ri + 1}`}</h2>
-                <button type="button" className={styles.deleteButton} onClick={() => confirmDeleteRoute(ri)}>
+                <h2 className={styles.sectionTitle}>
+                  {route.name || `Route ${ri + 1}`}
+                </h2>
+                <button
+                  type="button"
+                  className={styles.deleteButton}
+                  onClick={() => confirmDeleteRoute(ri)}
+                >
                   ✕ DELETE ROUTE
                 </button>
               </div>
 
               <div className={styles.field}>
                 <label>Route Name</label>
-                <input value={route.name || ''} onChange={e => handleRouteChange(ri, 'name', e.target.value)} />
+                <input
+                  value={route.name || ""}
+                  onChange={(e) =>
+                    handleRouteChange(ri, "name", e.target.value)
+                  }
+                />
               </div>
 
               <div className={styles.field}>
                 <label>Way Description</label>
-                <textarea rows={4} value={route.way_description || ''} onChange={e => handleRouteChange(ri, 'way_description', e.target.value)} />
+                <textarea
+                  rows={4}
+                  value={route.way_description || ""}
+                  onChange={(e) =>
+                    handleRouteChange(ri, "way_description", e.target.value)
+                  }
+                />
               </div>
 
               <div className={styles.field}>
                 <label>Map URL</label>
-                <small className={styles.hint}>Link to Google Maps or any map service</small>
-                <input type="url" value={route.map_url || ''} onChange={e => handleRouteChange(ri, 'map_url', e.target.value)} placeholder="https://..." />
+                <small className={styles.hint}>
+                  Link to Google Maps or any map service
+                </small>
+                <input
+                  type="url"
+                  value={route.map_url || ""}
+                  onChange={(e) =>
+                    handleRouteChange(ri, "map_url", e.target.value)
+                  }
+                  placeholder="https://..."
+                />
               </div>
 
               <div className={styles.actions}>
-                {savedRoute === ri && <span className={styles.savedMsg}>✓ Route saved</span>}
-                <button type="button" className={styles.saveButton} onClick={() => saveRoute(ri)} disabled={saving}>
-                  {saving ? 'Saving...' : 'SAVE ROUTE'}
+                {savedRoute === ri && (
+                  <span className={styles.savedMsg}>✓ Route saved</span>
+                )}
+                <button
+                  type="button"
+                  className={styles.saveButton}
+                  onClick={() => saveRoute(ri)}
+                  disabled={saving}
+                >
+                  {saving ? "Saving..." : "SAVE ROUTE"}
                 </button>
               </div>
 
               <div className={styles.stopsBlock}>
                 <h3 className={styles.stopsTitle}>Stops</h3>
 
-                {!route.id && <p className={styles.hint}>Save the route first to add stops.</p>}
-                {route.id && (route.stops || []).length === 0 && <p className={styles.emptyMsg}>No stops added yet.</p>}
+                {!route.id && (
+                  <p className={styles.hint}>
+                    Save the route first to add stops.
+                  </p>
+                )}
+                {route.id && (route.stops || []).length === 0 && (
+                  <p className={styles.emptyMsg}>No stops added yet.</p>
+                )}
 
-                {route.id && (route.stops || []).map((stop, si) => (
-                  <div key={stop.id ?? `new-stop-${si}`} className={styles.stopRow}>
-                    <div className={styles.photoCol}>
-                      {stop._photoPreview
-                        ? <img src={stop._photoPreview} alt="preview" className={styles.stopPhoto} />
-                        : stop.photo
-                          ? <img src={buildMediaUrl(stop.photo)} alt={stop.name} className={styles.stopPhoto} />
-                          : <div className={styles.photoPlaceholder} />
-                      }
-                      <label className={styles.photoLabel}>
-                        Change photo
-                        <input type="file" accept="image/*" onChange={e => handleStopPhoto(ri, si, e.target.files[0])} className={styles.fileInputHidden} />
-                      </label>
-                    </div>
+                {route.id &&
+                  (route.stops || []).map((stop, si) => (
+                    <div
+                      key={stop.id ?? `new-stop-${si}`}
+                      className={styles.stopRow}
+                    >
+                      <div className={styles.photoCol}>
+                        {stop._photoPreview ? (
+                          <img
+                            src={stop._photoPreview}
+                            alt="preview"
+                            className={styles.stopPhoto}
+                          />
+                        ) : stop.photo ? (
+                          <img
+                            src={buildMediaUrl(stop.photo)}
+                            alt={stop.name}
+                            className={styles.stopPhoto}
+                          />
+                        ) : (
+                          <div className={styles.photoPlaceholder} />
+                        )}
+                        <label className={styles.photoLabel}>
+                          Change photo
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) =>
+                              handleStopPhoto(ri, si, e.target.files[0])
+                            }
+                            className={styles.fileInputHidden}
+                          />
+                        </label>
+                      </div>
 
-                    <div className={styles.stopFields}>
-                      <div className={styles.row}>
-                        <div className={styles.field}>
-                          <label>Stop Name</label>
-                          <input value={stop.name || ''} onChange={e => handleStopChange(ri, si, 'name', e.target.value)} />
+                      <div className={styles.stopFields}>
+                        <div className={styles.row}>
+                          <div className={styles.field}>
+                            <label>Stop Name</label>
+                            <input
+                              value={stop.name || ""}
+                              onChange={(e) =>
+                                handleStopChange(ri, si, "name", e.target.value)
+                              }
+                            />
+                          </div>
+                          <div className={styles.field}>
+                            <label>Order</label>
+                            <input
+                              type="number"
+                              value={stop.order ?? si}
+                              onChange={(e) =>
+                                handleStopChange(
+                                  ri,
+                                  si,
+                                  "order",
+                                  e.target.value
+                                )
+                              }
+                              style={{ maxWidth: 80 }}
+                            />
+                          </div>
                         </div>
                         <div className={styles.field}>
-                          <label>Order</label>
-                          <input type="number" value={stop.order ?? si} onChange={e => handleStopChange(ri, si, 'order', e.target.value)} style={{ maxWidth: 80 }} />
+                          <label>Description</label>
+                          <textarea
+                            rows={2}
+                            value={stop.description || ""}
+                            onChange={(e) =>
+                              handleStopChange(
+                                ri,
+                                si,
+                                "description",
+                                e.target.value
+                              )
+                            }
+                          />
                         </div>
                       </div>
-                      <div className={styles.field}>
-                        <label>Description</label>
-                        <textarea rows={2} value={stop.description || ''} onChange={e => handleStopChange(ri, si, 'description', e.target.value)} />
-                      </div>
-                    </div>
 
-                    <button type="button" className={styles.deleteButtonSmall} onClick={() => confirmDeleteStop(ri, si)}>✕</button>
-                  </div>
-                ))}
+                      <button
+                        type="button"
+                        className={styles.deleteButtonSmall}
+                        onClick={() => confirmDeleteStop(ri, si)}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
 
                 {route.id && (
                   <div className={styles.personActions}>
-                    <button type="button" className={styles.addButton} onClick={() => addStop(ri)}>+ ADD STOP</button>
+                    <button
+                      type="button"
+                      className={styles.addButton}
+                      onClick={() => addStop(ri)}
+                    >
+                      + ADD STOP
+                    </button>
                     <div className={styles.saveRow}>
-                      {savedRoute === `stops-${ri}` && <span className={styles.savedMsg}>✓ Stops saved</span>}
-                      <button type="button" className={styles.saveButton} onClick={() => saveAllStops(ri)} disabled={saving}>
-                        {saving ? 'Saving...' : 'SAVE STOPS'}
+                      {savedRoute === `stops-${ri}` && (
+                        <span className={styles.savedMsg}>✓ Stops saved</span>
+                      )}
+                      <button
+                        type="button"
+                        className={styles.saveButton}
+                        onClick={() => saveAllStops(ri)}
+                        disabled={saving}
+                      >
+                        {saving ? "Saving..." : "SAVE STOPS"}
                       </button>
                     </div>
                   </div>
@@ -418,9 +541,14 @@ export default function EditWebInfoHiking() {
           ))}
 
           <div style={{ marginTop: 24 }}>
-            <button type="button" className={styles.addButton} onClick={addRoute}>+ ADD ROUTE</button>
+            <button
+              type="button"
+              className={styles.addButton}
+              onClick={addRoute}
+            >
+              + ADD ROUTE
+            </button>
           </div>
-
         </div>
       )}
       <Modal

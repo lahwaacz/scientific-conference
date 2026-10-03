@@ -30,14 +30,14 @@
   margin-top: 20px;
 }
 .fadeIn {
-    opacity: 0;
-    animation: fadeInAnim 0.4s ease forwards;
+  opacity: 0;
+  animation: fadeInAnim 0.4s ease forwards;
 }
 
 @keyframes fadeInAnim {
-    to {
-        opacity: 1;
-    }
+  to {
+    opacity: 1;
+  }
 }
 .section {
   display: flex;

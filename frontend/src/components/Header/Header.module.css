@@ -1,11 +1,11 @@
 .header {
-    background-color: var(--accent-color);
-    padding: 10px clamp(12px, 3vw, 18px);
-    text-align: center;
-    border-bottom: 2px solid var(--secondary-color);
-    position: sticky;
-    top: 0;
-    z-index: 1000;
+  background-color: var(--accent-color);
+  padding: 10px clamp(12px, 3vw, 18px);
+  text-align: center;
+  border-bottom: 2px solid var(--secondary-color);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
 
 .inner {
@@ -44,7 +44,7 @@
   background: none;
   border: none;
   padding: 0;
- z-index: 1101;
+  z-index: 1101;
 }
 
 .line {
@@ -64,17 +64,17 @@
 
 /* LINKS */
 .whiteLink {
-    text-decoration: none;
-    color: var(--secondary-color) !important;
-    font-family: var(--font-main);
-    font-size: clamp(14px, 1.4vw, 18px);
-    text-transform: uppercase;
-    font-weight: 400;
+  text-decoration: none;
+  color: var(--secondary-color) !important;
+  font-family: var(--font-main);
+  font-size: clamp(14px, 1.4vw, 18px);
+  text-transform: uppercase;
+  font-weight: 400;
 }
 .whiteLink:hover,
 .whiteLink:focus,
 .whiteLink:active {
-    color: var(--hover-color) !important;
+  color: var(--hover-color) !important;
 }
 .venueRow {
   display: inline-flex;
@@ -139,7 +139,7 @@
   background: white;
   padding: 10px 0;
   border-radius: 6px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
   animation: fadeIn 0.2s ease;
   z-index: 100;
   min-width: clamp(140px, 25vw, 180px);
@@ -158,8 +158,14 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ===================== MOBILE ===================== */
@@ -171,7 +177,7 @@
   .overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.4);
+    background: rgba(0, 0, 0, 0.4);
     z-index: 1000;
   }
 
@@ -187,7 +193,7 @@
     align-items: flex-start;
     padding: 90px clamp(16px, 4vw, 24px);
     transition: right 0.3s ease;
-    box-shadow: -4px 0 15px rgba(0,0,0,0.2);
+    box-shadow: -4px 0 15px rgba(0, 0, 0, 0.2);
     z-index: 1050;
   }
 

@@ -1,6 +1,4 @@
-
-@import url('https://fonts.googleapis.com/css2?family=Metrophobic&display=swap');
-
+@import url("https://fonts.googleapis.com/css2?family=Metrophobic&display=swap");
 
 :root {
   --primary-color: rgba(7, 67, 145, 1);
@@ -9,7 +7,7 @@
   --hover-color: #002672;
   --text-color: #222;
   --font-main: "Roboto", "Segoe UI", sans-serif;
-  --font-title:"Metrophobic", "Segoe UI", sans-serif;
+  --font-title: "Metrophobic", "Segoe UI", sans-serif;
 }
 
 * {
@@ -17,14 +15,15 @@
   padding: 0;
   box-sizing: border-box;
   text-decoration: none;
-
 }
 
-html, body {
+html,
+body {
   max-width: 100%;
 }
 
-img, svg {
+img,
+svg {
   max-width: 100%;
   height: auto;
 }

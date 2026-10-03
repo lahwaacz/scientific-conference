@@ -1,7 +1,14 @@
-import styles from './AbstractCard.module.css';
+import styles from "./AbstractCard.module.css";
 import { useNavigate } from "react-router-dom";
 
-export default function AbstractCard({ id, title, authors, department, abstractText, talkId }) {
+export default function AbstractCard({
+  id,
+  title,
+  authors,
+  department,
+  abstractText,
+  talkId,
+}) {
   const navigate = useNavigate();
 
   function goToProgram() {

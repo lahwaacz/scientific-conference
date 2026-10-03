@@ -1,7 +1,7 @@
 .committeeSection {
-    background-color: var(--accent-color);
-    width: 100%;
-    overflow-x: hidden;
+  background-color: var(--accent-color);
+  width: 100%;
+  overflow-x: hidden;
 }
 
 .container {

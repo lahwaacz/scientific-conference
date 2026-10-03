@@ -2,8 +2,7 @@ let isRefreshing = false;
 let failedQueue = [];
 
 const RAW_API_BASE_URL =
-  process.env.REACT_APP_BACKEND_API_BASE_URL ||
-  "http://localhost:8000";
+  process.env.REACT_APP_BACKEND_API_BASE_URL || "http://localhost:8000";
 
 export const API_BASE_URL = RAW_API_BASE_URL.replace(/\/$/, "");
 
@@ -13,7 +12,7 @@ function reloadAppAtHomePage() {
 }
 
 const processQueue = (error, token = null) => {
-  failedQueue.forEach(prom => {
+  failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
     } else {
@@ -46,14 +45,14 @@ function buildHeaders(options, token) {
 }
 
 export function buildMediaUrl(path) {
-  if (!path) return '';
+  if (!path) return "";
   if (/^https?:\/\//i.test(path)) return path;
 
-  const base = API_BASE_URL.replace(/\/$/, '');
-  let cleanPath = path.trim().replace(/^\/+/, '');
+  const base = API_BASE_URL.replace(/\/$/, "");
+  let cleanPath = path.trim().replace(/^\/+/, "");
 
-  if (cleanPath.startsWith('conference-demo/')) {
-    cleanPath = cleanPath.replace(/^conference-demo\//, '');
+  if (cleanPath.startsWith("conference-demo/")) {
+    cleanPath = cleanPath.replace(/^conference-demo\//, "");
   }
 
   return `${base}/${cleanPath}`;
@@ -109,7 +108,7 @@ export async function fetchWithAuth(url, options = {}) {
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
         failedQueue.push({ resolve, reject });
-      }).then(newToken => {
+      }).then((newToken) => {
         return fetch(finalUrl, {
           ...options,
           headers: buildHeaders(options, newToken),

@@ -1,38 +1,47 @@
-import styles from './RegistrationForm.module.css';
+import styles from "./RegistrationForm.module.css";
 import { useState, useCallback } from "react";
-import Title from '../ui/Title/Title';
-import { useConferenceInfo } from '../hooks/useConferenceInfo';
-import Modal from '../ui/Modal/Modal';
-import { buildApiUrl } from '../../utils/api';
+import Title from "../ui/Title/Title";
+import { useConferenceInfo } from "../hooks/useConferenceInfo";
+import Modal from "../ui/Modal/Modal";
+import { buildApiUrl } from "../../utils/api";
 
 function useModal() {
   const [modal, setModal] = useState({ isOpen: false });
 
-  const showAlert = useCallback((message, title = '') => {
-    return new Promise(resolve => {
+  const showAlert = useCallback((message, title = "") => {
+    return new Promise((resolve) => {
       setModal({
         isOpen: true,
         title,
         message,
-        confirmText: 'OK',
-        onConfirm: () => { setModal({ isOpen: false }); resolve(true); },
+        confirmText: "OK",
+        onConfirm: () => {
+          setModal({ isOpen: false });
+          resolve(true);
+        },
         onCancel: null,
-        type: 'default',
+        type: "default",
       });
     });
   }, []);
 
-  const showConfirm = useCallback((message, title = '') => {
-    return new Promise(resolve => {
+  const showConfirm = useCallback((message, title = "") => {
+    return new Promise((resolve) => {
       setModal({
         isOpen: true,
         title,
         message,
-        confirmText: 'Confirm',
-        cancelText: 'Cancel',
-        onConfirm: () => { setModal({ isOpen: false }); resolve(true); },
-        onCancel: () => { setModal({ isOpen: false }); resolve(false); },
-        type: 'default',
+        confirmText: "Confirm",
+        cancelText: "Cancel",
+        onConfirm: () => {
+          setModal({ isOpen: false });
+          resolve(true);
+        },
+        onCancel: () => {
+          setModal({ isOpen: false });
+          resolve(false);
+        },
+        type: "default",
       });
     });
   }, []);
@@ -74,7 +83,10 @@ export default function RegistrationForm() {
       newErrors.affiliation = "Please enter a valid affiliation";
     }
 
-    const words = formData.abstract_text.trim().split(/\s+/).filter(w => w.length > 0);
+    const words = formData.abstract_text
+      .trim()
+      .split(/\s+/)
+      .filter((w) => w.length > 0);
     if (words.length > 250) {
       newErrors.abstract_text = "Abstract must not exceed 250 words";
     }
@@ -87,7 +99,11 @@ export default function RegistrationForm() {
       newErrors.departure = "Please select departure date";
     }
 
-    if (formData.arrival && formData.departure && formData.departure <= formData.arrival) {
+    if (
+      formData.arrival &&
+      formData.departure &&
+      formData.departure <= formData.arrival
+    ) {
       newErrors.departure = "Departure date must be after arrival date";
     }
 
@@ -104,20 +120,23 @@ export default function RegistrationForm() {
     if (validate()) {
       try {
         const submitData = new FormData();
-        submitData.append('name', formData.name);
-        submitData.append('email', formData.email);
-        submitData.append('affiliation', formData.affiliation);
-        submitData.append('abstract_title', formData.abstract_title);
-        submitData.append('abstract_text', formData.abstract_text);
-        submitData.append('additional_authors', formData.additional_authors);
-        submitData.append('additional_affiliations', formData.additional_affiliations);
-        submitData.append('arrival_date', formData.arrival);
-        submitData.append('departure_date', formData.departure);
-        submitData.append('info', formData.info);
-        submitData.append('is_student', formData.is_student);
+        submitData.append("name", formData.name);
+        submitData.append("email", formData.email);
+        submitData.append("affiliation", formData.affiliation);
+        submitData.append("abstract_title", formData.abstract_title);
+        submitData.append("abstract_text", formData.abstract_text);
+        submitData.append("additional_authors", formData.additional_authors);
+        submitData.append(
+          "additional_affiliations",
+          formData.additional_affiliations
+        );
+        submitData.append("arrival_date", formData.arrival);
+        submitData.append("departure_date", formData.departure);
+        submitData.append("info", formData.info);
+        submitData.append("is_student", formData.is_student);
 
         if (photo) {
-          submitData.append('photo', photo);
+          submitData.append("photo", photo);
         }
 
         const response = await fetch(buildApiUrl("/api/submit/"), {
@@ -126,7 +145,10 @@ export default function RegistrationForm() {
         });
 
         if (response.ok) {
-          await showAlert("Your submission is pending review.", "Registration successful!");
+          await showAlert(
+            "Your submission is pending review.",
+            "Registration successful!"
+          );
           setFormData({
             name: "",
             email: "",
@@ -145,7 +167,10 @@ export default function RegistrationForm() {
           setWordCount(0);
         } else {
           const errorData = await response.json();
-          await showAlert(` Registration failed: ${JSON.stringify(errorData)}`, "Error");
+          await showAlert(
+            ` Registration failed: ${JSON.stringify(errorData)}`,
+            "Error"
+          );
         }
       } catch (error) {
         console.error("Error:", error);
@@ -158,11 +183,14 @@ export default function RegistrationForm() {
     const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: type === "checkbox" ? checked : value,
     });
 
     if (name === "abstract_text") {
-      const words = value.trim().split(/\s+/).filter(w => w.length > 0);
+      const words = value
+        .trim()
+        .split(/\s+/)
+        .filter((w) => w.length > 0);
       setWordCount(words.length);
     }
   };
@@ -170,7 +198,7 @@ export default function RegistrationForm() {
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (!file.type.startsWith('image/')) {
+      if (!file.type.startsWith("image/")) {
         setErrors({ ...errors, photo: "Please select a valid image file" });
         return;
       }
@@ -192,21 +220,22 @@ export default function RegistrationForm() {
     setPhoto(null);
     setPhotoPreview(null);
     const fileInput = document.querySelector('input[type="file"]');
-    if (fileInput) fileInput.value = '';
+    if (fileInput) fileInput.value = "";
   };
 
   const deadlineStr = info?.registration_deadline
-    ? new Date(info.registration_deadline).toLocaleDateString('en-GB', {
-        day: 'numeric', month: 'long', year: 'numeric'
+    ? new Date(info.registration_deadline).toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
       })
     : null;
 
   return (
     <section className={styles.formSection}>
-        <Modal {...modal} />
+      <Modal {...modal} />
       <Title text="Registration Form" />
       <div className={styles.fadeIn}>
-
         {info?.registration_fee_note && (
           <p className={styles.instructions}>{info.registration_fee_note}</p>
         )}
@@ -218,7 +247,6 @@ export default function RegistrationForm() {
         )}
 
         <form className={styles.form} onSubmit={handleSubmit}>
-
           {/* Name */}
           <div className={styles.field}>
             <label className={styles.label}>
@@ -249,7 +277,9 @@ export default function RegistrationForm() {
               maxLength={100}
               required
             />
-            {errors.email && <span className={styles.error}>{errors.email}</span>}
+            {errors.email && (
+              <span className={styles.error}>{errors.email}</span>
+            )}
           </div>
 
           {/* Affiliation */}
@@ -281,20 +311,26 @@ export default function RegistrationForm() {
                     type="file"
                     accept="image/*"
                     onChange={handlePhotoChange}
-                    style={{ display: 'none' }}
+                    style={{ display: "none" }}
                   />
                   📷 Choose Photo
                 </label>
               ) : (
                 <div className={styles.photoPreview}>
                   <img src={photoPreview} alt="Preview" />
-                  <button type="button" onClick={removePhoto} className={styles.removePhoto}>
+                  <button
+                    type="button"
+                    onClick={removePhoto}
+                    className={styles.removePhoto}
+                  >
                     Remove
                   </button>
                 </div>
               )}
             </div>
-            {errors.photo && <span className={styles.error}>{errors.photo}</span>}
+            {errors.photo && (
+              <span className={styles.error}>{errors.photo}</span>
+            )}
             <small className={styles.hint}>Max 5MB, JPG/PNG format</small>
           </div>
 
@@ -393,7 +429,7 @@ export default function RegistrationForm() {
           <div className={styles.field}>
             <label className={styles.checkboxLabel}>
               <input
-              className={styles.checkbox}
+                className={styles.checkbox}
                 type="checkbox"
                 name="is_student"
                 checked={formData.is_student}

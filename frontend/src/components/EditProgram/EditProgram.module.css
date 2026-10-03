@@ -7,7 +7,7 @@
 }
 
 .backBtn {
-background-color: var(--secondary-color);
+  background-color: var(--secondary-color);
   color: white;
   border: none;
   padding: 10px 25px;
@@ -26,17 +26,15 @@ background-color: var(--secondary-color);
   margin: 40px 0;
 }
 .fadeIn {
-    opacity: 0;
-    animation: fadeInAnim 0.4s ease forwards;
+  opacity: 0;
+  animation: fadeInAnim 0.4s ease forwards;
 }
 
 @keyframes fadeInAnim {
-    to {
-        opacity: 1;
-    }
+  to {
+    opacity: 1;
+  }
 }
-
-
 
 .description {
   color: #666;
@@ -192,12 +190,12 @@ background-color: var(--secondary-color);
   cursor: pointer;
   transition: background-color 0.3s;
   font-family: var(--font-title);
-    text-transform: uppercase;
+  text-transform: uppercase;
 }
 
 .cancelBtn:hover {
   background: var(--hover-color);
-  color:white;
+  color: white;
   border: 2px solid var(--hover-color);
 }
 
@@ -226,7 +224,7 @@ background-color: var(--secondary-color);
   display: flex;
   flex-direction: column;
   gap: 12px;
-    margin-bottom: 15px;
+  margin-bottom: 15px;
 }
 
 .timelineItem {
@@ -262,7 +260,7 @@ background-color: var(--secondary-color);
   .talksGrid {
     grid-template-columns: 1fr;
   }
-  
+
   .programPreview {
     grid-template-columns: 1fr;
   }
@@ -298,7 +296,7 @@ background-color: var(--secondary-color);
 }
 
 .deleteBtn {
-  flex:1 1;
+  flex: 1 1;
   padding: 10px;
   background: white;
   color: var(--secondary-color);
@@ -308,12 +306,12 @@ background-color: var(--secondary-color);
   cursor: pointer;
   transition: background-color 0.3s;
   font-family: var(--font-title);
-    text-transform: uppercase;
+  text-transform: uppercase;
 }
 
 .deleteBtn:hover {
   background: var(--hover-color);
-  color:white;
+  color: white;
   border: 2px solid var(--hover-color);
 }
 
@@ -330,7 +328,7 @@ background-color: var(--secondary-color);
 }
 
 .addBreakBtn:hover {
- background: var(--hover-color);  
+  background: var(--hover-color);
 }
 
 .breakForm {
@@ -385,12 +383,12 @@ background-color: var(--secondary-color);
   cursor: pointer;
   transition: background-color 0.3s;
   font-family: var(--font-title);
-    text-transform: uppercase;
+  text-transform: uppercase;
 }
 
 .addSessionBtn:hover {
   background: var(--hover-color);
-  color:white;
+  color: white;
   border: 2px solid var(--hover-color);
 }
 
@@ -503,7 +501,7 @@ background-color: var(--secondary-color);
 
 .editTimeBtn:hover {
   background: var(--hover-color);
-  color:var(--accent-color);
+  color: var(--accent-color);
   border: 1px solid var(--hover-color);
 }
 

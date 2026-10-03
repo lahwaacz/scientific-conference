@@ -19,7 +19,9 @@
   transition: background-color 0.3s ease;
 }
 
-.backButton:hover { background-color: #004494; }
+.backButton:hover {
+  background-color: #004494;
+}
 
 .section {
   display: flex;
@@ -38,14 +40,14 @@
   gap: 12px;
 }
 .fadeIn {
-    opacity: 0;
-    animation: fadeInAnim 0.4s ease forwards;
+  opacity: 0;
+  animation: fadeInAnim 0.4s ease forwards;
 }
 
 @keyframes fadeInAnim {
-    to {
-        opacity: 1;
-    }
+  to {
+    opacity: 1;
+  }
 }
 .sectionTitle {
   font-family: var(--font-title);
@@ -108,7 +110,9 @@
 }
 
 .field input:focus,
-.field textarea:focus { border-color: var(--secondary-color); }
+.field textarea:focus {
+  border-color: var(--secondary-color);
+}
 
 .row {
   display: flex;
@@ -136,8 +140,13 @@
   transition: background-color 0.3s ease;
 }
 
-.saveButton:hover { background-color: #004494; }
-.saveButton:disabled { background-color: #aaa; cursor: not-allowed; }
+.saveButton:hover {
+  background-color: #004494;
+}
+.saveButton:disabled {
+  background-color: #aaa;
+  cursor: not-allowed;
+}
 
 .savedMsg {
   font-family: var(--font-main);
@@ -197,7 +206,9 @@
   text-decoration: underline;
 }
 
-.fileInputHidden { display: none; }
+.fileInputHidden {
+  display: none;
+}
 
 .stopFields {
   display: flex;
@@ -234,7 +245,9 @@
   transition: color 0.2s;
 }
 
-.deleteButtonSmall:hover { color: #990000; }
+.deleteButtonSmall:hover {
+  color: #990000;
+}
 
 .personActions {
   display: flex;
@@ -264,4 +277,6 @@
   transition: background-color 0.3s ease;
 }
 
-.addButton:hover { background-color: #e2ebf6; }
+.addButton:hover {
+  background-color: #e2ebf6;
+}

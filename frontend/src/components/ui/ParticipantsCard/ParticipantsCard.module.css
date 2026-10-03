@@ -42,7 +42,7 @@
   padding: clamp(8px, 1.8vw, 10px) clamp(12px, 2.5vw, 15px);
   font-size: clamp(13px, 1.5vw, 16px);
   font-weight: 300;
-  font-family: 'Metrophobic', sans-serif;
+  font-family: "Metrophobic", sans-serif;
   letter-spacing: 1px;
   text-transform: uppercase;
   display: flex;

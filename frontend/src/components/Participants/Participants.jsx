@@ -1,9 +1,9 @@
-import styles from './Participants.module.css';
-import Title from '../ui/Title/Title';
-import ParticipantsCard from '../ui/ParticipantsCard/ParticipantsCard';
+import styles from "./Participants.module.css";
+import Title from "../ui/Title/Title";
+import ParticipantsCard from "../ui/ParticipantsCard/ParticipantsCard";
 import { useEffect, useState } from "react";
-import Loader from '../ui/Loader/Loader';
-import { buildApiUrl } from '../../utils/api';
+import Loader from "../ui/Loader/Loader";
+import { buildApiUrl } from "../../utils/api";
 
 export default function Participants() {
   const [participants, setParticipants] = useState([]);
@@ -11,8 +11,8 @@ export default function Participants() {
 
   useEffect(() => {
     fetch(buildApiUrl("/api/participants/"))
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         setParticipants(data);
         setLoading(false);
       });
@@ -26,7 +26,7 @@ export default function Participants() {
         <Loader />
       ) : (
         <div className={`${styles.cardsContainer} ${styles.fadeIn}`}>
-          {participants.map(person => (
+          {participants.map((person) => (
             <ParticipantsCard
               key={person.id}
               id={person.id}

@@ -102,7 +102,6 @@ p {
   letter-spacing: 0.5px;
 }
 
-
 @media (max-width: 768px) {
   .footerContainer {
     flex-direction: column;
@@ -110,7 +109,6 @@ p {
   }
   .column:first-child {
     flex: 1 1 auto;
-
   }
   .column {
     flex: 1 1 auto;

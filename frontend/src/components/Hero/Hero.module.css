@@ -1,56 +1,56 @@
 .hero {
-    background-color: var(--primary-color);
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden;
+  background-color: var(--primary-color);
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .container {
-    display: flex;
-    flex-direction: column;
-    padding: clamp(24px, 6vw, 50px) clamp(16px, 8vw, 80px);
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(24px, 6vw, 50px) clamp(16px, 8vw, 80px);
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .rightSide {
-    width: 100%;
-    display: flex;
-    justify-content: right;
+  width: 100%;
+  display: flex;
+  justify-content: right;
 }
 
 .leftSide {
-    width: 100%;
+  width: 100%;
 }
 
 .mainTitle {
-    font-family: var(--font-title);
-    font-size: clamp(22px, 5vw, 46px);
-    font-weight: 200;
-    width: 100%;
-    max-width: 600px;
-    text-transform: uppercase;
-    color: var(--accent-color);
-    word-wrap: break-word;
+  font-family: var(--font-title);
+  font-size: clamp(22px, 5vw, 46px);
+  font-weight: 200;
+  width: 100%;
+  max-width: 600px;
+  text-transform: uppercase;
+  color: var(--accent-color);
+  word-wrap: break-word;
 }
 
 .date {
-    font-family: var(--font-main);
-    font-size: clamp(14px, 2.2vw, 24px);
-    color: var(--accent-color);
-    font-weight: 300;
+  font-family: var(--font-main);
+  font-size: clamp(14px, 2.2vw, 24px);
+  color: var(--accent-color);
+  font-weight: 300;
 }
 
 .text {
-    font-family: var(--font-main);
-    font-size: clamp(14px, 1.8vw, 20px);
-    color: var(--accent-color);
-    font-weight: 300;
-    text-align: right;
-    width: 100%;
-    max-width: 500px;
+  font-family: var(--font-main);
+  font-size: clamp(14px, 1.8vw, 20px);
+  color: var(--accent-color);
+  font-weight: 300;
+  text-align: right;
+  width: 100%;
+  max-width: 500px;
 }
 
 @media (max-width: 768px) {

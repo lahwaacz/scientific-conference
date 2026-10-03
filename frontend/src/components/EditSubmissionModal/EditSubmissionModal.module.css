@@ -48,7 +48,7 @@
 }
 
 .modal h2 {
-    font-size: 30px;
+  font-size: 30px;
 }
 
 .form {
@@ -90,7 +90,7 @@
 }
 
 .removeButton {
-    background-color: var(--secondary-color);
+  background-color: var(--secondary-color);
   color: white;
   padding: 10px 20px;
   border: none;
@@ -105,8 +105,8 @@
 }
 
 .uploadButton {
-   background-color: var(--secondary-color);
-   color: white;
+  background-color: var(--secondary-color);
+  color: white;
   padding: 10px 20px;
   cursor: pointer;
   font-family: var(--font-title);
@@ -222,12 +222,12 @@
   cursor: pointer;
   transition: background-color 0.3s;
   font-family: var(--font-title);
-    text-transform: uppercase;
+  text-transform: uppercase;
 }
 
 .cancelBtn:hover {
   background: var(--hover-color);
-  color:white;
+  color: white;
   border: 2px solid var(--hover-color);
 }
 .approvedNotice {

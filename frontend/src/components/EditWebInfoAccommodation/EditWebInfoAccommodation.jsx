@@ -1,47 +1,45 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import styles from './EditWebInfoAccommodation.module.css';
-import Title from '../ui/Title/Title';
-import Loader from '../ui/Loader/Loader';
-import { fetchWithAuth, buildMediaUrl } from '../../utils/api';
-import Modal from '../ui/Modal/Modal';
-
-
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import styles from "./EditWebInfoAccommodation.module.css";
+import Title from "../ui/Title/Title";
+import Loader from "../ui/Loader/Loader";
+import { fetchWithAuth, buildMediaUrl } from "../../utils/api";
+import Modal from "../ui/Modal/Modal";
 
 export default function EditWebInfoAccommodation() {
-  const [description, setDescription] = useState('');
+  const [description, setDescription] = useState("");
   const [options, setOptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [savingInfo, setSavingInfo] = useState(false);
   const [savingOptions, setSavingOptions] = useState(false);
   const [savedInfo, setSavedInfo] = useState(false);
   const [savedOptions, setSavedOptions] = useState(false);
-  const [error] = useState('');
+  const [error] = useState("");
 
   const [modal, setModal] = useState({
     isOpen: false,
-    title: '',
-    message: '',
+    title: "",
+    message: "",
     onConfirm: null,
-    type: 'default'
+    type: "default",
   });
 
   function openModal(config) {
     setModal({
       isOpen: true,
-      ...config
+      ...config,
     });
   }
 
   function closeModal() {
-    setModal(prev => ({ ...prev, isOpen: false }));
+    setModal((prev) => ({ ...prev, isOpen: false }));
   }
 
   useEffect(() => {
     fetchWithAuth(`/api/accommodation/`)
-      .then(r => r.json())
-      .then(data => {
-        setDescription(data.description || '');
+      .then((r) => r.json())
+      .then((data) => {
+        setDescription(data.description || "");
         setOptions(data.options || []);
         setLoading(false);
       });
@@ -52,35 +50,35 @@ export default function EditWebInfoAccommodation() {
     setSavingInfo(true);
 
     try {
-      const res = await fetchWithAuth('/api/admin/accommodation/', {
-        method: 'PATCH',
+      const res = await fetchWithAuth("/api/admin/accommodation/", {
+        method: "PATCH",
         body: JSON.stringify({ description }),
       });
 
       if (!res.ok) {
         const errorText = await res.text();
         openModal({
-          title: 'Save failed',
-          message: errorText || 'Failed to save description.',
-          type: 'danger',
-          onConfirm: closeModal
+          title: "Save failed",
+          message: errorText || "Failed to save description.",
+          type: "danger",
+          onConfirm: closeModal,
         });
         return;
       }
 
       setSavedInfo(true);
       openModal({
-        title: 'Success',
-        message: 'Description saved successfully.',
-        type: 'success',
-        onConfirm: closeModal
+        title: "Success",
+        message: "Description saved successfully.",
+        type: "success",
+        onConfirm: closeModal,
       });
     } catch (error) {
       openModal({
-        title: 'Connection error',
-        message: error.message || 'Server is unreachable.',
-        type: 'danger',
-        onConfirm: closeModal
+        title: "Connection error",
+        message: error.message || "Server is unreachable.",
+        type: "danger",
+        onConfirm: closeModal,
       });
     } finally {
       setSavingInfo(false);
@@ -105,69 +103,87 @@ export default function EditWebInfoAccommodation() {
   }
 
   function addOption() {
-    setOptions([...options, { name: '', description: '', url: '', photo: null, order: options.length }]);
+    setOptions([
+      ...options,
+      {
+        name: "",
+        description: "",
+        url: "",
+        photo: null,
+        order: options.length,
+      },
+    ]);
   }
 
   async function deleteOption(id, index) {
     try {
       if (id) {
-        const res = await fetchWithAuth(`/api/admin/accommodation/options/${id}/`, {
-          method: 'DELETE'
-        });
+        const res = await fetchWithAuth(
+          `/api/admin/accommodation/options/${id}/`,
+          {
+            method: "DELETE",
+          }
+        );
 
         if (!res.ok && res.status !== 204) {
           const errorText = await res.text();
           openModal({
-            title: 'Delete failed',
-            message: errorText || 'Failed to delete option.',
-            type: 'danger',
-            onConfirm: closeModal
+            title: "Delete failed",
+            message: errorText || "Failed to delete option.",
+            type: "danger",
+            onConfirm: closeModal,
           });
           return;
         }
       }
 
-      setOptions(prev => prev.filter((_, i) => i !== index));
+      setOptions((prev) => prev.filter((_, i) => i !== index));
 
       openModal({
-        title: 'Success',
-        message: 'Option deleted successfully.',
-        type: 'success',
-        onConfirm: closeModal
+        title: "Success",
+        message: "Option deleted successfully.",
+        type: "success",
+        onConfirm: closeModal,
       });
     } catch (error) {
       openModal({
-        title: 'Connection error',
-        message: error.message || 'Server is unreachable.',
-        type: 'danger',
-        onConfirm: closeModal
+        title: "Connection error",
+        message: error.message || "Server is unreachable.",
+        type: "danger",
+        onConfirm: closeModal,
       });
     }
   }
   function confirmDeleteOption(id, index) {
     openModal({
-      title: 'Delete option',
-      message: 'Delete this option permanently?',
-      type: 'danger',
+      title: "Delete option",
+      message: "Delete this option permanently?",
+      type: "danger",
       onConfirm: async () => {
         closeModal();
         await deleteOption(id, index);
-      }
+      },
     });
   }
 
   async function saveOption(option) {
     const fd = new FormData();
-    fd.append('name', option.name || '');
-    fd.append('description', option.description || '');
-    fd.append('url', option.url || '');
-    fd.append('order', option.order ?? 0);
-    if (option._photoFile) fd.append('photo', option._photoFile);
+    fd.append("name", option.name || "");
+    fd.append("description", option.description || "");
+    fd.append("url", option.url || "");
+    fd.append("order", option.order ?? 0);
+    if (option._photoFile) fd.append("photo", option._photoFile);
 
     if (option.id) {
-      return fetchWithAuth(`/api/admin/accommodation/options/${option.id}/`, { method: 'PATCH', body: fd });
+      return fetchWithAuth(`/api/admin/accommodation/options/${option.id}/`, {
+        method: "PATCH",
+        body: fd,
+      });
     } else {
-      return fetchWithAuth(`/api/admin/accommodation/options/`, { method: 'POST', body: fd });
+      return fetchWithAuth(`/api/admin/accommodation/options/`, {
+        method: "POST",
+        body: fd,
+      });
     }
   }
 
@@ -175,37 +191,37 @@ export default function EditWebInfoAccommodation() {
     setSavingOptions(true);
 
     try {
-      const results = await Promise.all(options.map(o => saveOption(o)));
+      const results = await Promise.all(options.map((o) => saveOption(o)));
 
       for (const res of results) {
         if (!res.ok) {
           const errorText = await res.text();
           openModal({
-            title: 'Save failed',
-            message: errorText || 'Failed to save options.',
-            type: 'danger',
-            onConfirm: closeModal
+            title: "Save failed",
+            message: errorText || "Failed to save options.",
+            type: "danger",
+            onConfirm: closeModal,
           });
           return;
         }
       }
 
-      const updated = await Promise.all(results.map(r => r.json()));
+      const updated = await Promise.all(results.map((r) => r.json()));
       setOptions(updated);
       setSavedOptions(true);
 
       openModal({
-        title: 'Success',
-        message: 'Accommodation options saved successfully.',
-        type: 'success',
-        onConfirm: closeModal
+        title: "Success",
+        message: "Accommodation options saved successfully.",
+        type: "success",
+        onConfirm: closeModal,
       });
     } catch (error) {
       openModal({
-        title: 'Connection error',
-        message: error.message || 'Server is unreachable.',
-        type: 'danger',
-        onConfirm: closeModal
+        title: "Connection error",
+        message: error.message || "Server is unreachable.",
+        type: "danger",
+        onConfirm: closeModal,
       });
     } finally {
       setSavingOptions(false);
@@ -214,14 +230,15 @@ export default function EditWebInfoAccommodation() {
 
   return (
     <div className={styles.container}>
-      <Link to="/admin-panel/edit-web-info" className={styles.backButton}>← BACK</Link>
+      <Link to="/admin-panel/edit-web-info" className={styles.backButton}>
+        ← BACK
+      </Link>
       <Title text="Edit Accommodation" />
 
       {loading ? (
         <Loader />
       ) : (
         <div className={styles.fadeIn}>
-
           {/* ── Description ── */}
           <form onSubmit={handleSaveInfo} className={styles.form}>
             <section className={styles.section}>
@@ -231,7 +248,10 @@ export default function EditWebInfoAccommodation() {
                 <textarea
                   rows={5}
                   value={description}
-                  onChange={e => { setDescription(e.target.value); setSavedInfo(false); }}
+                  onChange={(e) => {
+                    setDescription(e.target.value);
+                    setSavedInfo(false);
+                  }}
                 />
               </div>
             </section>
@@ -240,8 +260,12 @@ export default function EditWebInfoAccommodation() {
 
             <div className={styles.actions}>
               {savedInfo && <span className={styles.savedMsg}>✓ Saved</span>}
-              <button type="submit" className={styles.saveButton} disabled={savingInfo}>
-                {savingInfo ? 'Saving...' : 'SAVE DESCRIPTION'}
+              <button
+                type="submit"
+                className={styles.saveButton}
+                disabled={savingInfo}
+              >
+                {savingInfo ? "Saving..." : "SAVE DESCRIPTION"}
               </button>
             </div>
           </form>
@@ -257,18 +281,27 @@ export default function EditWebInfoAccommodation() {
             {options.map((option, i) => (
               <div key={option.id ?? `new-${i}`} className={styles.optionRow}>
                 <div className={styles.photoCol}>
-                  {option._photoPreview
-                    ? <img src={option._photoPreview} alt="preview" className={styles.optionPhoto} />
-                    : option.photo
-                      ? <img src={buildMediaUrl(option.photo)} alt={option.name} className={styles.optionPhoto} />
-                      : <div className={styles.photoPlaceholder} />
-                  }
+                  {option._photoPreview ? (
+                    <img
+                      src={option._photoPreview}
+                      alt="preview"
+                      className={styles.optionPhoto}
+                    />
+                  ) : option.photo ? (
+                    <img
+                      src={buildMediaUrl(option.photo)}
+                      alt={option.name}
+                      className={styles.optionPhoto}
+                    />
+                  ) : (
+                    <div className={styles.photoPlaceholder} />
+                  )}
                   <label className={styles.photoLabel}>
                     Change photo
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={e => handleOptionPhoto(i, e.target.files[0])}
+                      onChange={(e) => handleOptionPhoto(i, e.target.files[0])}
                       className={styles.fileInputHidden}
                     />
                   </label>
@@ -279,8 +312,10 @@ export default function EditWebInfoAccommodation() {
                     <div className={styles.field}>
                       <label>Name</label>
                       <input
-                        value={option.name || ''}
-                        onChange={e => handleOptionChange(i, 'name', e.target.value)}
+                        value={option.name || ""}
+                        onChange={(e) =>
+                          handleOptionChange(i, "name", e.target.value)
+                        }
                       />
                     </div>
                     <div className={styles.field}>
@@ -288,7 +323,9 @@ export default function EditWebInfoAccommodation() {
                       <input
                         type="number"
                         value={option.order ?? i}
-                        onChange={e => handleOptionChange(i, 'order', e.target.value)}
+                        onChange={(e) =>
+                          handleOptionChange(i, "order", e.target.value)
+                        }
                         style={{ maxWidth: 80 }}
                       />
                     </div>
@@ -298,8 +335,10 @@ export default function EditWebInfoAccommodation() {
                     <label>Description</label>
                     <textarea
                       rows={2}
-                      value={option.description || ''}
-                      onChange={e => handleOptionChange(i, 'description', e.target.value)}
+                      value={option.description || ""}
+                      onChange={(e) =>
+                        handleOptionChange(i, "description", e.target.value)
+                      }
                     />
                   </div>
 
@@ -307,8 +346,10 @@ export default function EditWebInfoAccommodation() {
                     <label>Website URL</label>
                     <input
                       type="url"
-                      value={option.url || ''}
-                      onChange={e => handleOptionChange(i, 'url', e.target.value)}
+                      value={option.url || ""}
+                      onChange={(e) =>
+                        handleOptionChange(i, "url", e.target.value)
+                      }
                       placeholder="https://..."
                     />
                   </div>
@@ -318,23 +359,31 @@ export default function EditWebInfoAccommodation() {
                   type="button"
                   className={styles.deleteButton}
                   onClick={() => confirmDeleteOption(option.id, i)}
-                >✕</button>
+                >
+                  ✕
+                </button>
               </div>
             ))}
 
             <div className={styles.personActions}>
-              <button type="button" className={styles.addButton} onClick={addOption}>
+              <button
+                type="button"
+                className={styles.addButton}
+                onClick={addOption}
+              >
                 + ADD OPTION
               </button>
               <div className={styles.saveRow}>
-                {savedOptions && <span className={styles.savedMsg}>✓ Saved</span>}
+                {savedOptions && (
+                  <span className={styles.savedMsg}>✓ Saved</span>
+                )}
                 <button
                   type="button"
                   className={styles.saveButton}
                   onClick={handleSaveOptions}
                   disabled={savingOptions}
                 >
-                  {savingOptions ? 'Saving...' : 'SAVE OPTIONS'}
+                  {savingOptions ? "Saving..." : "SAVE OPTIONS"}
                 </button>
               </div>
             </div>
@@ -347,7 +396,6 @@ export default function EditWebInfoAccommodation() {
               onCancel={closeModal}
             />
           </section>
-
         </div>
       )}
     </div>

@@ -18,19 +18,19 @@
 }
 
 .instructions {
-    font-family: var(--font--main);
-    font-size: clamp(14px, 1.8vw, 18px);
-    font-weight: 400;
-    margin-bottom: 15px;
-    letter-spacing: 0.5px;
+  font-family: var(--font--main);
+  font-size: clamp(14px, 1.8vw, 18px);
+  font-weight: 400;
+  margin-bottom: 15px;
+  letter-spacing: 0.5px;
 }
 
 .deadline {
-    font-family: var(--font--main);
-    font-size: clamp(14px, 1.8vw, 18px);
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    margin-bottom: clamp(24px, 5vw, 50px);
+  font-family: var(--font--main);
+  font-size: clamp(14px, 1.8vw, 18px);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-bottom: clamp(24px, 5vw, 50px);
 }
 
 .field {
@@ -45,7 +45,7 @@
   border: 1px solid #ccc;
   border-radius: 6px;
   margin-bottom: 8px;
-  font-family: 'Roboto', sans-serif;
+  font-family: "Roboto", sans-serif;
   box-sizing: border-box;
   width: 100%;
 }
@@ -81,7 +81,7 @@ textarea:focus {
   padding: clamp(8px, 2vw, 8px) clamp(30px, 8vw, 60px);
   font-size: clamp(16px, 2.5vw, 23px);
   font-weight: 300;
-  font-family: 'Metrophobic', sans-serif;
+  font-family: "Metrophobic", sans-serif;
   letter-spacing: 1px;
   text-transform: uppercase;
   display: flex;
@@ -114,10 +114,10 @@ textarea:focus {
 }
 
 .label {
-    font-family: var(--font--main);
-    font-size: clamp(14px, 1.8vw, 18px);
-    font-weight: 400;
-    margin-bottom: 10px;
+  font-family: var(--font--main);
+  font-size: clamp(14px, 1.8vw, 18px);
+  font-weight: 400;
+  margin-bottom: 10px;
 }
 
 input[type="date"] {
@@ -127,7 +127,7 @@ input[type="date"] {
   border-radius: 8px;
   padding: clamp(10px, 2vw, 12px) clamp(12px, 2.5vw, 16px);
   font-size: clamp(14px, 1.6vw, 16px);
-  font-family: 'Roboto', sans-serif;
+  font-family: "Roboto", sans-serif;
   outline: none;
   transition: all 0.3s ease;
   width: 100%;
@@ -145,19 +145,19 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .separator {
-    margin: 0;
-    opacity: 100%;
-    margin-top: 2rem;
-    margin-bottom: 2rem;
-    border: none;
-    border-top: 1px solid #0056b3;
-    width: 100%;
-    margin-right: auto;
+  margin: 0;
+  opacity: 100%;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  border: none;
+  border-top: 1px solid #0056b3;
+  width: 100%;
+  margin-right: auto;
 }
 
 .fadeIn {
-    opacity: 0;
-    animation: fadeInAnim 0.4s ease forwards;
+  opacity: 0;
+  animation: fadeInAnim 0.4s ease forwards;
 }
 
 .required {
@@ -178,9 +178,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 @keyframes fadeInAnim {
-    to {
-        opacity: 1;
-    }
+  to {
+    opacity: 1;
+  }
 }
 
 .photoUpload {
@@ -229,7 +229,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   padding: clamp(6px, 1.5vw, 8px) clamp(14px, 3vw, 20px);
   font-size: clamp(13px, 1.5vw, 15px);
   font-weight: 300;
-  font-family: 'Metrophobic', sans-serif;
+  font-family: "Metrophobic", sans-serif;
   letter-spacing: 1px;
   text-transform: uppercase;
   display: flex;
@@ -256,7 +256,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   height: 18px;
   margin-right: 10px;
 }
-.checkboxLabel{
+.checkboxLabel {
   display: flex;
   flex-direction: row;
   align-items: center;

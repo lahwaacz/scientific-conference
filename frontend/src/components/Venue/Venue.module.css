@@ -1,64 +1,64 @@
 .venueSection {
-    padding: clamp(24px, 6vw, 50px) clamp(16px, 8vw, 80px);
-    background-color: var(--accent-color);
-    box-sizing: border-box;
-    width: 100%;
-    overflow-x: hidden;
+  padding: clamp(24px, 6vw, 50px) clamp(16px, 8vw, 80px);
+  background-color: var(--accent-color);
+  box-sizing: border-box;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 .container {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
 }
 
 .content {
-    width: 100%;
+  width: 100%;
 }
 
 .description {
-    font-family: var(--font--main);
-    font-size: clamp(14px, 1.8vw, 18px);
-    color: #222;
-    width: 100%;
-    max-width: 70ch;
-    margin-bottom: clamp(20px, 4vw, 35px);
-    font-weight: 400 !important;
-    letter-spacing: 0.5px;
-    line-height: 1.7;
+  font-family: var(--font--main);
+  font-size: clamp(14px, 1.8vw, 18px);
+  color: #222;
+  width: 100%;
+  max-width: 70ch;
+  margin-bottom: clamp(20px, 4vw, 35px);
+  font-weight: 400 !important;
+  letter-spacing: 0.5px;
+  line-height: 1.7;
 }
 
 .mapWrapper {
-    width: 100%;
-    border: 1px solid #1e73be;
-    overflow: hidden;
-    box-sizing: border-box;
+  width: 100%;
+  border: 1px solid #1e73be;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .mapWrapper iframe {
-    display: block;
-    width: 100%;
-    height: clamp(260px, 50vw, 400px);
+  display: block;
+  width: 100%;
+  height: clamp(260px, 50vw, 400px);
 }
 
 .fadeIn {
-    opacity: 0;
-    animation: fadeInAnim 0.4s ease forwards;
+  opacity: 0;
+  animation: fadeInAnim 0.4s ease forwards;
 }
 
 @keyframes fadeInAnim {
-    to {
-        opacity: 1;
-    }
+  to {
+    opacity: 1;
+  }
 }
 
 @media (max-width: 600px) {
-    .description {
-        max-width: 100%;
-        line-height: 1.6;
-    }
+  .description {
+    max-width: 100%;
+    line-height: 1.6;
+  }
 
-    .mapWrapper iframe {
-        height: 260px;
-    }
+  .mapWrapper iframe {
+    height: 260px;
+  }
 }

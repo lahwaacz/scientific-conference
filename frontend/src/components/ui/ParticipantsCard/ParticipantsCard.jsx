@@ -1,9 +1,15 @@
-import styles from './ParticipantsCard.module.css';
-import avatar from '../../../assets/avatar.png';
+import styles from "./ParticipantsCard.module.css";
+import avatar from "../../../assets/avatar.png";
 import { useNavigate } from "react-router-dom";
-import { buildMediaUrl } from '../../../utils/api';
+import { buildMediaUrl } from "../../../utils/api";
 
-export default function ParticipantsCard({ name, department, email, abstractId, photo }) {
+export default function ParticipantsCard({
+  name,
+  department,
+  email,
+  abstractId,
+  photo,
+}) {
   const navigate = useNavigate();
 
   function goToAbstract() {

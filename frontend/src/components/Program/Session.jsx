@@ -8,7 +8,7 @@ export default function Session({ session }) {
         <div className={styles.chair}>Chair: {session.chair}</div>
       )}
 
-      {session.talks.map(talk => (
+      {session.talks.map((talk) => (
         <Talk key={talk.id} talk={talk} />
       ))}
     </div>
