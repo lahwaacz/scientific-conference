@@ -250,6 +250,7 @@ class ParticipantSubmissionSerializer(serializers.ModelSerializer):
 
         participant.save()
 
+        abstract = instance.published_abstract
         if instance.abstract_title or instance.abstract_text:
             all_authors = instance.name
             if instance.additional_authors:
