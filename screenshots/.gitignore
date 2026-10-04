@@ -1,0 +1,3 @@
+# Visual regression captures (scripts/capture-screenshots.sh) stay local.
+*
+!.gitignore
