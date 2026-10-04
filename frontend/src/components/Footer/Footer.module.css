@@ -38,6 +38,10 @@
   letter-spacing: 0.5px;
 }
 
+p {
+  margin-bottom: 0;
+}
+
 .column p,
 .column a {
   font-size: clamp(13px, 1.5vw, 16px);
@@ -95,10 +99,6 @@
 
 .adminLink:hover {
   color: #e0e0e0;
-}
-
-p {
-  margin-bottom: 0;
 }
 
 .bottomText {

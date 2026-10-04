@@ -62,8 +62,8 @@
 }
 
 .center {
-  text-align: center !important;
-  padding: 10px 0 !important;
+  text-align: center;
+  padding: 10px 0;
 }
 .checkIcon {
   color: var(--secondary-color);

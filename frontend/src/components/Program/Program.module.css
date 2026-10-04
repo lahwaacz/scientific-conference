@@ -2,16 +2,15 @@
   font-size: clamp(14px, 1.8vw, 18px);
   color: #222;
   margin: 0;
-  font-weight: 400 !important;
+  font-weight: 400;
   letter-spacing: 0.5px;
-  font-weight: 300;
   margin-bottom: 20px;
 }
 
 .subheading {
   font-size: clamp(16px, 2vw, 20px);
   color: #222;
-  font-weight: 600 !important;
+  font-weight: 600;
   letter-spacing: 0.5px;
   margin-bottom: 15px;
 }

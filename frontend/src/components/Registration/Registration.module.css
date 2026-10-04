@@ -27,7 +27,7 @@ section.registration .description {
   font-size: clamp(14px, 1.8vw, 20px);
   color: #222;
   margin: 0;
-  font-weight: 600 !important;
+  font-weight: 600;
   letter-spacing: 0.5px;
   font-family: var(--font-main);
 }
@@ -35,13 +35,13 @@ section.registration .description {
 section.registration .strong {
   font-size: clamp(14px, 1.8vw, 20px);
   color: #222;
-  font-weight: 600 !important;
+  font-weight: 600;
   letter-spacing: 0.5px;
   margin-bottom: 10px;
 }
 
 ol {
-  list-style-type: decimal !important;
+  list-style-type: decimal;
   padding-left: 1.2rem;
   margin-bottom: 1.5rem;
 }
@@ -49,7 +49,7 @@ ol {
 li {
   font-size: clamp(14px, 1.8vw, 20px);
   color: #222;
-  font-weight: 400 !important;
+  font-weight: 400;
   letter-spacing: 0.5px;
 }
 

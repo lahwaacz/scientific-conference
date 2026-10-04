@@ -65,7 +65,7 @@
 /* LINKS */
 .whiteLink {
   text-decoration: none;
-  color: var(--secondary-color) !important;
+  color: var(--secondary-color);
   font-family: var(--font-main);
   font-size: clamp(14px, 1.4vw, 18px);
   text-transform: uppercase;
@@ -74,7 +74,7 @@
 .whiteLink:hover,
 .whiteLink:focus,
 .whiteLink:active {
-  color: var(--hover-color) !important;
+  color: var(--hover-color);
 }
 .venueRow {
   display: inline-flex;

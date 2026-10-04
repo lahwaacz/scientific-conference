@@ -16,7 +16,7 @@
   },
   "css": {
     "linter": {
-      "enabled": false
+      "enabled": true
     }
   },
   "javascript": {

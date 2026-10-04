@@ -332,7 +332,6 @@
 }
 
 .breakForm {
-  margin-top: 12px;
   margin-top: auto;
   padding: 12px;
   background-color: var(--color-surface-offset);
@@ -367,7 +366,6 @@
 .dayActions {
   display: flex;
   gap: 8px;
-  margin-top: 12px;
   flex-wrap: wrap;
   margin-top: auto;
 }

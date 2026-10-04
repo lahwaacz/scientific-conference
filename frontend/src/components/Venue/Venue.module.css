@@ -23,7 +23,7 @@
   width: 100%;
   max-width: 70ch;
   margin-bottom: clamp(20px, 4vw, 35px);
-  font-weight: 400 !important;
+  font-weight: 400;
   letter-spacing: 0.5px;
   line-height: 1.7;
 }

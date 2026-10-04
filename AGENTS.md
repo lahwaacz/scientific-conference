@@ -17,6 +17,8 @@ scientific-conference/
 ├── backend/      # Django project + single app `core` (all domain logic) — see backend/AGENTS.md
 ├── frontend/     # CRA React SPA — see frontend/AGENTS.md
 ├── assets/       # PNG screenshots for ADMINISTRATOR_GUIDE.md ONLY (not app assets)
+├── screenshots/  # visual regression captures (gitignored; regenerate via scripts/capture-screenshots.sh)
+├── scripts/      # repo-level tooling (capture-screenshots.sh: seeds backend, builds frontend, captures all routes)
 ├── .github/workflows/  # single workflow: builds/pushes 2 GHCR images on push to main
 ├── README.md           # stack + local setup
 └── ADMINISTRATOR_GUIDE.md  # 473-line admin manual; MUST be updated when app is extended
@@ -37,6 +39,7 @@ No root Makefile / docker-compose / package.json / requirements.txt. Each app bu
 | New UI component | `frontend/src/components/<Name>/` | `<Name>.jsx` + `<Name>.module.css` |
 | Docker images | `backend/Dockerfile`, `frontend/Dockerfile` | separate build contexts (matrix in CI) |
 | Admin usage rules | `ADMINISTRATOR_GUIDE.md` | behavioral constraints on delete/publish flows |
+| Visual regression baseline | `scripts/capture-screenshots.sh` → `screenshots/` | 20 full-page PNGs (8 public + 12 admin routes), 1440x900; rerun after UI changes and diff `screenshots/*.png` |
 
 ## CODE MAP
 
@@ -91,8 +94,9 @@ npm install
 npm run start                         # :3000, uses .env.development
 CI=true npm test                      # one-shot Jest
 npm run build                         # compile (ESLint plugin disabled)
-npm run lint                          # Biome lint (0 errors gate; infos don't fail)
+npm run lint                          # Biome lint (0 errors gate, CSS included)
 npm run format:check                  # Biome format gate
+bash scripts/capture-screenshots.sh   # visual regression baseline -> screenshots/
 
 # Docker (as CI does)
 docker build backend/                 # -> ghcr.io/<repo>-backend
