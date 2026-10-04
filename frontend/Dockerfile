@@ -1,5 +1,5 @@
 # =========================================
-# Stage 1: Build the React (Create React App) Application
+# Stage 1: Build the React (Vite) Application
 # =========================================
 
 ARG NODE_VERSION=24.14.0-alpine
@@ -18,10 +18,10 @@ RUN --mount=type=cache,target=/root/.npm npm ci
 # Copy the rest of the application source code into the container
 COPY . .
 
-# FIXME: default value should not be hardcoded - pass --build-arg REACT_APP_BACKEND_API_BASE_URL=... to override
-ARG REACT_APP_BACKEND_API_BASE_URL=https://mmg-webapps.fjfi.cvut.cz/conference-demo
-# ARG does not reach RUN commands' environment; export it so create-react-app can bake it into the bundle
-ENV REACT_APP_BACKEND_API_BASE_URL=${REACT_APP_BACKEND_API_BASE_URL}
+# FIXME: default value should not be hardcoded - pass --build-arg VITE_BACKEND_API_BASE_URL=... to override
+ARG VITE_BACKEND_API_BASE_URL=https://mmg-webapps.fjfi.cvut.cz/conference-demo
+# ARG does not reach RUN commands' environment; export it so Vite can inline it into the bundle
+ENV VITE_BACKEND_API_BASE_URL=${VITE_BACKEND_API_BASE_URL}
 
 # Build the React.js application (outputs to /app/build)
 RUN npm run build

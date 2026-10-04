@@ -1,35 +1,34 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import "@testing-library/jest-dom";
 import RegistrationForm from "./RegistrationForm";
 
-jest.mock("../hooks/useConferenceInfo", () => ({
+vi.mock("../hooks/useConferenceInfo", () => ({
   useConferenceInfo: () => ({
     registration_deadline: "2026-09-01",
     registration_fee_note: "Conference fee is free of charge",
   }),
 }));
 
-jest.mock("../ui/Modal/Modal", () => {
-  return function MockModal({ isOpen, title, message }) {
+vi.mock("../ui/Modal/Modal", () => ({
+  default: function MockModal({ isOpen, title, message }) {
     return isOpen ? (
       <div data-testid="modal">
         <div>{title}</div>
         <div>{message}</div>
       </div>
     ) : null;
-  };
-});
+  },
+}));
 
 describe("RegistrationForm", () => {
   let consoleErrorSpy;
 
   beforeEach(() => {
-    global.fetch = jest.fn();
-    consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    globalThis.fetch = vi.fn();
+    consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     consoleErrorSpy.mockRestore();
   });
 
@@ -74,7 +73,9 @@ describe("RegistrationForm", () => {
       target: { name: "departure", value: "2026-09-12" },
     });
 
-    fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+    // Submit the form directly: jsdom's HTML5 validation blocks the click
+    // path before React's custom validate() runs (name here stays empty).
+    fireEvent.submit(document.querySelector("form"));
 
     expect(
       await screen.findByText(/Please enter a valid email/i)
@@ -103,7 +104,9 @@ describe("RegistrationForm", () => {
       target: { name: "departure", value: "2026-09-12" },
     });
 
-    fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+    // See the email-validation test above: HTML5 validation blocks click
+    // submit with an empty required name field in jsdom.
+    fireEvent.submit(document.querySelector("form"));
 
     expect(
       await screen.findByText(/Departure date must be after arrival date/i)
@@ -145,7 +148,7 @@ describe("RegistrationForm", () => {
   });
 
   test("submits valid form data successfully", async () => {
-    global.fetch.mockResolvedValueOnce({
+    globalThis.fetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ message: "ok" }),
     });
@@ -178,10 +181,10 @@ describe("RegistrationForm", () => {
     fireEvent.click(screen.getByRole("button", { name: /submit/i }));
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledTimes(1);
+      expect(globalThis.fetch).toHaveBeenCalledTimes(1);
     });
 
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(globalThis.fetch).toHaveBeenCalledWith(
       "http://localhost:8000/api/submit/",
       expect.objectContaining({
         method: "POST",
@@ -197,7 +200,7 @@ describe("RegistrationForm", () => {
   });
 
   test("shows error modal when server returns error", async () => {
-    global.fetch.mockResolvedValueOnce({
+    globalThis.fetch.mockResolvedValueOnce({
       ok: false,
       json: async () => ({ email: ["Invalid"] }),
     });
@@ -235,7 +238,7 @@ describe("RegistrationForm", () => {
   });
 
   test("shows connection error modal when fetch throws", async () => {
-    global.fetch.mockRejectedValueOnce(new Error("Network error"));
+    globalThis.fetch.mockRejectedValueOnce(new Error("Network error"));
 
     render(<RegistrationForm />);
 

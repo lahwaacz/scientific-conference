@@ -1,7 +1,7 @@
-const originalFetch = global.fetch;
+const originalFetch = globalThis.fetch;
 
 export const applyBaseUrlToFetch = (baseUrl) => {
-  global.fetch = (url, options) => {
+  globalThis.fetch = (url, options) => {
     if (url.startsWith("http")) {
       return originalFetch(url, options);
     }

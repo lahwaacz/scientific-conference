@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ReactComponent as LogoIcon } from "../../assets/logo.svg";
+import LogoIcon from "../../assets/logo.svg";
 import { useLockBodyScroll } from "./../hooks/useLockBodyScroll";
 import styles from "./Header.module.css";
 

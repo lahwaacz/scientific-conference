@@ -40,7 +40,7 @@ BACKEND_PID=$!
 
 # --- frontend: production build + static serve ------------------------------
 (cd "$FRONTEND" && \
-  REACT_APP_BACKEND_API_BASE_URL="http://localhost:$BACKEND_PORT" \
+  VITE_BACKEND_API_BASE_URL="http://localhost:$BACKEND_PORT" \
   npm run build >/dev/null)
 python3 -m http.server "$FRONTEND_PORT" -d "$FRONTEND/build" \
   >/dev/null 2>&1 &

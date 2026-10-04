@@ -12,11 +12,11 @@ The application communicates with the Django backend through a REST API and is s
 
 - React
 - React Router
-- Create React App
+- Vite
 
 ## Testing
 
-- Jest and React Testing Library
+- Vitest and React Testing Library
 
 ## Project Structure
 
@@ -27,7 +27,7 @@ The application communicates with the Django backend through a REST API and is s
 - `src/utils/` — API utilities and helper functions.
 - `public/` — static public assets.
 - `.env.development` — local development environment variables.
-- `.env.production` — production environment variables.
+- `.env.production` — deliberately absent; production backend URL comes from the Dockerfile ARG.
 
 ## Requirements
 
@@ -52,27 +52,23 @@ The application will run on `http://localhost:3000/` by default.
 
 ## Environment Variables
 
-The frontend reads the backend base URL from the `REACT_APP_BACKEND_API_BASE_URL` environment variable defined in the corresponding `.env` file.
-
-Create React App automatically loads different environment files depending on the command used:
+The frontend reads the backend base URL from the `VITE_BACKEND_API_BASE_URL` variable. Vite exposes only `VITE_*`-prefixed variables through `import.meta.env` and loads different env files depending on the command:
 
 - `npm start` uses `.env.development`
-- `npm run build` uses `.env.production`
+- `npm run build` uses `.env.production` (not committed — the URL comes from the Dockerfile ARG)
 
 For local development, the backend is configured in `.env.development`:
 
 ```env
-REACT_APP_BACKEND_API_BASE_URL=http://localhost:8000
+VITE_BACKEND_API_BASE_URL=http://localhost:8000
 ```
 
-Both env files also set `DISABLE_ESLINT_PLUGIN=true`, which disables CRA's builtin ESLint plugin (linting is handled by Biome instead; react-scripts requires the value to be exactly `true`).
-
-For production builds, the backend URL comes from the `REACT_APP_BACKEND_API_BASE_URL` build ARG in the Dockerfile; `.env.production` intentionally holds no URL.
+For production builds, the backend URL comes from the `VITE_BACKEND_API_BASE_URL` build ARG in the Dockerfile, exported as an ENV so Vite inlines it at build time.
 After changing environment variables, restart the development server or rebuild the frontend to apply the updates.
 
 API requests are constructed centrally in `src/utils/api.js`.
 
-If the project is deployed on another server, the backend URL should be updated via the Dockerfile build ARG (`--build-arg REACT_APP_BACKEND_API_BASE_URL=...`).
+If the project is deployed on another server, the backend URL should be updated via the Dockerfile build ARG (`--build-arg VITE_BACKEND_API_BASE_URL=...`).
 
 ## Production Build
 

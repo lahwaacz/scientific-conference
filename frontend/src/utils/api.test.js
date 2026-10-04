@@ -2,10 +2,10 @@
  * Unit tests for the API client helpers in utils/api.js.
  *
  * buildHeaders is intentionally NOT exported; it is exercised indirectly
- * through fetchWithAuth by inspecting the headers handed to global.fetch.
+ * through fetchWithAuth by inspecting the headers handed to globalThis.fetch.
  *
  * isRefreshing/failedQueue are module-level singletons, so every test that
- * touches fetchWithAuth reloads the module (jest.resetModules + require) to
+ * touches fetchWithAuth reloads the module (vi.resetModules + dynamic import) to
  * guarantee a fresh latch state.
  */
 
@@ -14,19 +14,19 @@ const BASE = "http://localhost:8000";
 let api;
 let reloadMock;
 
-function loadApi() {
-  jest.resetModules();
-  api = require("./api");
+async function loadApi() {
+  vi.resetModules();
+  api = await import("./api");
 }
 
 function refreshCallCount() {
-  return global.fetch.mock.calls.filter(([url]) =>
+  return globalThis.fetch.mock.calls.filter(([url]) =>
     url.includes("/api/auth/refresh/")
   ).length;
 }
 
 beforeEach(() => {
-  reloadMock = jest.fn();
+  reloadMock = vi.fn();
   // The failure path in fetchWithAuth pokes window.location.hash + reload().
   Object.defineProperty(window, "location", {
     configurable: true,
@@ -37,7 +37,7 @@ beforeEach(() => {
 });
 
 describe("buildApiUrl", () => {
-  beforeEach(() => loadApi());
+  beforeEach(async () => loadApi());
 
   test("returns the bare base URL for an empty path", () => {
     expect(api.buildApiUrl("")).toBe(BASE);
@@ -67,7 +67,7 @@ describe("buildApiUrl", () => {
 });
 
 describe("buildMediaUrl", () => {
-  beforeEach(() => loadApi());
+  beforeEach(async () => loadApi());
 
   test("returns an empty string for an empty path", () => {
     expect(api.buildMediaUrl("")).toBe("");
@@ -106,9 +106,9 @@ describe("buildMediaUrl", () => {
 });
 
 describe("buildHeaders (exercised via fetchWithAuth)", () => {
-  beforeEach(() => {
-    loadApi();
-    global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200 });
+  beforeEach(async () => {
+    await loadApi();
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200 });
   });
 
   test("sends application/json content type and Bearer for a JSON body", async () => {
@@ -118,7 +118,7 @@ describe("buildHeaders (exercised via fetchWithAuth)", () => {
       body: JSON.stringify({ a: 1 }),
     });
 
-    const [, opts] = global.fetch.mock.calls[0];
+    const [, opts] = globalThis.fetch.mock.calls[0];
     expect(opts.headers["Content-Type"]).toBe("application/json");
     expect(opts.headers.Authorization).toBe("Bearer tok");
   });
@@ -130,7 +130,7 @@ describe("buildHeaders (exercised via fetchWithAuth)", () => {
 
     await api.fetchWithAuth("/api/x", { method: "POST", body: form });
 
-    const [, opts] = global.fetch.mock.calls[0];
+    const [, opts] = globalThis.fetch.mock.calls[0];
     expect(opts.headers["Content-Type"]).toBeUndefined();
     expect(opts.headers.Authorization).toBe("Bearer tok");
   });
@@ -138,23 +138,23 @@ describe("buildHeaders (exercised via fetchWithAuth)", () => {
   test("omits the Authorization header when no access token is stored", async () => {
     await api.fetchWithAuth("/api/x", { method: "GET" });
 
-    const [, opts] = global.fetch.mock.calls[0];
+    const [, opts] = globalThis.fetch.mock.calls[0];
     expect(opts.headers.Authorization).toBeUndefined();
     expect(opts.headers["Content-Type"]).toBe("application/json");
   });
 });
 
 describe("fetchWithAuth 401 refresh flow", () => {
-  beforeEach(() => {
-    loadApi();
-    global.fetch = jest.fn();
+  beforeEach(async () => {
+    await loadApi();
+    globalThis.fetch = vi.fn();
   });
 
   test("serializes concurrent 401s behind a single refresh, then retries the queue", async () => {
     localStorage.setItem("access_token", "old");
     localStorage.setItem("refresh_token", "r");
 
-    global.fetch = jest.fn((url, opts) => {
+    globalThis.fetch = vi.fn((url, opts) => {
       if (url.includes("/api/auth/refresh/")) {
         return Promise.resolve({
           ok: true,
@@ -178,21 +178,21 @@ describe("fetchWithAuth 401 refresh flow", () => {
     // Single-flight latch: exactly one refresh despite two 401s.
     expect(refreshCallCount()).toBe(1);
     // two initial 401s + one refresh + two retried requests.
-    expect(global.fetch).toHaveBeenCalledTimes(5);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(5);
   });
 
   test("clears tokens and reloads home when the refresh request fails", async () => {
     localStorage.setItem("access_token", "old");
     localStorage.setItem("refresh_token", "r");
 
-    global.fetch = jest.fn((url) => {
+    globalThis.fetch = vi.fn((url) => {
       if (url.includes("/api/auth/refresh/")) {
         return Promise.resolve({ ok: false, status: 401 });
       }
       return Promise.resolve({ ok: false, status: 401 });
     });
 
-    const consoleError = jest
+    const consoleError = vi
       .spyOn(console, "error")
       .mockImplementation(() => {});
     const res = await api.fetchWithAuth("/api/data");
@@ -208,7 +208,7 @@ describe("fetchWithAuth 401 refresh flow", () => {
   test("short-circuits the refresh request when no refresh token exists", async () => {
     localStorage.setItem("access_token", "old"); // no refresh_token
 
-    global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 401 });
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, status: 401 });
 
     const res = await api.fetchWithAuth("/api/data");
 

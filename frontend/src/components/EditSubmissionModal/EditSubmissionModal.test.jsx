@@ -1,11 +1,10 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import "@testing-library/jest-dom";
 import { fetchWithAuth } from "../../utils/api";
 import EditSubmissionModal from "./EditSubmissionModal";
 
-jest.mock("../../utils/api", () => ({
-  ...jest.requireActual("../../utils/api"),
-  fetchWithAuth: jest.fn(),
+vi.mock("../../utils/api", async () => ({
+  ...(await vi.importActual("../../utils/api")),
+  fetchWithAuth: vi.fn(),
 }));
 
 const submission = {
@@ -26,8 +25,8 @@ describe("EditSubmissionModal save paths", () => {
 
   beforeEach(() => {
     localStorage.clear();
-    onClose = jest.fn();
-    onSave = jest.fn();
+    onClose = vi.fn();
+    onSave = vi.fn();
     fetchWithAuth.mockReset();
   });
 

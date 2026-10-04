@@ -1,5 +1,4 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import "@testing-library/jest-dom";
 import { buildApiUrl, fetchWithAuth } from "../../utils/api";
 import {
   clearProgramDirty,
@@ -7,9 +6,9 @@ import {
 } from "../../utils/programRefresh";
 import EditProgram from "./EditProgram";
 
-jest.mock("../../utils/api", () => ({
-  ...jest.requireActual("../../utils/api"),
-  fetchWithAuth: jest.fn(),
+vi.mock("../../utils/api", async () => ({
+  ...(await vi.importActual("../../utils/api")),
+  fetchWithAuth: vi.fn(),
 }));
 
 function protect(items) {
@@ -20,7 +19,7 @@ function mockInitialFetch(dayItems = []) {
   fetchWithAuth
     .mockResolvedValueOnce(protect([]))
     .mockResolvedValueOnce(protect([]));
-  global.fetch.mockResolvedValueOnce(protect(dayItems));
+  globalThis.fetch.mockResolvedValueOnce(protect(dayItems));
 }
 
 describe("EditProgram data lifecycle", () => {
@@ -30,8 +29,8 @@ describe("EditProgram data lifecycle", () => {
     localStorage.clear();
     clearProgramDirty();
     fetchWithAuth.mockReset();
-    global.fetch = jest.fn();
-    consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+    globalThis.fetch = vi.fn();
+    consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -46,7 +45,7 @@ describe("EditProgram data lifecycle", () => {
     expect(await screen.findByText("Conference Schedule")).toBeInTheDocument();
     expect(buildApiUrl).toBeDefined();
     expect(fetchWithAuth).toHaveBeenCalledTimes(2);
-    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
   });
 
   test("focus refetches only while the dirty flag is set, and clears it", async () => {
@@ -60,7 +59,7 @@ describe("EditProgram data lifecycle", () => {
     fireEvent(window, new Event("focus"));
 
     await waitFor(() => expect(fetchWithAuth).toHaveBeenCalledTimes(4));
-    expect(global.fetch).toHaveBeenCalledTimes(2);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
 
     mockInitialFetch([]);
     fireEvent(window, new Event("focus"));
@@ -73,7 +72,10 @@ describe("EditProgram data lifecycle", () => {
     fetchWithAuth
       .mockResolvedValueOnce(protect([]))
       .mockResolvedValueOnce(protect([]));
-    global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({}) });
+    globalThis.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({}),
+    });
 
     render(<EditProgram />);
 

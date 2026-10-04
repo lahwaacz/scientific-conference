@@ -7,10 +7,10 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { applyBaseUrlToFetch } from "./configuredFetch";
 
 if (
-  process.env.REACT_APP_BACKEND_API_BASE_URL !== undefined &&
-  process.env.REACT_APP_BACKEND_API_BASE_URL !== ""
+  import.meta.env.VITE_BACKEND_API_BASE_URL !== undefined &&
+  import.meta.env.VITE_BACKEND_API_BASE_URL !== ""
 ) {
-  applyBaseUrlToFetch(process.env.REACT_APP_BACKEND_API_BASE_URL);
+  applyBaseUrlToFetch(import.meta.env.VITE_BACKEND_API_BASE_URL);
 }
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
@@ -22,5 +22,5 @@ root.render(
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
+// or send to an analytics endpoint. Learn more: https://web.dev/articles/vitals
 reportWebVitals();

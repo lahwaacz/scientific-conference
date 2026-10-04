@@ -1,12 +1,11 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import "@testing-library/jest-dom";
 import { fetchWithAuth } from "../../utils/api";
 import { isProgramDirty } from "../../utils/programRefresh";
 import EditParticipants from "./EditParticipants";
 
-jest.mock("../../utils/api", () => ({
-  ...jest.requireActual("../../utils/api"),
-  fetchWithAuth: jest.fn(),
+vi.mock("../../utils/api", async () => ({
+  ...(await vi.importActual("../../utils/api")),
+  fetchWithAuth: vi.fn(),
 }));
 
 const pendingSubmission = {

@@ -7,7 +7,7 @@
 ## OVERVIEW
 
 Web app for organizing scientific conferences (CTU FNSPE, Dept. of Software Engineering).
-Django 5.2 + DRF + SimpleJWT backend, React 19 (Create React App) frontend, SQLite DB.
+Django 5.2 + DRF + SimpleJWT backend, React 19 (Vite 6) frontend, SQLite DB.
 Two independent deployables, coupled only via REST API. Deployed as Docker images under subpath `/conference-demo/`.
 
 ## STRUCTURE
@@ -15,7 +15,7 @@ Two independent deployables, coupled only via REST API. Deployed as Docker image
 ```
 scientific-conference/
 ├── backend/      # Django project + single app `core` (all domain logic) — see backend/AGENTS.md
-├── frontend/     # CRA React SPA — see frontend/AGENTS.md
+├── frontend/     # Vite React SPA — see frontend/AGENTS.md
 ├── assets/       # PNG screenshots for ADMINISTRATOR_GUIDE.md ONLY (not app assets)
 ├── screenshots/  # visual regression captures (gitignored; regenerate via scripts/capture-screenshots.sh)
 ├── scripts/      # repo-level tooling (capture-screenshots.sh: seeds backend, builds frontend, captures all routes)
@@ -56,8 +56,8 @@ Codegraph covers Python only (JS unindexed); refs via pyright LSP.
 
 ## CONVENTIONS
 
-- Cross-app contract: REST under `/{RELATIVE_URL_ROOT}api/`, JWT Bearer; frontend base URL from `REACT_APP_BACKEND_API_BASE_URL` (CRA env, baked at build).
-- Subpath deployment is first-class on BOTH sides. Backend: `RELATIVE_URL_ROOT` env feeds URL prefixes, STATIC_URL, MEDIA_URL, cookie paths. Frontend: `HashRouter` + `package.json "homepage": "."`. Any new route/URL must honor both.
+- Cross-app contract: REST under `/{RELATIVE_URL_ROOT}api/`, JWT Bearer; frontend base URL from `VITE_BACKEND_API_BASE_URL` (Vite env, inlined at build via import.meta.env).
+- Subpath deployment is first-class on BOTH sides. Backend: `RELATIVE_URL_ROOT` env feeds URL prefixes, STATIC_URL, MEDIA_URL, cookie paths. Frontend: `HashRouter` + Vite `base: "./"` in `frontend/vite.config.mjs`. Any new route/URL must honor both.
 - Env-driven config only: backend `os.getenv(..., dev_default)`; no settings split, no django-environ.
 - Commits: Conventional Commits — `<type>(<optional scope>): <imperative subject>`; types: feat / fix / docs / style / refactor / test / chore / build / ci. One logical change per commit.
 - Commit message lines are ≤ 72 characters (subject and body, kernel-style); wrap body prose instead of emitting one long line.
@@ -71,7 +71,7 @@ Codegraph covers Python only (JS unindexed); refs via pyright LSP.
 - NEVER hardcode backend URLs in components — always `buildApiUrl`/`buildMediaUrl`/`fetchWithAuth` (fix 7209ddc swept 20+ files for this).
 - NEVER "fix" the dual fetch-prefixing (`configuredFetch.js` global patch + `buildApiUrl`): they coexist only via `startsWith('http')` guards; touching one side risks double-prefixed URLs.
 - NEVER commit `.venv/`, `db.sqlite3`, `media/`, `staticfiles/` (a venv was once committed: 4c321da).
-- `.github/workflows/quality.yml` runs ruff/pyright/pytest + biome/jest on push to `main` and PRs. The Docker publish workflow does NOT depend on it — a red quality run does not block image pushes.
+- `.github/workflows/quality.yml` runs ruff/pyright/pytest + biome/vitest on push to `main` and PRs. The Docker publish workflow does NOT depend on it — a red quality run does not block image pushes.
 - Do not treat cascade deletes as accidental: deleting a ConferenceDay deletes its Sessions+Talks; deleting an Abstract deletes its Talk (the FK sits on Talk); deleting a HikingRoute deletes its Stops. NOTE: deleting a day or an unscheduled talk ORPHANS the linked abstract — deliberate admin choice (2026-10-03); do not add cascades unilaterally. The admin guide documents these as rules (`ADMINISTRATOR_GUIDE.md:196`,`:375`); backend guards exist deliberately (e.g. `UnscheduledTalkDeleteView` 400).
 - Do not uncomment dormant Docker lines blindly: `backend/Dockerfile` collectstatic/gunicorn and `frontend/Dockerfile` nginx.conf COPY are disabled on purpose.
 - If the app is extended, update `ADMINISTRATOR_GUIDE.md` (guide rule, line 471).
@@ -106,7 +106,7 @@ docker build frontend/                # -> ghcr.io/<repo>-frontend
 ## NOTES
 
 - EditProgram.jsx (~1100 lines) and api.js URL helpers are the highest-churn areas. Both have real tests now (EditProgram lifecycle + api client suites), but the component depth (DaySchedule/TalkCard interactions) is still thin territory — refactor with care.
-- `.env.production` holds only `DISABLE_ESLINT_PLUGIN=true` (CRA needs exactly `=== 'true'`); prod backend URL comes from the frontend Dockerfile `ARG`, exported as `ENV` to `npm run build` (default still hardcoded, flagged FIXME — override with `--build-arg`).
+- `.env.production` is deliberately absent: the prod backend URL comes from the frontend Dockerfile `ARG VITE_BACKEND_API_BASE_URL`, exported as `ENV` so `vite build` inlines it (default still hardcoded, flagged FIXME — override with `--build-arg`).
 - Backend prod image runs `manage.py runserver`, not gunicorn. Media files in prod must be served externally; Django serves media only in DEBUG.
 - JWT: 1h access / 7d refresh — lifetimes were a deliberate fix (f064a9e); shortening logs admins out mid-edit.
 - Demo: `https://mmg-webapps.fjfi.cvut.cz/conference-demo/`

@@ -1,10 +1,9 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import "@testing-library/jest-dom";
 import { fetchWithAuth } from "../../utils/api";
 import AdminLoginModal from "./AdminLoginModal";
 
-jest.mock("../../utils/api", () => ({
-  fetchWithAuth: jest.fn(),
+vi.mock("../../utils/api", () => ({
+  fetchWithAuth: vi.fn(),
 }));
 
 describe("AdminLoginModal", () => {
@@ -23,8 +22,8 @@ describe("AdminLoginModal", () => {
 
   beforeEach(() => {
     localStorage.clear();
-    onSuccess = jest.fn();
-    onClose = jest.fn();
+    onSuccess = vi.fn();
+    onClose = vi.fn();
     fetchWithAuth.mockReset();
   });
 

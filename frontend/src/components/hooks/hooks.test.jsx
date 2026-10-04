@@ -4,12 +4,12 @@ import { useLockBodyScroll } from "./useLockBodyScroll";
 
 describe("useConferenceInfo", () => {
   beforeEach(() => {
-    global.fetch = jest.fn();
+    globalThis.fetch = vi.fn();
   });
 
   test("returns the fetched conference info", async () => {
     const info = { title: "Workshop 2026" };
-    global.fetch.mockResolvedValueOnce({
+    globalThis.fetch.mockResolvedValueOnce({
       json: async () => info,
     });
 
@@ -20,7 +20,7 @@ describe("useConferenceInfo", () => {
   });
 
   test("swallows fetch failures and keeps info null", async () => {
-    global.fetch.mockRejectedValueOnce(new Error("offline"));
+    globalThis.fetch.mockRejectedValueOnce(new Error("offline"));
 
     const { result } = renderHook(() => useConferenceInfo());
 
