@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import avatar from "../../assets/avatar.png";
 import { buildMediaUrl, fetchWithAuth } from "../../utils/api";
 import { markProgramDirty } from "../../utils/programRefresh";
@@ -10,11 +10,20 @@ import Title from "../ui/Title/Title";
 import styles from "./EditParticipants.module.css";
 
 export default function EditParticipants() {
+  // Linked from Participants Info: ?submission=<id> jumps to that card on
+  // the All tab (scroll only — the edit modal stays closed).
+  const focusSubmissionId = new URLSearchParams(useLocation().search).get(
+    "submission"
+  );
+
   const [submissions, setSubmissions] = useState([]);
-  const [filter, setFilter] = useState("pending");
+  const [filter, setFilter] = useState(
+    focusSubmissionId === null ? "pending" : ""
+  );
   const [loading, setLoading] = useState(true);
   const [editingSubmission, setEditingSubmission] = useState(null);
   const navigate = useNavigate();
+  const scrolledToFocus = useRef(false);
 
   const [modal, setModal] = useState({
     isOpen: false,
@@ -34,6 +43,18 @@ export default function EditParticipants() {
   useEffect(() => {
     fetchSubmissions();
   }, [filter]);
+
+  useEffect(() => {
+    if (loading || scrolledToFocus.current || focusSubmissionId === null) {
+      return;
+    }
+    const card = document.getElementById(`submission-${focusSubmissionId}`);
+    if (card) {
+      scrolledToFocus.current = true;
+      card.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [loading, focusSubmissionId]);
+
   async function fetchSubmissions() {
     setLoading(true);
     try {
@@ -228,7 +249,11 @@ export default function EditParticipants() {
           ) : (
             <div className={styles.submissionsGrid}>
               {submissions.map((sub) => (
-                <div key={sub.id} className={styles.submissionCard}>
+                <div
+                  key={sub.id}
+                  id={`submission-${sub.id}`}
+                  className={styles.submissionCard}
+                >
                   <div className={styles.cardHeader}>
                     <div className={styles.headerLeft}>
                       <img

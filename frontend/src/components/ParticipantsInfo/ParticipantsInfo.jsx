@@ -1,7 +1,7 @@
 import { faCircleCheck } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { fetchWithAuth } from "../../utils/api.js";
 import Loader from "../ui/Loader/Loader";
 import Title from "../ui/Title/Title";
@@ -67,7 +67,16 @@ export default function ParticipantsInfo() {
                 {submissions.map((sub, idx) => (
                   <tr key={sub.id}>
                     <td>{idx + 1}</td>
-                    <td className={styles.nameCell}>{sub.name}</td>
+                    <td className={styles.nameCell}>
+                      {/* Jumps to this submission's card on the All tab of
+                          Edit Participants (scroll only, no edit modal). */}
+                      <Link
+                        to={`/admin-panel/edit-participants?submission=${sub.id}`}
+                        className={styles.nameLink}
+                      >
+                        {sub.name}
+                      </Link>
+                    </td>
                     <td style={{ textAlign: "center", padding: "10px 0" }}>
                       {sub.is_student ? (
                         <FontAwesomeIcon

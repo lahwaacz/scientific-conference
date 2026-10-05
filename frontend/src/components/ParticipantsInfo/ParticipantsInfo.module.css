@@ -76,6 +76,15 @@
   white-space: nowrap;
 }
 
+.nameLink {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+.nameLink:hover {
+  text-decoration: underline;
+}
+
 .infoCell {
   max-width: 300px;
   color: #555;

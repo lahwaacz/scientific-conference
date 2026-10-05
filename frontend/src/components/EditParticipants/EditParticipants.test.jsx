@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { fetchWithAuth } from "../../utils/api";
 import { isProgramDirty } from "../../utils/programRefresh";
+import { setTestLocation } from "../../testUtils/reactRouterDomStub";
 import EditParticipants from "./EditParticipants";
 
 vi.mock("../../utils/api", async () => ({
@@ -37,6 +38,7 @@ describe("EditParticipants workflows", () => {
   beforeEach(() => {
     localStorage.clear();
     fetchWithAuth.mockReset();
+    setTestLocation({ pathname: "/admin-panel/edit-participants", search: "" });
   });
 
   test("loads pending submissions and refetches when the filter changes", async () => {
@@ -101,5 +103,31 @@ describe("EditParticipants workflows", () => {
       )
     ).toBe(true);
     expect(isProgramDirty()).toBe(true);
+  });
+
+  test("a ?submission= link loads the All tab and scrolls to that card", async () => {
+    setTestLocation({
+      pathname: "/admin-panel/edit-participants",
+      search: "?submission=12",
+    });
+    fetchWithAuth.mockResolvedValue(
+      listResponse([pendingSubmission, approvedSubmission])
+    );
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+
+    render(<EditParticipants />);
+
+    await screen.findByText("Approved Person");
+
+    // The link forces the All tab, not the pending default.
+    expect(fetchWithAuth.mock.calls[0][0]).toBe(
+      "/api/admin/submissions/?status="
+    );
+    expect(document.getElementById("submission-12")).not.toBeNull();
+    await waitFor(() => expect(scrollIntoView).toHaveBeenCalledTimes(1));
+
+    // Scroll only — the edit modal stays closed.
+    expect(screen.queryByText("Edit Submission")).not.toBeInTheDocument();
   });
 });

@@ -11,4 +11,11 @@ export const Link = ({ to, children, ...rest }) => (
 
 export const useNavigate = () => () => {};
 
-export const useLocation = () => ({ pathname: "/" });
+let testLocation = { pathname: "/", search: "" };
+
+/** Point useLocation at a specific location for the current test. */
+export const setTestLocation = (location) => {
+  testLocation = location;
+};
+
+export const useLocation = () => testLocation;
