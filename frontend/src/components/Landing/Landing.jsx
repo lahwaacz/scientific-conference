@@ -12,7 +12,7 @@ const GROUPS = [
   { status: "past", heading: "Past" },
 ];
 
-export default function Landing() {
+export default function Landing({ unknownSlug = null }) {
   const [conferences, setConferences] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -36,6 +36,11 @@ export default function Landing() {
   return (
     <main className={styles.landing}>
       <h1 className={styles.pageTitle}>Conferences</h1>
+      {unknownSlug && (
+        <p className={styles.notFound}>
+          Conference &quot;{unknownSlug}&quot; was not found.
+        </p>
+      )}
       {loading ? (
         <Loader />
       ) : error ? (

@@ -3,22 +3,19 @@ import { buildApiUrl } from "../../utils/api";
 import { getConferenceSlug } from "../../utils/conferenceSlug";
 
 /**
- * Guards the conference shell against path slugs that match no real
- * conference. States:
- *  - "landing":  no slug in the path (the landing page)
- *  - "checking": slug present, existence not resolved yet
- *  - "missing":  slug matches no conference -> render the landing page
- *  - "ok":       slug is a real conference
+ * Resolves whether the path slug matches a real conference. States:
+ *  - "unknown": the check has not resolved yet
+ *  - "exists":  the conference is confirmed real
+ *  - "absent":  the conference list loaded and lacks the slug
  *
- * "missing" is decided ONLY when the public conference list loads and
+ * "absent" is decided ONLY when the public conference list loads and
  * lacks the slug; every failure mode (HTTP error, bad payload, offline)
- * fails open to "ok" so a backend hiccup keeps the site rendering as
- * before instead of blanking it.
+ * fails open to "exists" so a backend hiccup keeps the site rendering
+ * instead of blanking it. A missing path slug is not this hook's
+ * concern — App renders the landing page before consulting it.
  */
 export function useConferenceExists() {
-  const [state, setState] = useState(() =>
-    getConferenceSlug() === null ? "landing" : "checking"
-  );
+  const [state, setState] = useState("unknown");
 
   useEffect(() => {
     const slug = getConferenceSlug();
@@ -30,12 +27,12 @@ export function useConferenceExists() {
       .then((response) => (response.ok ? response.json() : null))
       .then((cards) => {
         if (cancelled) return;
-        const missing =
+        const absent =
           Array.isArray(cards) && !cards.some((c) => c?.slug === slug);
-        setState(missing ? "missing" : "ok");
+        setState(absent ? "absent" : "exists");
       })
       .catch(() => {
-        if (!cancelled) setState("ok");
+        if (!cancelled) setState("exists");
       });
 
     return () => {

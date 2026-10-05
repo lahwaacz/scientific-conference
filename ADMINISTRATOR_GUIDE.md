@@ -138,7 +138,7 @@ Update bookmarks to the full conference address, for example `<root>/wsc2026/#/p
 
 ### Unknown Conference Addresses
 
-An address whose conference slug matches no existing conference, for example `<root>/typo-in-the-slug/`, also shows the landing page — the conference websites are only served for real conferences. Select the required conference card to continue, or fix the slug in the address.
+An address whose conference slug matches no existing conference, for example `<root>/typo-in-the-slug/`, also shows the landing page — the conference websites are only served for real conferences. A red banner at the top of the landing page names the slug that was not found. Select the required conference card to continue, or fix the slug in the address.
 
 ## Participants Info
 

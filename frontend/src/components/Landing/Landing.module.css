@@ -90,3 +90,11 @@
   font-size: clamp(14px, 1.6vw, 18px);
   color: #b00020;
 }
+
+.notFound {
+  font-size: clamp(14px, 1.6vw, 18px);
+  color: #b00020;
+  border: 1px solid #b00020;
+  padding: 12px 16px;
+  margin-bottom: clamp(20px, 3vw, 32px);
+}

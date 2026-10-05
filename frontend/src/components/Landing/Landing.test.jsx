@@ -16,13 +16,13 @@ function setLocation(locationValue) {
   });
 }
 
-async function renderLanding() {
+async function renderLanding(props = {}) {
   vi.resetModules();
   setLocation({ pathname: "/" });
   const slugModule = await import("../../utils/conferenceSlug");
   slugModule.initConferenceSlug();
   const { default: Landing } = await import("./Landing");
-  render(<Landing />);
+  render(<Landing {...props} />);
   return slugModule;
 }
 
@@ -197,6 +197,31 @@ describe("Landing", () => {
     expect(
       await screen.findByText(/failed to load conferences/i)
     ).toBeInTheDocument();
+  });
+
+  test("shows a not-found banner above the cards for an unknown slug", async () => {
+    globalThis.fetch.mockResolvedValue(listResponse(mixedPayload));
+
+    await renderLanding({ unknownSlug: "ghost-conference" });
+
+    expect(
+      await screen.findByText('Conference "ghost-conference" was not found.')
+    ).toBeInTheDocument();
+    // The landing itself still renders as the recovery path.
+    expect(
+      await screen.findByRole("heading", { name: "Running" })
+    ).toBeInTheDocument();
+  });
+
+  test("shows no not-found banner on the plain landing page", async () => {
+    globalThis.fetch.mockResolvedValue(listResponse(mixedPayload));
+
+    await renderLanding();
+
+    expect(
+      await screen.findByRole("heading", { name: "Running" })
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/was not found/i)).not.toBeInTheDocument();
   });
 
   test("card title pairs the title with the year like the conference page", async () => {

@@ -24,6 +24,7 @@ import { useConferenceExists } from "./components/hooks/useConferenceExists";
 import Loader from "./components/ui/Loader/Loader";
 import ScrollToTop from "./components/ui/ScrollToTop";
 import Venue from "./components/Venue/Venue";
+import { getConferenceSlug } from "./utils/conferenceSlug";
 import AbstractsPage from "./pages/AbstractsPage";
 import HomePage from "./pages/HomePage";
 import Participants from "./pages/ParticipantsPage";
@@ -31,17 +32,23 @@ import ProgramPage from "./pages/ProgramPage";
 import RegistrationPage from "./pages/RegistrationPage";
 
 function App() {
+  const slug = getConferenceSlug();
   const conferenceState = useConferenceExists();
 
   // Landing renders bare — conference chrome is per-conference only.
   // A path slug that matches no real conference ALSO renders the landing
-  // page: every scoped API call would 404 and the component fallbacks
-  // would otherwise fake a "ghost" conference.
-  if (conferenceState === "landing" || conferenceState === "missing") {
+  // page, with a not-found banner naming the slug: every scoped API call
+  // would 404 and the component fallbacks would otherwise fake a "ghost"
+  // conference.
+  if (slug === null) {
     return <Landing />;
   }
 
-  if (conferenceState === "checking") {
+  if (conferenceState === "absent") {
+    return <Landing unknownSlug={slug} />;
+  }
+
+  if (conferenceState === "unknown") {
     return <Loader />;
   }
 

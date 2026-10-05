@@ -111,14 +111,14 @@ describe("useConferenceExists", () => {
     initConferenceSlug();
   });
 
-  test("no slug in the path stays 'landing' without fetching", () => {
+  test("no slug in the path stays 'unknown' without fetching", () => {
     const { result } = renderHook(() => useConferenceExists());
 
-    expect(result.current).toBe("landing");
+    expect(result.current).toBe("unknown");
     expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 
-  test("a slug present in the conference list resolves to 'ok'", async () => {
+  test("a slug present in the conference list resolves to 'exists'", async () => {
     setLocation("/wsc2026/");
     initConferenceSlug();
     globalThis.fetch.mockResolvedValueOnce({
@@ -127,12 +127,12 @@ describe("useConferenceExists", () => {
     });
 
     const { result } = renderHook(() => useConferenceExists());
-    expect(result.current).toBe("checking");
+    expect(result.current).toBe("unknown");
 
-    await waitFor(() => expect(result.current).toBe("ok"));
+    await waitFor(() => expect(result.current).toBe("exists"));
   });
 
-  test("a slug missing from the conference list resolves to 'missing'", async () => {
+  test("a slug missing from the conference list resolves to 'absent'", async () => {
     setLocation("/ghost-conference/");
     initConferenceSlug();
     globalThis.fetch.mockResolvedValueOnce({
@@ -142,30 +142,30 @@ describe("useConferenceExists", () => {
 
     const { result } = renderHook(() => useConferenceExists());
 
-    await waitFor(() => expect(result.current).toBe("missing"));
+    await waitFor(() => expect(result.current).toBe("absent"));
   });
 
-  test("an HTTP error fails open to 'ok'", async () => {
+  test("an HTTP error fails open to 'exists'", async () => {
     setLocation("/wsc2026/");
     initConferenceSlug();
     globalThis.fetch.mockResolvedValueOnce({ ok: false });
 
     const { result } = renderHook(() => useConferenceExists());
 
-    await waitFor(() => expect(result.current).toBe("ok"));
+    await waitFor(() => expect(result.current).toBe("exists"));
   });
 
-  test("a transport error fails open to 'ok'", async () => {
+  test("a transport error fails open to 'exists'", async () => {
     setLocation("/wsc2026/");
     initConferenceSlug();
     globalThis.fetch.mockRejectedValueOnce(new Error("offline"));
 
     const { result } = renderHook(() => useConferenceExists());
 
-    await waitFor(() => expect(result.current).toBe("ok"));
+    await waitFor(() => expect(result.current).toBe("exists"));
   });
 
-  test("a non-array payload fails open to 'ok'", async () => {
+  test("a non-array payload fails open to 'exists'", async () => {
     setLocation("/wsc2026/");
     initConferenceSlug();
     globalThis.fetch.mockResolvedValueOnce({
@@ -175,6 +175,6 @@ describe("useConferenceExists", () => {
 
     const { result } = renderHook(() => useConferenceExists());
 
-    await waitFor(() => expect(result.current).toBe("ok"));
+    await waitFor(() => expect(result.current).toBe("exists"));
   });
 });
