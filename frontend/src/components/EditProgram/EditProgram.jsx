@@ -432,12 +432,20 @@ export default function EditProgram() {
 
             <div className={styles.addDayRow}>
               {!showDayForm ? (
-                <button
-                  className={styles.addDayBtn}
-                  onClick={() => setShowDayForm(true)}
-                >
-                  + Add Day
-                </button>
+                <div className={styles.addDayActions}>
+                  <button
+                    className={styles.addDayBtn}
+                    onClick={() => setShowDayForm(true)}
+                  >
+                    + Add Day
+                  </button>
+                  <button
+                    className={styles.addDayBtn}
+                    onClick={() => navigate("/admin-panel/edit-program/info")}
+                  >
+                    Edit Page Texts
+                  </button>
+                </div>
               ) : (
                 <div className={styles.dayForm}>
                   <label>

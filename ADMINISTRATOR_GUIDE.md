@@ -249,7 +249,7 @@ The **Edit Program** section contains two main parts:
 - **Unscheduled Talks**
 - **Conference Schedule**
 
-This section is used to create conference days, create chairs, assign talks to the schedule, add breaks, and modify already scheduled items.
+This section is used to create conference days, create chairs, assign talks to the schedule, add breaks, and modify already scheduled items. The explanatory texts shown on the public program page are edited here as well; see **Edit the Program Page Texts** below.
 
 ### Unscheduled Talks Section
 
@@ -361,6 +361,15 @@ To change the time or chair of any talk or break:
 
 To move a talk to another day, select **Move to Unscheduled**. The talk is then moved to the **Unscheduled Talks** section and becomes invisible in the public part of the website. From there, assign it again to the required day, time, and chair.
 
+### Edit the Program Page Texts
+
+The public program page shows short explanatory texts (registration for local participants, regular talks, poster pitch talks) together with the schedule. These texts are edited from the program editor.
+
+1. Open **Edit Program**.
+2. In the **Conference Schedule** section, select **Edit Page Texts** next to **Add Day**.
+3. Change the relevant input fields.
+4. Select **SAVE CHANGES**.
+
 ## Edit Website Information
 
 ### Overview
@@ -403,16 +412,6 @@ Use the **Registration** subsection to update the registration page text.
 1. Open the **Registration** subsection.
 2. Modify the relevant input fields.
 3. Select **Save**.
-
-### Program Subsection
-
-Use the **Program** subsection to update only the text displayed before the conference schedule.
-
-1. Open the **Program** subsection.
-2. Modify the relevant input fields.
-3. Select **Save**.
-
-To change the actual schedule, use **Edit Program** in the admin panel instead.
 
 ### Venue Subsection
 

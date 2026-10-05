@@ -21,12 +21,6 @@ const sections = [
     description: "Edit registration instructions and deadline",
   },
   {
-    to: "/admin-panel/edit-web-info/program",
-    icon: "fa-solid fa-calendar-days",
-    title: "Program",
-    description: "Edit program page info texts",
-  },
-  {
     to: "/admin-panel/edit-web-info/venue",
     icon: "fa-solid fa-location-dot",
     title: "Venue",

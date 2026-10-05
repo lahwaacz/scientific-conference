@@ -3,9 +3,9 @@ import { Link } from "react-router-dom";
 import { fetchWithAuth } from "../../utils/api";
 import Loader from "../ui/Loader/Loader";
 import Title from "../ui/Title/Title";
-import styles from "./EditWebInfoProgram.module.css";
+import styles from "./EditProgramInfo.module.css";
 
-export default function EditWebInfoProgram() {
+export default function EditProgramInfo() {
   const [form, setForm] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -50,10 +50,10 @@ export default function EditWebInfoProgram() {
 
   return (
     <div className={styles.container}>
-      <Link to="/admin-panel/edit-web-info" className={styles.backButton}>
+      <Link to="/admin-panel/edit-program" className={styles.backButton}>
         ← BACK
       </Link>
-      <Title text="Edit Program" />
+      <Title text="Edit Program Info" />
 
       {loading ? (
         <Loader />

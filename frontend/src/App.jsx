@@ -6,12 +6,12 @@ import AdminPanel from "./components/AdminPanel/AdminPanel";
 import Container from "./components/Container/Container";
 import EditParticipants from "./components/EditParticipants/EditParticipants";
 import EditProgram from "./components/EditProgram/EditProgram";
+import EditProgramInfo from "./components/EditProgramInfo/EditProgramInfo";
 import EditWebInfo from "./components/EditWebInfo/EditWebInfo";
 import EditWebInfoAccommodation from "./components/EditWebInfoAccommodation/EditWebInfoAccommodation";
 import EditWebInfoFooter from "./components/EditWebInfoFooter/EditWebInfoFooter";
 import EditWebInfoHiking from "./components/EditWebInfoHiking/EditWebInfoHiking";
 import EditWebInfoHome from "./components/EditWebInfoHome/EditWebInfoHome";
-import EditWebInfoProgram from "./components/EditWebInfoProgram/EditWebInfoProgram";
 import EditWebInfoRegistration from "./components/EditWebInfoRegistration/EditWebInfoRegistration";
 import EditWebInfoVenue from "./components/EditWebInfoVenue/EditWebInfoVenue";
 import Footer from "./components/Footer/Footer";
@@ -93,6 +93,14 @@ function App() {
             }
           />
           <Route
+            path="/admin-panel/edit-program/info"
+            element={
+              <ProtectedRoute>
+                <EditProgramInfo />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/admin-panel/edit-web-info"
             element={
               <ProtectedRoute>
@@ -113,14 +121,6 @@ function App() {
             element={
               <ProtectedRoute>
                 <EditWebInfoRegistration />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin-panel/edit-web-info/program"
-            element={
-              <ProtectedRoute>
-                <EditWebInfoProgram />
               </ProtectedRoute>
             }
           />

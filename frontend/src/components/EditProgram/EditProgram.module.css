@@ -438,6 +438,12 @@
   margin-bottom: 16px;
 }
 
+.addDayActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 .addDayBtn {
   padding: 10px 24px;
   background: var(--secondary-color);
