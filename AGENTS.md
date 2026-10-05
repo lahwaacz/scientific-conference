@@ -1,8 +1,8 @@
 # PROJECT KNOWLEDGE BASE
 
 **Generated:** 2026-10-02
-**Updated:** 2026-10-04 — multi-conference architecture
-**Commit:** ec29448
+**Updated:** 2026-10-05 — editor UX polish + landing not-found banner
+**Commit:** b24fa5e
 **Branch:** main
 
 ## OVERVIEW
@@ -37,7 +37,7 @@ No root Makefile / docker-compose / package.json / requirements.txt. Each app bu
 | Change data model | `backend/core/models.py` | then `makemigrations`; every domain model carries a `conference` FK |
 | Create/edit a conference | Django admin (`Conference` model) | CRUD via admin only; deletion disabled (`has_delete_permission=False`) |
 | Backend config/env vars | `backend/backend/settings.py` | single env-driven file, no dev/prod split |
-| Frontend routing | `frontend/src/App.jsx` | one flat HashRouter route table; renders `Landing` (no router) when no slug in path |
+| Frontend routing | `frontend/src/App.jsx` | one flat HashRouter route table; renders `Landing` (no router) when no slug in path (or the slug matches no conference — with a not-found banner) |
 | Conference slug resolution | `frontend/src/utils/conferenceSlug.js` | pathname-parsed module singleton; `initConferenceSlug()` in main.jsx |
 | Any backend HTTP call | `frontend/src/utils/api.js` | `buildApiUrl` (slug-scoped, `GLOBAL_API_PREFIXES` allowlist) / `buildMediaUrl` / `fetchWithAuth` |
 | New UI component | `frontend/src/components/<Name>/` | `<Name>.jsx` + `<Name>.module.css` |
@@ -59,8 +59,8 @@ Codegraph covers Python only (JS unindexed); refs via pyright LSP.
 | `ParticipantSubmission.publish()` | method | backend/core/models.py | core workflow | creates Participant + Abstract + unscheduled Talk, dedup scoped to `conference` |
 | `generate_program_pdf` / `generate_badges_pdf` | function | backend/core/views.py | 2 endpoints | per-conference reportlab PDFs; badges header = info's `badge_title or title`, footer = info's `location`; need `core/fonts/*.ttf` |
 | ~39 DRF views | classes | backend/core/views.py | 38 scoped via core/urls.py + ConferenceListView | public `AllowAny` + admin `IsAdminUser` |
-| `App` | component | frontend/src/App.jsx | entry | renders `<Landing/>` when `isLandingPage()`, else HashRouter + all routes + layout shell |
-| `Landing` / `ConferenceCard` | components | frontend/src/components/Landing/ | root page | cards grouped Running/Upcoming/Past; whole card is a plain `<a>` to `/<slug>/` |
+| `App` | component | frontend/src/App.jsx | entry | renders `<Landing/>` when no slug (or unknown slug, with a not-found banner), else HashRouter + all routes + layout shell |
+| `Landing` / `ConferenceCard` | components | frontend/src/components/Landing/ | root page | cards grouped Running/Upcoming/Past; whole card is a plain `<a>` to `/<slug>/`; `unknownSlug` prop renders the not-found banner |
 | `fetchWithAuth` / `buildApiUrl` / `buildMediaUrl` | functions | frontend/src/utils/api.js | ~26 files | sole API client; 401-refresh queue; slug scoping via `GLOBAL_API_PREFIXES` allowlist |
 
 ## CONVENTIONS
@@ -103,12 +103,12 @@ uv run pytest                         # backend suite (pytest-django; 146 tests 
                                       #   incl. conference model/isolation/singleton/conferences-endpoint suites)
 uv run ruff check . && uv run ruff format --check .
 uv run pyright                        # type check via django-stubs
-uv run python manage.py loaddata conferences.json participants.json program.json  # seed: 5 demo conferences, 19 participants with abstracts/submissions, organizers/committee, sample program
+uv run python manage.py loaddata conferences.json participants.json program.json  # seed: 5 demo conferences, 19 participants with abstracts/submissions, organizers/committee, a scheduled program (day + chaired session + talk per participant) for every conference
 
 # Frontend (workdir frontend/)
 npm install
 npm run start                         # :3000, uses .env.development ("/" = landing, "/wsc2026/" = conference)
-CI=true npm test                      # one-shot Vitest (101 tests incl. conferenceSlug/api/programRefresh/Landing suites)
+CI=true npm test                      # one-shot Vitest (120 tests incl. conferenceSlug/api/programRefresh/Landing/Header suites)
 npm run build                         # compile (ESLint plugin disabled)
 npm run lint                          # Biome lint (0 errors gate, CSS included)
 npm run format:check                  # Biome format gate
@@ -126,5 +126,5 @@ docker build frontend/                # -> ghcr.io/<repo>-frontend (ARGs: VITE_B
 - Backend prod image runs `manage.py runserver`, not gunicorn. Media files in prod must be served externally; Django serves media only in DEBUG.
 - JWT: 1h access / 7d refresh — lifetimes were a deliberate fix (f064a9e); shortening logs admins out mid-edit. Tokens are global across conferences (no per-conference scoping).
 - The prod reverse proxy (mmg-webapps) must map any non-file path under `/conference-demo/` (especially `/conference-demo/<slug>/`) to the SPA index.html; `api/`, `admin/`, `media/` keep routing to the backend. Documented in README.md and ADMINISTRATOR_GUIDE.md.
-- Old bookmarks like `/conference-demo/#/program` now land on the landing page (path, not hash, selects the conference) — deliberate "always render landing"; users click through.
+- Old bookmarks like `/conference-demo/#/program` now land on the landing page (path, not hash, selects the conference) — deliberate "always render landing"; users click through. An unknown slug (`/typo-in-the-slug/`) also renders the landing, with a static banner naming the slug (`useConferenceExists` tri-state: unknown/exists/absent; fetch failures fail open to the conference shell so a backend hiccup cannot blank the site).
 - Demo: `https://mmg-webapps.fjfi.cvut.cz/conference-demo/` (root = landing; `wsc2026` = seeded conference)
