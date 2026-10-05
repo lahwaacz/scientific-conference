@@ -15,6 +15,7 @@ export default function EditWebInfoHome() {
   const [committee, setCommittee] = useState([]);
   const [personSaved, setPersonSaved] = useState("");
   const [personError, setPersonError] = useState("");
+  const [photoFile, setPhotoFile] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -22,7 +23,19 @@ export default function EditWebInfoHome() {
       fetchWithAuth(`/api/organizers/`).then((r) => r.json()),
       fetchWithAuth(`/api/committees/`).then((r) => r.json()),
     ]).then(([info, orgs, comm]) => {
-      setForm(info);
+      // `year` is derived from date_start on the backend and `photo`
+      // is only replaced via the file input, so neither belongs in
+      // form state or the PATCH body.
+      const { year, photo, ...formInfo } = info;
+      setForm({
+        title: "",
+        location: "",
+        date_start: "",
+        date_end: "",
+        short_description: "",
+        badge_title: "",
+        ...formInfo,
+      });
       setOrganizers(orgs);
       setCommittee(comm);
       setLoading(false);
@@ -34,14 +47,26 @@ export default function EditWebInfoHome() {
     setSaved(false);
   }
 
+  function handlePhotoChange(e) {
+    setPhotoFile(e.target.files[0]);
+    setSaved(false);
+  }
+
   async function handleSave(e) {
     e.preventDefault();
     setSaving(true);
     setError("");
     try {
+      const fd = new FormData();
+      for (const [key, value] of Object.entries(form)) {
+        fd.append(key, value ?? "");
+      }
+      // Absent key = keep the existing photo.
+      if (photoFile) fd.append("photo", photoFile);
+
       const res = await fetchWithAuth(`/api/conference-info/edit/`, {
         method: "PATCH",
-        body: JSON.stringify(form),
+        body: fd,
       });
       if (!res.ok) throw new Error();
       setSaved(true);
@@ -144,21 +169,29 @@ export default function EditWebInfoHome() {
                 />
               </div>
 
+              <div className={styles.field}>
+                <label>Short Description</label>
+                <input
+                  name="short_description"
+                  value={form.short_description || ""}
+                  onChange={handleChange}
+                />
+              </div>
+
               <div className={styles.row}>
-                <div className={styles.field}>
-                  <label>Year</label>
-                  <input
-                    name="year"
-                    type="number"
-                    value={form.year || ""}
-                    onChange={handleChange}
-                  />
-                </div>
                 <div className={styles.field}>
                   <label>Location</label>
                   <input
                     name="location"
                     value={form.location || ""}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className={styles.field}>
+                  <label>Badge Title</label>
+                  <input
+                    name="badge_title"
+                    value={form.badge_title || ""}
                     onChange={handleChange}
                   />
                 </div>
@@ -183,6 +216,20 @@ export default function EditWebInfoHome() {
                     onChange={handleChange}
                   />
                 </div>
+              </div>
+
+              <div className={styles.field}>
+                <label>
+                  Photo{" "}
+                  <span className={styles.hint}>
+                    (leave empty to keep the current photo)
+                  </span>
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoChange}
+                />
               </div>
 
               <div className={styles.field}>
