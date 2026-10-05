@@ -199,6 +199,30 @@ describe("Landing", () => {
     ).toBeInTheDocument();
   });
 
+  test("card title pairs the title with the year like the conference page", async () => {
+    globalThis.fetch.mockResolvedValue(
+      listResponse([
+        conference({ title: "Winter School" }),
+        conference({
+          slug: "no-dates",
+          title: "No Dates Yet",
+          date_start: null,
+          date_end: null,
+          year: null,
+        }),
+      ])
+    );
+
+    await renderLanding();
+
+    expect(
+      await screen.findByRole("heading", { name: "Winter School 2026" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "No Dates Yet" })
+    ).toBeInTheDocument();
+  });
+
   test("renders a card without an image when the photo is null", async () => {
     globalThis.fetch.mockResolvedValue(
       listResponse([

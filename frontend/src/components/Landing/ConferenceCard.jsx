@@ -16,6 +16,8 @@ export default function ConferenceCard({ conference }) {
     photo,
     short_description,
   } = conference;
+  // Same title-year pairing as the conference page Hero.
+  const fullTitle = [title, year].filter(Boolean).join(" ");
 
   return (
     <a href={conferenceUrl(slug)} className={styles.card}>
@@ -23,7 +25,7 @@ export default function ConferenceCard({ conference }) {
         <img src={buildMediaUrl(photo)} alt={title} className={styles.photo} />
       )}
       <div className={styles.cardBody}>
-        <h3 className={styles.cardTitle}>{title}</h3>
+        <h3 className={styles.cardTitle}>{fullTitle}</h3>
         <p className={styles.dates}>
           {dateRangeText(date_start, date_end, year)}
         </p>

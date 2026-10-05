@@ -79,9 +79,6 @@
 
 .description {
   font-size: clamp(13px, 1.5vw, 16px);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .empty {
