@@ -2,12 +2,13 @@ from datetime import date
 
 from django.contrib.auth.models import User
 from django.test import TestCase
-from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from .conftest import api
 from .models import (
     Abstract,
+    Conference,
     Participant,
     ParticipantSubmission,
     Talk,
@@ -15,9 +16,14 @@ from .models import (
 from .serializers import ParticipantSubmissionSerializer
 
 
+def wsc_conference():
+    return Conference.objects.get_or_create(slug="wsc2026-test")[0]
+
+
 class TestParticipantSubmissionModel(TestCase):
     def test_publish_creates_participant_abstract_and_unscheduled_talk(self):
         submission = ParticipantSubmission.objects.create(
+            conference=wsc_conference(),
             name="Alice Smith",
             email="alice@example.com",
             affiliation="CTU",
@@ -99,7 +105,8 @@ class TestParticipantSubmissionSerializer(TestCase):
 
 class TestSubmissionAPI(APITestCase):
     def test_create_submission(self):
-        url = reverse("submission-create")
+        wsc_conference()
+        url = api("submit/")
         data = {
             "name": "David Green",
             "email": "david@example.com",
@@ -134,6 +141,7 @@ class TestPublishSubmissionAPI(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
 
         self.submission = ParticipantSubmission.objects.create(
+            conference=wsc_conference(),
             name="Eva Brown",
             email="eva@example.com",
             affiliation="CTU",
@@ -144,7 +152,7 @@ class TestPublishSubmissionAPI(APITestCase):
         )
 
     def test_publish_submission_endpoint(self):
-        url = reverse("submission-publish", kwargs={"pk": self.submission.id})
+        url = api(f"admin/submissions/{self.submission.id}/publish/")
         response = self.client.post(url)
 
         self.assertEqual(response.status_code, 200)
@@ -156,7 +164,7 @@ class TestPublishSubmissionAPI(APITestCase):
 
     def test_publish_endpoint_rejects_non_staff(self):
         self.client.credentials()
-        url = reverse("submission-publish", kwargs={"pk": self.submission.id})
+        url = api(f"admin/submissions/{self.submission.id}/publish/")
         response = self.client.post(url)
 
         self.assertIn(response.status_code, [401, 403])

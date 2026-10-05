@@ -4,6 +4,8 @@ import os
 import traceback
 
 from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+from django.utils.functional import cached_property
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
@@ -22,6 +24,7 @@ from .models import (
     Abstract,
     AccommodationInfo,
     AccommodationOption,
+    Conference,
     ConferenceDay,
     ConferenceInfo,
     HikingRoute,
@@ -38,8 +41,10 @@ from .serializers import (
     AccommodationInfoSerializer,
     AccommodationOptionSerializer,
     AccommodationOptionWriteSerializer,
+    ConferenceCardSerializer,
     ConferenceDaySerializer,
     ConferenceInfoSerializer,
+    ConferenceInfoWriteSerializer,
     HikingRouteSerializer,
     HikingStopSerializer,
     OrganizerSerializer,
@@ -51,7 +56,84 @@ from .serializers import (
 )
 
 
-def generate_program_pdf(request):
+def get_conference_or_404(slug):
+    # Shared with the function views below.
+    return get_object_or_404(Conference, slug=slug)
+
+
+class ConferenceScopedMixin:
+    """Resolves the Conference from the `conference_slug` URL kwarg.
+
+    - unknown slug -> 404 for EVERY scoped view (eager, in initial())
+    - get_queryset() filters by conference
+    - perform_create() assigns conference
+    - get_serializer_context() exposes conference to serializers
+    """
+
+    conference_url_kwarg = "conference_slug"
+
+    @cached_property
+    def conference(self):
+        return get_conference_or_404(self.kwargs[self.conference_url_kwarg])
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        _ = self.conference  # force 404 uniformly (AdminPanelView too)
+
+    def get_queryset(self):
+        return super().get_queryset().filter(conference=self.conference)
+
+    def perform_create(self, serializer):
+        serializer.save(conference=self.conference)
+
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        ctx["conference"] = self.conference
+        return ctx
+
+
+class ConferenceListView(generics.ListAPIView):
+    """Public landing-page card list; the only unscoped API view.
+
+    Ordered in Python (no DB annotation gymnastics): running
+    (date_start asc) -> future (date_start asc, None dates last) ->
+    past (date_end desc). Each card carries `status`; the frontend
+    groups by it. No pagination (project convention).
+
+    Cards are serialized from the per-conference ConferenceInfo row
+    (auto-created here), which owns the logistics fields.
+    """
+
+    serializer_class = ConferenceCardSerializer
+    queryset = Conference.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        # Not self.get_queryset(): that is typed off the ConferenceInfo
+        # serializer while the loop needs bare Conference rows.
+        infos = [
+            ConferenceInfo.objects.get_or_create(conference=c)[0]
+            for c in Conference.objects.all()
+        ]
+        # None-guarded sort keys: a bare date key would TypeError on
+        # undated rows ("past" always has both dates, per ConferenceInfo.status).
+        running = sorted(
+            [i for i in infos if i.status == "running"],
+            key=lambda i: (i.date_start is None, i.date_start),
+        )
+        future = sorted(
+            [i for i in infos if i.status == "future"],
+            key=lambda i: (i.date_start is None, i.date_start),
+        )
+        past = sorted(
+            [i for i in infos if i.status == "past"],
+            key=lambda i: i.date_end,
+            reverse=True,
+        )
+        serializer = self.get_serializer(running + future + past, many=True)
+        return Response(serializer.data)
+
+
+def generate_program_pdf(request, conference_slug):
     try:
         auth = JWTAuthentication()
         result = auth.authenticate(request)
@@ -60,6 +142,8 @@ def generate_program_pdf(request):
     except Exception:  # noqa: BLE001
         return HttpResponse(status=403)
 
+    conference = get_conference_or_404(conference_slug)
+
     font_path = os.path.join(os.path.dirname(__file__), "fonts", "DejaVuSans.ttf")
     font_bold_path = os.path.join(
         os.path.dirname(__file__), "fonts", "DejaVuSans-Bold.ttf"
@@ -67,9 +151,11 @@ def generate_program_pdf(request):
     pdfmetrics.registerFont(TTFont("DejaVu", font_path))
     pdfmetrics.registerFont(TTFont("DejaVu-Bold", font_bold_path))
 
-    days = ConferenceDay.objects.prefetch_related(
-        "sessions__talks__participant", "items__participant"
-    ).order_by("date")
+    days = (
+        ConferenceDay.objects.filter(conference=conference)
+        .prefetch_related("sessions__talks__participant", "items__participant")
+        .order_by("date")
+    )
 
     response = HttpResponse(content_type="application/pdf")
     response["Content-Disposition"] = 'attachment; filename="program.pdf"'
@@ -233,9 +319,9 @@ def generate_program_pdf(request):
     return response
 
 
-class AccommodationInfoView(APIView):
-    def get(self, request):
-        obj, _ = AccommodationInfo.objects.get_or_create(id=1)
+class AccommodationInfoView(ConferenceScopedMixin, APIView):
+    def get(self, request, *args, **kwargs):
+        obj, _ = AccommodationInfo.objects.get_or_create(conference=self.conference)
         serializer = AccommodationInfoSerializer(obj)
         return Response(serializer.data)
 
@@ -245,12 +331,12 @@ class AccommodationOptionListView(generics.ListAPIView):
     serializer_class = AccommodationOptionSerializer
 
 
-class AccommodationInfoEditView(APIView):
+class AccommodationInfoEditView(ConferenceScopedMixin, APIView):
     permission_classes = [IsAdminUser]
     parser_classes = [JSONParser]
 
-    def patch(self, request):
-        obj, _ = AccommodationInfo.objects.get_or_create(id=1)
+    def patch(self, request, *args, **kwargs):
+        obj, _ = AccommodationInfo.objects.get_or_create(conference=self.conference)
         serializer = AccommodationInfoSerializer(obj, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -258,22 +344,20 @@ class AccommodationInfoEditView(APIView):
         return Response(serializer.errors, status=400)
 
 
-class AccommodationOptionEditView(APIView):
+class AccommodationOptionEditView(ConferenceScopedMixin, APIView):
     permission_classes = [IsAdminUser]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
-    def post(self, request):
-        info, _ = AccommodationInfo.objects.get_or_create(id=1)
-        data = request.data.copy()
-        data["info"] = info.id
-        serializer = AccommodationOptionWriteSerializer(data=data)
+    def post(self, request, *args, **kwargs):
+        info, _ = AccommodationInfo.objects.get_or_create(conference=self.conference)
+        serializer = AccommodationOptionWriteSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(info=info)
+            serializer.save(info=info, conference=self.conference)
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
 
-    def patch(self, request, pk):
-        option = AccommodationOption.objects.get(pk=pk)
+    def patch(self, request, pk, *args, **kwargs):
+        option = AccommodationOption.objects.get(pk=pk, conference=self.conference)
         serializer = AccommodationOptionWriteSerializer(
             option, data=request.data, partial=True
         )
@@ -282,15 +366,15 @@ class AccommodationOptionEditView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=400)
 
-    def delete(self, request, pk):
-        AccommodationOption.objects.get(pk=pk).delete()
+    def delete(self, request, pk, *args, **kwargs):
+        AccommodationOption.objects.get(pk=pk, conference=self.conference).delete()
         return Response(status=204)
 
 
 accommodation_info_view = AccommodationInfoView.as_view()
 
 
-def generate_badges_pdf(request):
+def generate_badges_pdf(request, conference_slug):
     try:
         auth = JWTAuthentication()
         result = auth.authenticate(request)
@@ -299,6 +383,9 @@ def generate_badges_pdf(request):
     except Exception:  # noqa: BLE001
         return HttpResponse(status=403)
 
+    conference = get_conference_or_404(conference_slug)
+    info, _ = ConferenceInfo.objects.get_or_create(conference=conference)
+
     font_path = os.path.join(os.path.dirname(__file__), "fonts", "DejaVuSans.ttf")
     font_bold_path = os.path.join(
         os.path.dirname(__file__), "fonts", "DejaVuSans-Bold.ttf"
@@ -306,9 +393,9 @@ def generate_badges_pdf(request):
     pdfmetrics.registerFont(TTFont("DejaVu", font_path))
     pdfmetrics.registerFont(TTFont("DejaVu-Bold", font_bold_path))
 
-    submissions = ParticipantSubmission.objects.filter(status="approved").order_by(
-        "name"
-    )
+    submissions = ParticipantSubmission.objects.filter(
+        status="approved", conference=conference
+    ).order_by("name")
 
     response = HttpResponse(content_type="application/pdf")
     response["Content-Disposition"] = 'attachment; filename="badges.pdf"'
@@ -366,7 +453,11 @@ def generate_badges_pdf(request):
                 c.rect(x, y + badge_h - 9 * mm, badge_w, 9 * mm, fill=1, stroke=0)
                 c.setFillColor(colors.white)
                 c.setFont("DejaVu-Bold", 9)
-                c.drawCentredString(x + badge_w / 2, y + badge_h - 6 * mm, "WSC 2025")
+                c.drawCentredString(
+                    x + badge_w / 2,
+                    y + badge_h - 6 * mm,
+                    info.badge_title or info.title,
+                )
 
                 # ── Name ──
                 c.setFillColor(colors.black)
@@ -398,9 +489,9 @@ def generate_badges_pdf(request):
                     dep = sub.departure_date
                     arrival_str = f"{arr.day} {MONTHS[arr.month - 1]}"
                     departure_str = f"{dep.day} {MONTHS[dep.month - 1]} {dep.year}"
-                    footer_text = f"{arrival_str} – {departure_str}  |  Děčín"
+                    footer_text = f"{arrival_str} – {departure_str}  |  {info.location}"
                 else:
-                    footer_text = "Děčín"
+                    footer_text = info.location
                 c.drawCentredString(x + badge_w / 2, y + 2.8 * mm, footer_text)
 
                 c.setStrokeColor(colors.HexColor("#aaaaaa"))
@@ -420,45 +511,45 @@ def generate_badges_pdf(request):
 
 
 # Program: all days with timeline
-class ProgramView(generics.ListAPIView):
+class ProgramView(ConferenceScopedMixin, generics.ListAPIView):
     queryset = ConferenceDay.objects.all().order_by("date")
     serializer_class = ConferenceDaySerializer
 
 
 # Participants
-class ParticipantListView(generics.ListCreateAPIView):
+class ParticipantListView(ConferenceScopedMixin, generics.ListCreateAPIView):
     queryset = Participant.objects.all().order_by("name")
     serializer_class = ParticipantSerializer
 
 
-class ParticipantDetailView(generics.RetrieveAPIView):
+class ParticipantDetailView(ConferenceScopedMixin, generics.RetrieveAPIView):
     queryset = Participant.objects.all()
     serializer_class = ParticipantSerializer
 
 
 # Abstracts
-class AbstractListView(generics.ListCreateAPIView):
+class AbstractListView(ConferenceScopedMixin, generics.ListCreateAPIView):
     queryset = Abstract.objects.all().order_by("title")
     serializer_class = AbstractSerializer
 
 
-class AbstractDetailView(generics.RetrieveAPIView):
+class AbstractDetailView(ConferenceScopedMixin, generics.RetrieveAPIView):
     queryset = Abstract.objects.all()
     serializer_class = AbstractSerializer
 
 
 # Talks (optional endpoints)
-class TalkListView(generics.ListAPIView):
+class TalkListView(ConferenceScopedMixin, generics.ListAPIView):
     queryset = Talk.objects.all().order_by("day", "start_time")
     serializer_class = TalkSerializer
 
 
-class TalkDetailView(generics.RetrieveAPIView):
+class TalkDetailView(ConferenceScopedMixin, generics.RetrieveAPIView):
     queryset = Talk.objects.all()
     serializer_class = TalkSerializer
 
 
-class OrganizerListAPIView(generics.ListCreateAPIView):
+class OrganizerListAPIView(ConferenceScopedMixin, generics.ListCreateAPIView):
     queryset = Organizer.objects.all()
     serializer_class = OrganizerSerializer
     parser_classes = [MultiPartParser, FormParser, JSONParser]
@@ -474,7 +565,7 @@ class OrganizerListAPIView(generics.ListCreateAPIView):
         return [JWTAuthentication()]
 
 
-class OrganizingCommitteeListAPIView(generics.ListCreateAPIView):
+class OrganizingCommitteeListAPIView(ConferenceScopedMixin, generics.ListCreateAPIView):
     queryset = OrganizingCommittee.objects.all()
     serializer_class = OrganizingCommitteeSerializer
     parser_classes = [MultiPartParser, FormParser, JSONParser]
@@ -490,7 +581,7 @@ class OrganizingCommitteeListAPIView(generics.ListCreateAPIView):
         return [JWTAuthentication()]
 
 
-class OrganizerDetailView(generics.RetrieveUpdateDestroyAPIView):
+class OrganizerDetailView(ConferenceScopedMixin, generics.RetrieveUpdateDestroyAPIView):
     queryset = Organizer.objects.all()
     serializer_class = OrganizerSerializer
     authentication_classes = [JWTAuthentication]
@@ -498,7 +589,9 @@ class OrganizerDetailView(generics.RetrieveUpdateDestroyAPIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
 
-class OrganizingCommitteeDetailView(generics.RetrieveUpdateDestroyAPIView):
+class OrganizingCommitteeDetailView(
+    ConferenceScopedMixin, generics.RetrieveUpdateDestroyAPIView
+):
     queryset = OrganizingCommittee.objects.all()
     serializer_class = OrganizingCommitteeSerializer
     authentication_classes = [JWTAuthentication]
@@ -507,37 +600,40 @@ class OrganizingCommitteeDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 # Admin Panel - JWT
-class AdminPanelView(APIView):
+class AdminPanelView(ConferenceScopedMixin, APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAdminUser]
 
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
         return Response(
             {"message": "Welcome to admin panel", "user": request.user.username}
         )
 
 
-class SubmissionCreateView(generics.CreateAPIView):
+class SubmissionCreateView(ConferenceScopedMixin, generics.CreateAPIView):
     queryset = ParticipantSubmission.objects.all()
     serializer_class = ParticipantSubmissionSerializer
     permission_classes = [AllowAny]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
 
-class SubmissionListView(generics.ListAPIView):
+class SubmissionListView(ConferenceScopedMixin, generics.ListAPIView):
     queryset = ParticipantSubmission.objects.all()
     serializer_class = ParticipantSubmissionSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAdminUser]
 
     def get_queryset(self):
+        qs = super().get_queryset()
         status_filter = self.request.query_params.get("status", None)
         if status_filter:
-            return ParticipantSubmission.objects.filter(status=status_filter)
-        return ParticipantSubmission.objects.all()
+            return qs.filter(status=status_filter)
+        return qs
 
 
-class SubmissionDetailView(generics.RetrieveUpdateDestroyAPIView):
+class SubmissionDetailView(
+    ConferenceScopedMixin, generics.RetrieveUpdateDestroyAPIView
+):
     queryset = ParticipantSubmission.objects.all()
     serializer_class = ParticipantSubmissionSerializer
     authentication_classes = [JWTAuthentication]
@@ -546,20 +642,24 @@ class SubmissionDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 # Admin: get unscheduled talks (talks without time/day)
-class UnscheduledTalksView(generics.ListAPIView):
+class UnscheduledTalksView(ConferenceScopedMixin, generics.ListAPIView):
+    queryset = Talk.objects.all()
     serializer_class = TalkSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAdminUser]
 
     def get_queryset(self):
         # Talks без времени или дня
-        return Talk.objects.filter(is_scheduled=False).select_related(
-            "participant", "abstract"
+        return (
+            super()
+            .get_queryset()
+            .filter(is_scheduled=False)
+            .select_related("participant", "abstract")
         )
 
 
 # Admin: update talk schedule
-class TalkScheduleUpdateView(generics.UpdateAPIView):
+class TalkScheduleUpdateView(ConferenceScopedMixin, generics.UpdateAPIView):
     queryset = Talk.objects.all()
     serializer_class = TalkSerializer
     authentication_classes = [JWTAuthentication]
@@ -587,12 +687,14 @@ class TalkScheduleUpdateView(generics.UpdateAPIView):
 
 # Admin: publish submission
 @api_view(["POST"])
-def publish_submission(request, pk):
+def publish_submission(request, conference_slug, pk):
     if not request.user.is_staff:
         return Response({"error": "Admin only"}, status=403)
 
+    conference = get_conference_or_404(conference_slug)
+
     try:
-        submission = ParticipantSubmission.objects.get(pk=pk)
+        submission = ParticipantSubmission.objects.get(pk=pk, conference=conference)
     except ParticipantSubmission.DoesNotExist:
         return Response({"error": "Submission not found"}, status=404)
 
@@ -630,7 +732,7 @@ def publish_submission(request, pk):
         return Response({"error": f"Failed to publish: {e!s}"}, status=500)
 
 
-class UnscheduledTalkDeleteView(generics.DestroyAPIView):
+class UnscheduledTalkDeleteView(ConferenceScopedMixin, generics.DestroyAPIView):
     queryset = Talk.objects.all()
     serializer_class = TalkSerializer
     authentication_classes = [JWTAuthentication]
@@ -658,7 +760,7 @@ class UnscheduledTalkDeleteView(generics.DestroyAPIView):
         )
 
 
-class ConferenceDayDeleteView(generics.DestroyAPIView):
+class ConferenceDayDeleteView(ConferenceScopedMixin, generics.DestroyAPIView):
     queryset = ConferenceDay.objects.all()
     serializer_class = ConferenceDaySerializer
     authentication_classes = [JWTAuthentication]
@@ -672,8 +774,15 @@ class ConferenceDayDeleteView(generics.DestroyAPIView):
         )
 
 
+def _get_scoped_day(day_id, conference):
+    try:
+        return ConferenceDay.objects.get(pk=day_id, conference=conference)
+    except (ConferenceDay.DoesNotExist, ValueError, TypeError):
+        return None
+
+
 # Admin: create a break/event in schedule
-class ScheduleBreakCreateView(generics.CreateAPIView):
+class ScheduleBreakCreateView(ConferenceScopedMixin, generics.CreateAPIView):
     queryset = Talk.objects.all()
     serializer_class = TalkSerializer
     authentication_classes = [JWTAuthentication]
@@ -692,10 +801,18 @@ class ScheduleBreakCreateView(generics.CreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        day = _get_scoped_day(day_id, self.conference)
+        if day is None:
+            return Response(
+                {"error": "day does not belong to this conference"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         talk = Talk.objects.create(
+            conference=self.conference,
             title=title,
             talk_type=talk_type,
-            day_id=day_id,
+            day=day,
             start_time=start_time,
             end_time=end_time,
             is_scheduled=True,
@@ -706,7 +823,7 @@ class ScheduleBreakCreateView(generics.CreateAPIView):
 
 
 # Admin: create session
-class SessionCreateView(generics.CreateAPIView):
+class SessionCreateView(ConferenceScopedMixin, generics.CreateAPIView):
     queryset = Session.objects.all()
     serializer_class = SessionSerializer
     authentication_classes = [JWTAuthentication]
@@ -721,8 +838,16 @@ class SessionCreateView(generics.CreateAPIView):
                 {"error": "day is required"}, status=status.HTTP_400_BAD_REQUEST
             )
 
+        day = _get_scoped_day(day_id, self.conference)
+        if day is None:
+            return Response(
+                {"error": "day does not belong to this conference"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         session = Session.objects.create(
-            day_id=day_id,
+            conference=self.conference,
+            day=day,
             chair=chair,
         )
 
@@ -730,26 +855,28 @@ class SessionCreateView(generics.CreateAPIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-class SessionListView(generics.ListAPIView):
+class SessionListView(ConferenceScopedMixin, generics.ListAPIView):
+    queryset = Session.objects.all()
     serializer_class = SessionSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAdminUser]
 
     def get_queryset(self):
+        qs = super().get_queryset()
         day_id = self.request.query_params.get("day", None)
         if day_id:
-            return Session.objects.filter(day_id=day_id)
-        return Session.objects.all()
+            return qs.filter(day_id=day_id)
+        return qs
 
 
-class ConferenceDayCreateView(generics.CreateAPIView):
+class ConferenceDayCreateView(ConferenceScopedMixin, generics.CreateAPIView):
     queryset = ConferenceDay.objects.all()
     serializer_class = ConferenceDaySerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAdminUser]
 
 
-class SessionUpdateTimeView(generics.UpdateAPIView):
+class SessionUpdateTimeView(ConferenceScopedMixin, generics.UpdateAPIView):
     queryset = Session.objects.all()
     serializer_class = SessionSerializer
     authentication_classes = [JWTAuthentication]
@@ -757,29 +884,29 @@ class SessionUpdateTimeView(generics.UpdateAPIView):
     http_method_names = ["patch"]
 
 
-class HikingRouteListView(generics.ListAPIView):
+class HikingRouteListView(ConferenceScopedMixin, generics.ListAPIView):
     queryset = HikingRoute.objects.all()
     serializer_class = HikingRouteSerializer
 
 
-class HikingRouteEditView(APIView):
+class HikingRouteEditView(ConferenceScopedMixin, APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAdminUser]
 
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
         serializer = HikingRouteSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(conference=self.conference)
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
 
-    def patch(self, request):
+    def patch(self, request, *args, **kwargs):
         route_id = request.data.get("id")
         if not route_id:
             return Response({"detail": "Route id is required."}, status=400)
 
         try:
-            route = HikingRoute.objects.get(pk=route_id)
+            route = HikingRoute.objects.get(pk=route_id, conference=self.conference)
         except HikingRoute.DoesNotExist:
             return Response({"detail": "Route not found."}, status=404)
 
@@ -789,13 +916,13 @@ class HikingRouteEditView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=400)
 
-    def delete(self, request):
+    def delete(self, request, *args, **kwargs):
         route_id = request.data.get("id")
         if not route_id:
             return Response({"detail": "Route id is required."}, status=400)
 
         try:
-            route = HikingRoute.objects.get(pk=route_id)
+            route = HikingRoute.objects.get(pk=route_id, conference=self.conference)
         except HikingRoute.DoesNotExist:
             return Response({"detail": "Route not found."}, status=404)
 
@@ -803,56 +930,65 @@ class HikingRouteEditView(APIView):
         return Response(status=204)
 
 
-class HikingStopEditView(APIView):
+class HikingStopEditView(ConferenceScopedMixin, APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAdminUser]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
-    def post(self, request):
-        serializer = HikingStopSerializer(data=request.data)
+    def post(self, request, *args, **kwargs):
+        serializer = HikingStopSerializer(
+            data=request.data, context={"conference": self.conference}
+        )
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(conference=self.conference)
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
 
-    def patch(self, request, pk):
-        stop = HikingStop.objects.get(pk=pk)
-        serializer = HikingStopSerializer(stop, data=request.data, partial=True)
+    def patch(self, request, pk, *args, **kwargs):
+        stop = HikingStop.objects.get(pk=pk, conference=self.conference)
+        serializer = HikingStopSerializer(
+            stop,
+            data=request.data,
+            partial=True,
+            context={"conference": self.conference},
+        )
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=400)
 
-    def delete(self, request, pk):
-        HikingStop.objects.get(pk=pk).delete()
+    def delete(self, request, pk, *args, **kwargs):
+        HikingStop.objects.get(pk=pk, conference=self.conference).delete()
         return Response(status=204)
 
 
-class ConferenceInfoView(APIView):
-    def get(self, request):
-        obj, _ = ConferenceInfo.objects.get_or_create(id=1)
+class ConferenceInfoView(ConferenceScopedMixin, APIView):
+    def get(self, request, *args, **kwargs):
+        obj, _ = ConferenceInfo.objects.get_or_create(conference=self.conference)
         return Response(ConferenceInfoSerializer(obj).data)
 
 
-class ConferenceInfoEditView(APIView):
+class ConferenceInfoEditView(ConferenceScopedMixin, APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAdminUser]
-    parser_classes = [JSONParser]
+    # Multipart so the SPA can PATCH FormData with an optional photo file.
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
-    def patch(self, request):
-        obj, _ = ConferenceInfo.objects.get_or_create(id=1)
-        serializer = ConferenceInfoSerializer(obj, data=request.data, partial=True)
+    def patch(self, request, *args, **kwargs):
+        obj, _ = ConferenceInfo.objects.get_or_create(conference=self.conference)
+        serializer = ConferenceInfoWriteSerializer(obj, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data)
+            return Response(ConferenceInfoSerializer(obj).data)
         return Response(serializer.errors, status=400)
 
 
 @api_view(["DELETE"])
 @permission_classes([IsAdminUser])
-def delete_session(request, pk):
+def delete_session(request, conference_slug, pk):
+    conference = get_conference_or_404(conference_slug)
     try:
-        session = Session.objects.get(pk=pk)
+        session = Session.objects.get(pk=pk, conference=conference)
         session.talks.all().update(session=None)
         session.delete()
         return Response(status=204)
@@ -862,9 +998,10 @@ def delete_session(request, pk):
 
 @api_view(["PATCH"])
 @permission_classes([IsAdminUser])
-def update_session(request, pk):
+def update_session(request, conference_slug, pk):
+    conference = get_conference_or_404(conference_slug)
     try:
-        session = Session.objects.get(pk=pk)
+        session = Session.objects.get(pk=pk, conference=conference)
         chair = request.data.get("chair")
         if chair is not None:
             session.chair = chair

@@ -1,13 +1,50 @@
 [
   {
+    "model": "core.conference",
+    "pk": 1,
+    "fields": {
+      "slug": "wsc2026"
+    }
+  },
+  {
+    "model": "core.conferenceinfo",
+    "pk": 1,
+    "fields": {
+      "conference": 1,
+      "title": "Workshop on Scientific Computing",
+      "date_start": "2025-05-29",
+      "date_end": "2025-05-30",
+      "location": "Děčín",
+      "photo": "",
+      "short_description": "Annual workshop on scientific computing at FNSPE CTU.",
+      "badge_title": "WSC 2025",
+      "description": "",
+      "registration_instructions": "",
+      "registration_deadline": null,
+      "registration_fee_note": "Conference fee is free of charge",
+      "grant_text": "This workshop was supported by the Grant Agency of the Czech Technical University in Prague, grant No. SVK 44/25/F4.",
+      "venue_text": "Faculty of Nuclear Sciences and Physical Engineering, Pohraniční 1288/1, 405 02 Děčín and MS Teams online",
+      "conference_office_text": "D. Landovská, Department of Software Engineering, Faculty of Nuclear Sciences and Physical Engineering, Czech Technical University in Prague",
+      "website_url": "",
+      "poster_url": "",
+      "info_desk_email": "pauspetr@cvut.cz",
+      "venue_map_embed_url": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2522.8151323874063!2d14.21346707611837!3d50.77900046365381!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47099fd1ace90813%3A0x7d351b85e2789db!2sCTU%20Decin!5e0!3m2!1sru!2scz!4v1777641891915!5m2!1sru!2scz",
+      "copyright_text": "©2025 MMG, FNSPE CTU in Prague",
+      "program_local_registration_text": "Registration for local participants takes place at the conference venue: Thursday: from 13:00 to 14:00 + during coffee breaks between the sessions",
+      "program_regular_talks_text": "Oral presentation duration is 20 min = 15 min talk + 5 min for discussion.",
+      "program_poster_talks_text": "Each poster will be briefly introduced in a short 1–3 min presentation."
+    }
+  },
+  {
     "model": "core.conferenceday",
     "pk": 1,
-    "fields": { "date": "2025-05-29" }
+    "fields": { "conference": 1, "date": "2025-05-29" }
   },
   {
     "model": "core.session",
     "pk": 1,
     "fields": {
+      "conference": 1,
       "day": 1,
       "chair": "Radek Fučík",
       "start_time": "14:00",
@@ -18,6 +55,7 @@
     "model": "core.talk",
     "pk": 1,
     "fields": {
+      "conference": 1,
       "session": 1,
       "title": "TNL-SPH: Solving free surface flows…",
       "start_time": "14:10",

@@ -10,9 +10,25 @@ from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import Abstract, Participant, ParticipantSubmission, Talk
+from .conftest import api
+from .models import (
+    Abstract,
+    Conference,
+    Participant,
+    ParticipantSubmission,
+    Talk,
+)
 
-SUBMISSION_URL = "/api/admin/submissions/{}/"
+SUBMISSION_URL = api("admin/submissions/{}/")
+OTHER_SUBMISSION_URL = api("admin/submissions/{}/", slug="wsc2027-test")
+
+
+def wsc_conference():
+    return Conference.objects.get_or_create(slug="wsc2026-test")[0]
+
+
+def other_conference():
+    return Conference.objects.get_or_create(slug="wsc2027-test")[0]
 
 
 def make_submission(**overrides):
@@ -26,6 +42,7 @@ def make_submission(**overrides):
         "departure_date": date(2026, 9, 12),
     }
     data.update(overrides)
+    data.setdefault("conference", wsc_conference())
     return ParticipantSubmission.objects.create(**data)
 
 
@@ -57,7 +74,10 @@ class TestPublishBranches(TestCase):
 
     def test_matches_existing_participant_by_email(self):
         existing = Participant.objects.create(
-            name="Old Name", email="jane@example.com", affiliation="Old Affil"
+            conference=wsc_conference(),
+            name="Old Name",
+            email="jane@example.com",
+            affiliation="Old Affil",
         )
         submission = make_submission()
 
@@ -70,8 +90,13 @@ class TestPublishBranches(TestCase):
         self.assertEqual(existing.affiliation, "CTU")
 
     def test_duplicate_email_participants_creates_new_one(self):
-        Participant.objects.create(name="A", email="jane@example.com")
-        Participant.objects.create(name="B", email="jane@example.com")
+        conference = wsc_conference()
+        Participant.objects.create(
+            conference=conference, name="A", email="jane@example.com"
+        )
+        Participant.objects.create(
+            conference=conference, name="B", email="jane@example.com"
+        )
         submission = make_submission()
 
         participant, _, _ = submission.publish()
@@ -80,7 +105,7 @@ class TestPublishBranches(TestCase):
         self.assertEqual(participant.name, "Jane Doe")
 
     def test_blank_email_always_creates_new_participant(self):
-        Participant.objects.create(name="Same", email="")
+        Participant.objects.create(conference=wsc_conference(), name="Same", email="")
         submission = make_submission(email="")
 
         participant, _, _ = submission.publish()
@@ -121,6 +146,50 @@ class TestPublishBranches(TestCase):
         self.assertEqual(talk2.title, "Better Title")
 
 
+class TestPublishConferenceIsolation(TestCase):
+    def test_same_email_two_conferences_creates_two_participants(self):
+        sub_a = make_submission(conference=wsc_conference())
+        sub_b = make_submission(conference=other_conference())
+
+        participant_a, abstract_a, talk_a = sub_a.publish()
+        participant_b, abstract_b, talk_b = sub_b.publish()
+
+        self.assertEqual(Participant.objects.count(), 2)
+        self.assertNotEqual(participant_a, participant_b)
+        self.assertEqual(participant_a.conference, wsc_conference())
+        self.assertEqual(participant_b.conference, other_conference())
+        assert abstract_a is not None
+        assert abstract_b is not None
+        self.assertEqual(abstract_a.conference, wsc_conference())
+        self.assertEqual(abstract_b.conference, other_conference())
+        self.assertEqual(abstract_a.participant, participant_a)
+        self.assertEqual(abstract_b.participant, participant_b)
+        assert talk_a is not None
+        assert talk_b is not None
+        self.assertEqual(talk_a.conference, wsc_conference())
+        self.assertEqual(talk_b.conference, other_conference())
+        self.assertEqual(talk_a.abstract, abstract_a)
+        self.assertEqual(talk_b.abstract, abstract_b)
+
+    def test_existing_participant_in_other_conference_does_not_match(self):
+        existing = Participant.objects.create(
+            conference=wsc_conference(),
+            name="Old Name",
+            email="jane@example.com",
+            affiliation="Old Affil",
+        )
+        submission = make_submission(conference=other_conference())
+
+        participant, _, _ = submission.publish()
+
+        self.assertNotEqual(participant, existing)
+        self.assertEqual(Participant.objects.count(), 2)
+        self.assertEqual(participant.conference, other_conference())
+        existing.refresh_from_db()
+        self.assertEqual(existing.name, "Old Name")
+        self.assertEqual(existing.affiliation, "Old Affil")
+
+
 class TestSubmissionDelete(TestCase):
     def test_delete_approved_cascades_published_records(self):
         submission = make_submission()
@@ -134,7 +203,7 @@ class TestSubmissionDelete(TestCase):
         self.assertEqual(Talk.objects.count(), 0)
 
     def test_delete_pending_keeps_nothing_but_submission(self):
-        Participant.objects.create(name="Someone Else")
+        Participant.objects.create(conference=wsc_conference(), name="Someone Else")
         submission = make_submission()
 
         submission.delete()
@@ -233,6 +302,57 @@ class TestSubmissionAdminAPI(TestCase):
         participant.refresh_from_db()
         self.assertFalse(submission.photo)
         self.assertFalse(participant.photo)
+
+    def test_patch_leaves_other_conference_rows_untouched(self):
+        sub_a = make_submission(conference=wsc_conference())
+        sub_a.publish()
+        sub_b = make_submission(conference=other_conference())
+        sub_b.publish()
+
+        response = self.client.patch(
+            OTHER_SUBMISSION_URL.format(sub_b.id),
+            {"name": "Jane Renamed", "abstract_title": "B New Title"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        participant_a = sub_a.published_participant
+        assert participant_a is not None
+        participant_a.refresh_from_db()
+        abstract_a = sub_a.published_abstract
+        assert abstract_a is not None
+        abstract_a.refresh_from_db()
+        talk_a = Talk.objects.get(abstract=abstract_a)
+        self.assertEqual(participant_a.name, "Jane Doe")
+        self.assertEqual(abstract_a.title, "Numerical Methods")
+        self.assertEqual(talk_a.title, "Numerical Methods")
+        sub_b.refresh_from_db()
+        abstract_b = sub_b.published_abstract
+        assert abstract_b is not None
+        abstract_b.refresh_from_db()
+        self.assertEqual(abstract_b.title, "B New Title")
+
+    def test_patch_adding_abstract_creates_rows_in_own_conference(self):
+        sub_b = make_submission(
+            conference=other_conference(), abstract_title="", abstract_text=""
+        )
+        sub_b.publish()
+        self.assertIsNone(sub_b.published_abstract)
+
+        response = self.client.patch(
+            OTHER_SUBMISSION_URL.format(sub_b.id),
+            {"abstract_title": "Late Abstract", "abstract_text": "Late text"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        sub_b.refresh_from_db()
+        abstract = sub_b.published_abstract
+        self.assertIsNotNone(abstract)
+        assert abstract is not None
+        self.assertEqual(abstract.conference, other_conference())
+        talk = Talk.objects.get(abstract=abstract)
+        self.assertEqual(talk.conference, other_conference())
 
     def test_delete_approved_via_api_cascades(self):
         submission = make_submission()

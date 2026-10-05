@@ -4,6 +4,7 @@ from .models import (
     Abstract,
     AccommodationInfo,
     AccommodationOption,
+    Conference,
     ConferenceDay,
     ConferenceInfo,
     HikingRoute,
@@ -31,23 +32,40 @@ class SessionInline(admin.TabularInline):
     ordering = ("start_time",)
 
 
+@admin.register(Conference)
+class ConferenceAdmin(admin.ModelAdmin):
+    # Conferences are managed ONLY here; deletion is forbidden (fork line 3)
+    # because every other model cascades from this table. Only the slug is
+    # editable here: logistics (title, dates, location, photo, badge title)
+    # live on ConferenceInfo and are edited via the conference's SPA admin.
+    fields = ("slug",)
+    list_display = ("slug",)
+    search_fields = ("slug",)
+    actions = None
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
 @admin.register(ConferenceDay)
 class ConferenceDayAdmin(admin.ModelAdmin):
-    list_display = ("date",)
+    list_display = ("conference", "date")
+    list_filter = ("conference",)
     ordering = ("date",)
     inlines = [SessionInline, TalkInline]  # everything in one place
 
 
 @admin.register(Session)
 class SessionAdmin(admin.ModelAdmin):
-    list_display = ("day", "chair", "start_time", "end_time")
-    list_filter = ("day", "chair")
+    list_display = ("conference", "day", "chair", "start_time", "end_time")
+    list_filter = ("conference", "day", "chair")
     inlines = [TalkInline]
 
 
 @admin.register(Talk)
 class TalkAdmin(admin.ModelAdmin):
     list_display = (
+        "conference",
         "title",
         "talk_type",
         "get_participant_name",
@@ -56,7 +74,7 @@ class TalkAdmin(admin.ModelAdmin):
         "session",
         "day",
     )
-    list_filter = ("talk_type", "session", "day")
+    list_filter = ("conference", "talk_type", "session", "day")
     search_fields = ("title", "participant__name", "abstract__title")
 
     def get_participant_name(self, obj):
@@ -67,32 +85,43 @@ class TalkAdmin(admin.ModelAdmin):
 
 @admin.register(Participant)
 class ParticipantAdmin(admin.ModelAdmin):
-    list_display = ("name", "affiliation", "email")
+    list_display = ("conference", "name", "affiliation", "email")
+    list_filter = ("conference",)
     search_fields = ("name",)
 
 
 @admin.register(Abstract)
 class AbstractAdmin(admin.ModelAdmin):
-    list_display = ("title", "authors")
+    list_display = ("conference", "title", "authors")
+    list_filter = ("conference",)
     search_fields = ("title", "authors")
 
 
 @admin.register(Organizer)
 class OrganizerAdmin(admin.ModelAdmin):
-    list_display = ("name", "department", "email")
+    list_display = ("conference", "name", "department", "email")
+    list_filter = ("conference",)
     search_fields = ("name", "department")
 
 
 @admin.register(OrganizingCommittee)
 class OrganizingCommitteeAdmin(admin.ModelAdmin):
-    list_display = ("name", "department", "email")
+    list_display = ("conference", "name", "department", "email")
+    list_filter = ("conference",)
     search_fields = ("name", "department")
 
 
 @admin.register(ParticipantSubmission)
 class ParticipantSubmissionAdmin(admin.ModelAdmin):
-    list_display = ["name", "email", "abstract_title", "status", "submitted_at"]
-    list_filter = ["status", "submitted_at"]
+    list_display = [
+        "conference",
+        "name",
+        "email",
+        "abstract_title",
+        "status",
+        "submitted_at",
+    ]
+    list_filter = ["conference", "status", "submitted_at"]
     search_fields = ["name", "email", "abstract_title"]
     readonly_fields = ["submitted_at", "reviewed_at"]
 
@@ -109,12 +138,14 @@ class ParticipantSubmissionAdmin(admin.ModelAdmin):
 
 @admin.register(AccommodationInfo)
 class AccommodationInfoAdmin(admin.ModelAdmin):
-    list_display = ("id",)
+    list_display = ("conference",)
+    list_filter = ("conference",)
 
 
 @admin.register(AccommodationOption)
 class AccommodationOptionAdmin(admin.ModelAdmin):
-    list_display = ("name", "info", "order")
+    list_display = ("conference", "name", "info", "order")
+    list_filter = ("conference",)
 
 
 class HikingStopInline(admin.TabularInline):
@@ -124,10 +155,12 @@ class HikingStopInline(admin.TabularInline):
 
 @admin.register(HikingRoute)
 class HikingRouteAdmin(admin.ModelAdmin):
-    list_display = ("name",)
+    list_display = ("conference", "name")
+    list_filter = ("conference",)
     inlines = [HikingStopInline]
 
 
 @admin.register(ConferenceInfo)
 class ConferenceInfoAdmin(admin.ModelAdmin):
-    list_display = ("title", "year", "date_start", "date_end")
+    list_display = ("conference",)
+    list_filter = ("conference",)

@@ -33,9 +33,11 @@ from .views import (
     TalkScheduleUpdateView,
     UnscheduledTalkDeleteView,
     UnscheduledTalksView,
+    delete_session,
     generate_badges_pdf,
     generate_program_pdf,
     publish_submission,
+    update_session,
 )
 
 urlpatterns = [
@@ -107,6 +109,8 @@ urlpatterns = [
     ),
     path("admin/sessions/create/", SessionCreateView.as_view(), name="session-create"),
     path("admin/sessions/", SessionListView.as_view(), name="sessions-list"),
+    path("admin/sessions/<int:pk>/", update_session, name="session-update"),
+    path("admin/sessions/<int:pk>/delete/", delete_session, name="session-delete"),
     path("admin/sessions/<int:pk>/update-time/", SessionUpdateTimeView.as_view()),
     path("admin/days/create/", ConferenceDayCreateView.as_view(), name="day-create"),
     path(

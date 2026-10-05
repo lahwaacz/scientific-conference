@@ -7,10 +7,15 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import ConferenceDay, Talk
+from .conftest import api
+from .models import Conference, ConferenceDay, Talk
 
-SCHEDULE_URL = "/api/admin/talks/{}/schedule/"
-BREAK_URL = "/api/admin/talks/create-break/"
+SCHEDULE_URL = api("admin/talks/{}/schedule/")
+BREAK_URL = api("admin/talks/create-break/")
+
+
+def wsc_conference():
+    return Conference.objects.get_or_create(slug="wsc2026-test")[0]
 
 
 class TestTalkScheduleEndpoint(TestCase):
@@ -19,9 +24,15 @@ class TestTalkScheduleEndpoint(TestCase):
         token = RefreshToken.for_user(admin)
         self.client = APIClient()
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token.access_token}")
-        self.day = ConferenceDay.objects.create(date=date(2026, 9, 10))
+        conference = wsc_conference()
+        self.day = ConferenceDay.objects.create(
+            conference=conference, date=date(2026, 9, 10)
+        )
         self.talk = Talk.objects.create(
-            title="Test Talk", talk_type="talk", is_scheduled=False
+            conference=conference,
+            title="Test Talk",
+            talk_type="talk",
+            is_scheduled=False,
         )
 
     def patch(self, talk, **fields):
@@ -82,7 +93,9 @@ class TestBreakCreateEndpoint(TestCase):
         token = RefreshToken.for_user(admin)
         self.client = APIClient()
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token.access_token}")
-        self.day = ConferenceDay.objects.create(date=date(2026, 9, 10))
+        self.day = ConferenceDay.objects.create(
+            conference=wsc_conference(), date=date(2026, 9, 10)
+        )
 
     def test_create_break_marks_it_scheduled(self):
         response = self.client.post(

@@ -71,6 +71,17 @@ class TalkSerializer(serializers.ModelSerializer):
             "abstract_id",
         ]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        conference = self.context.get("conference")
+        if conference is not None:
+            self.fields["session"].queryset = Session.objects.filter(
+                conference=conference
+            )
+            self.fields["day"].queryset = ConferenceDay.objects.filter(
+                conference=conference
+            )
+
 
 class SessionSerializer(serializers.ModelSerializer):
     talks = serializers.SerializerMethodField()
@@ -78,6 +89,14 @@ class SessionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Session
         fields = ["id", "day", "chair", "start_time", "end_time", "talks"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        conference = self.context.get("conference")
+        if conference is not None:
+            self.fields["day"].queryset = ConferenceDay.objects.filter(
+                conference=conference
+            )
 
     def get_talks(self, session):
         qs = session.talks.all().order_by("start_time")
@@ -278,6 +297,7 @@ class ParticipantSubmissionSerializer(serializers.ModelSerializer):
                 abstract.save()
             else:
                 abstract = Abstract.objects.create(
+                    conference=instance.conference,
                     participant=participant,
                     title=instance.abstract_title or f"Presentation by {instance.name}",
                     text=instance.abstract_text,
@@ -296,6 +316,7 @@ class ParticipantSubmissionSerializer(serializers.ModelSerializer):
                 from .models import Talk
 
                 Talk.objects.create(
+                    conference=instance.conference,
                     title=abstract.title,
                     participant=participant,
                     abstract=abstract,
@@ -307,7 +328,15 @@ class ParticipantSubmissionSerializer(serializers.ModelSerializer):
 class HikingStopSerializer(serializers.ModelSerializer):
     class Meta:
         model = HikingStop
-        fields = "__all__"
+        fields = ["id", "route", "name", "description", "photo", "order"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        conference = self.context.get("conference")
+        if conference is not None:
+            self.fields["route"].queryset = HikingRoute.objects.filter(
+                conference=conference
+            )
 
 
 class HikingRouteSerializer(serializers.ModelSerializer):
@@ -315,10 +344,78 @@ class HikingRouteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = HikingRoute
-        fields = "__all__"
+        fields = ["id", "name", "way_description", "map_url", "stops"]
+
+
+class ConferenceCardSerializer(serializers.ModelSerializer):
+    # ReadOnlyField: year/status are model @property methods, not fields,
+    # and slug lives on the related Conference row, so none of the three
+    # is auto-discovered by ModelSerializer.
+    slug = serializers.ReadOnlyField(source="conference.slug")
+    year = serializers.ReadOnlyField()
+    status = serializers.ReadOnlyField()
+
+    class Meta:
+        model = ConferenceInfo
+        fields = [
+            "slug",
+            "title",
+            "date_start",
+            "date_end",
+            "year",
+            "location",
+            "photo",
+            "short_description",
+            "status",
+        ]
+
+
+class BlankAsNoneDateField(serializers.DateField):
+    """Multipart form posts send an empty string for empty date inputs."""
+
+    def to_internal_value(self, value):
+        if value in ("", None):
+            return None
+        return super().to_internal_value(value)
+
+
+class ConferenceInfoWriteSerializer(serializers.ModelSerializer):
+    registration_deadline = BlankAsNoneDateField(required=False, allow_null=True)
+    date_start = BlankAsNoneDateField(required=False, allow_null=True)
+    date_end = BlankAsNoneDateField(required=False, allow_null=True)
+
+    class Meta:
+        model = ConferenceInfo
+        fields = [
+            "title",
+            "date_start",
+            "date_end",
+            "location",
+            "photo",
+            "short_description",
+            "badge_title",
+            "description",
+            "registration_instructions",
+            "registration_deadline",
+            "registration_fee_note",
+            "grant_text",
+            "venue_text",
+            "conference_office_text",
+            "website_url",
+            "poster_url",
+            "info_desk_email",
+            "venue_map_embed_url",
+            "copyright_text",
+            "program_local_registration_text",
+            "program_regular_talks_text",
+            "program_poster_talks_text",
+        ]
 
 
 class ConferenceInfoSerializer(serializers.ModelSerializer):
+    # year is a derived @property on the model (F6), never writable.
+    year = serializers.ReadOnlyField()
+
     class Meta:
         model = ConferenceInfo
-        fields = "__all__"
+        fields = ["id", *ConferenceInfoWriteSerializer.Meta.fields, "year"]

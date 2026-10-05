@@ -21,14 +21,13 @@ from django.contrib import admin
 from django.urls import include, path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from core.views import delete_session, update_session
+from core.views import ConferenceListView
 
 # Support deployment in a subpath
 _prefix = settings.RELATIVE_URL_ROOT or ""
 
 urlpatterns = [
     path(f"{_prefix}admin/", admin.site.urls),
-    path(f"{_prefix}api/", include("core.urls")),
     # JWT Authentication
     path(
         f"{_prefix}api/auth/login/",
@@ -38,8 +37,15 @@ urlpatterns = [
     path(
         f"{_prefix}api/auth/refresh/", TokenRefreshView.as_view(), name="token_refresh"
     ),
-    path(f"{_prefix}api/admin/sessions/<int:pk>/", update_session),
-    path(f"{_prefix}api/admin/sessions/<int:pk>/delete/", delete_session),
+    # Global conference list (unscoped) — MUST stay registered BEFORE the
+    # slug include below, or `api/conferences/` is captured as a
+    # conference_slug prefix and 404s (core/urls has no empty tail).
+    path(
+        f"{_prefix}api/conferences/",
+        ConferenceListView.as_view(),
+        name="conference-list",
+    ),
+    path(f"{_prefix}api/<slug:conference_slug>/", include("core.urls")),
 ]
 
 if settings.DEBUG:

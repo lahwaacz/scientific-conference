@@ -5,7 +5,11 @@ from datetime import date
 from django.core import mail
 from django.test import TestCase
 
-from .models import ParticipantSubmission
+from .models import Conference, ParticipantSubmission
+
+
+def wsc_conference():
+    return Conference.objects.get_or_create(slug="wsc2026-test")[0]
 
 
 def make_submission(**overrides):
@@ -19,6 +23,7 @@ def make_submission(**overrides):
         "departure_date": date(2026, 9, 12),
     }
     data.update(overrides)
+    data.setdefault("conference", wsc_conference())
     return ParticipantSubmission.objects.create(**data)
 
 

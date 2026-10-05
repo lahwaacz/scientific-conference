@@ -7,7 +7,12 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import Abstract, ConferenceDay, Participant, Session, Talk
+from .conftest import api
+from .models import Abstract, Conference, ConferenceDay, Participant, Session, Talk
+
+
+def wsc_conference():
+    return Conference.objects.get_or_create(slug="wsc2026-test")[0]
 
 
 class AdminTestCase(TestCase):
@@ -16,10 +21,14 @@ class AdminTestCase(TestCase):
         token = RefreshToken.for_user(admin)
         self.client = APIClient()
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token.access_token}")
-        self.day = ConferenceDay.objects.create(date=date(2026, 9, 10))
+        self.conference = wsc_conference()
+        self.day = ConferenceDay.objects.create(
+            conference=self.conference, date=date(2026, 9, 10)
+        )
 
     def make_talk(self, **overrides):
         data = {
+            "conference": self.conference,
             "title": "Some Talk",
             "talk_type": "talk",
             "is_scheduled": False,
@@ -31,16 +40,19 @@ class AdminTestCase(TestCase):
 class TestDayAdmin(AdminTestCase):
     def test_create_day(self):
         response = self.client.post(
-            "/api/admin/days/create/", {"date": "2026-09-11"}, format="json"
+            api("admin/days/create/"), {"date": "2026-09-11"}, format="json"
         )
         self.assertEqual(response.status_code, 201)
         self.assertTrue(ConferenceDay.objects.filter(date="2026-09-11").exists())
 
     def test_delete_day_cascades_sessions_talks_and_abstracts(self):
-        session = Session.objects.create(day=self.day)
-        participant = Participant.objects.create(name="P")
-        abstract = Abstract.objects.create(title="A", participant=participant)
+        session = Session.objects.create(conference=self.conference, day=self.day)
+        participant = Participant.objects.create(conference=self.conference, name="P")
+        abstract = Abstract.objects.create(
+            conference=self.conference, title="A", participant=participant
+        )
         Talk.objects.create(
+            conference=self.conference,
             title="Nested",
             talk_type="talk",
             is_scheduled=True,
@@ -50,7 +62,7 @@ class TestDayAdmin(AdminTestCase):
             abstract=abstract,
         )
 
-        response = self.client.delete(f"/api/admin/days/{self.day.id}/delete/")
+        response = self.client.delete(api(f"admin/days/{self.day.id}/delete/"))
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(ConferenceDay.objects.count(), 0)
@@ -66,32 +78,34 @@ class TestDayAdmin(AdminTestCase):
 
 class TestSessionAdmin(AdminTestCase):
     def test_create_session_requires_day(self):
-        response = self.client.post("/api/admin/sessions/create/", {}, format="json")
+        response = self.client.post(api("admin/sessions/create/"), {}, format="json")
         self.assertEqual(response.status_code, 400)
 
     def test_create_session(self):
         response = self.client.post(
-            "/api/admin/sessions/create/",
+            api("admin/sessions/create/"),
             {"day": self.day.id, "chair": "Prof. X"},
             format="json",
         )
         self.assertEqual(response.status_code, 201)
 
     def test_list_filters_by_day(self):
-        other_day = ConferenceDay.objects.create(date=date(2026, 9, 11))
-        Session.objects.create(day=self.day, chair="A")
-        Session.objects.create(day=other_day, chair="B")
+        other_day = ConferenceDay.objects.create(
+            conference=self.conference, date=date(2026, 9, 11)
+        )
+        Session.objects.create(conference=self.conference, day=self.day, chair="A")
+        Session.objects.create(conference=self.conference, day=other_day, chair="B")
 
-        response = self.client.get(f"/api/admin/sessions/?day={self.day.id}")
+        response = self.client.get(api(f"admin/sessions/?day={self.day.id}"))
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["chair"], "A")
 
     def test_update_time(self):
-        session = Session.objects.create(day=self.day)
+        session = Session.objects.create(conference=self.conference, day=self.day)
         response = self.client.patch(
-            f"/api/admin/sessions/{session.id}/update-time/",
+            api(f"admin/sessions/{session.id}/update-time/"),
             {"start_time": "09:00", "end_time": "10:00"},
             format="json",
         )
@@ -100,10 +114,12 @@ class TestSessionAdmin(AdminTestCase):
         self.assertEqual(str(session.start_time), "09:00:00")
 
     def test_update_session_chair(self):
-        session = Session.objects.create(day=self.day, chair="Old")
+        session = Session.objects.create(
+            conference=self.conference, day=self.day, chair="Old"
+        )
 
         response = self.client.patch(
-            f"/api/admin/sessions/{session.id}/", {"chair": "New"}, format="json"
+            api(f"admin/sessions/{session.id}/"), {"chair": "New"}, format="json"
         )
 
         self.assertEqual(response.status_code, 200)
@@ -111,10 +127,10 @@ class TestSessionAdmin(AdminTestCase):
         self.assertEqual(session.chair, "New")
 
     def test_delete_session_detaches_talks(self):
-        session = Session.objects.create(day=self.day)
+        session = Session.objects.create(conference=self.conference, day=self.day)
         talk = self.make_talk(session=session, day=self.day, is_scheduled=True)
 
-        response = self.client.delete(f"/api/admin/sessions/{session.id}/delete/")
+        response = self.client.delete(api(f"admin/sessions/{session.id}/delete/"))
 
         self.assertEqual(response.status_code, 204)
         self.assertEqual(Session.objects.count(), 0)
@@ -131,7 +147,7 @@ class TestTalkAdminGuards(AdminTestCase):
             is_scheduled=True,
         )
 
-        response = self.client.get("/api/admin/talks/unscheduled/")
+        response = self.client.get(api("admin/talks/unscheduled/"))
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
@@ -139,13 +155,13 @@ class TestTalkAdminGuards(AdminTestCase):
 
     def test_delete_unscheduled_talk(self):
         talk = self.make_talk()
-        response = self.client.delete(f"/api/admin/talks/{talk.id}/delete/")
+        response = self.client.delete(api(f"admin/talks/{talk.id}/delete/"))
         self.assertEqual(response.status_code, 204)
         self.assertEqual(Talk.objects.count(), 0)
 
     def test_delete_scheduled_talk_is_rejected(self):
         talk = self.make_talk(day=self.day, is_scheduled=True)
-        response = self.client.delete(f"/api/admin/talks/{talk.id}/delete/")
+        response = self.client.delete(api(f"admin/talks/{talk.id}/delete/"))
         self.assertEqual(response.status_code, 400)
         self.assertEqual(Talk.objects.count(), 1)
 
@@ -153,6 +169,6 @@ class TestTalkAdminGuards(AdminTestCase):
         brk = self.make_talk(
             title="Break", talk_type="break", day=self.day, is_scheduled=True
         )
-        response = self.client.delete(f"/api/admin/talks/{brk.id}/delete/")
+        response = self.client.delete(api(f"admin/talks/{brk.id}/delete/"))
         self.assertEqual(response.status_code, 204)
         self.assertEqual(Talk.objects.count(), 0)

@@ -1,7 +1,28 @@
+from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
+
+RESERVED_SLUGS = {"auth", "admin", "api", "conferences", "media", "static"}
+
+
+class Conference(models.Model):
+    # Slug-only identity; the logistics fields (title, dates, location,
+    # photo, short description, badge title) live on ConferenceInfo.
+    slug = models.SlugField(max_length=64, unique=True)
+
+    def clean(self):
+        # reserved-word validation (F2)
+        if self.slug and self.slug.lower() in RESERVED_SLUGS:
+            raise ValidationError({"slug": f'"{self.slug}" is a reserved word.'})
+
+    def __str__(self):
+        return self.slug
 
 
 class ConferenceDay(models.Model):
+    conference = models.ForeignKey(
+        Conference, related_name="days", on_delete=models.CASCADE
+    )
     date = models.DateField()
 
     class Meta:
@@ -12,6 +33,9 @@ class ConferenceDay(models.Model):
 
 
 class Session(models.Model):
+    conference = models.ForeignKey(
+        Conference, related_name="sessions", on_delete=models.CASCADE
+    )
     day = models.ForeignKey(
         ConferenceDay, related_name="sessions", on_delete=models.CASCADE
     )
@@ -27,6 +51,9 @@ class Session(models.Model):
 
 
 class Participant(models.Model):
+    conference = models.ForeignKey(
+        Conference, related_name="participants", on_delete=models.CASCADE
+    )
     name = models.CharField(max_length=255)
     affiliation = models.CharField(max_length=500, blank=True)
     email = models.EmailField(blank=True)
@@ -37,6 +64,9 @@ class Participant(models.Model):
 
 
 class Abstract(models.Model):
+    conference = models.ForeignKey(
+        Conference, related_name="abstracts", on_delete=models.CASCADE
+    )
     title = models.CharField(max_length=500)
     text = models.TextField(blank=True)
     authors = models.CharField(max_length=500, blank=True)
@@ -62,6 +92,9 @@ class Talk(models.Model):
         ("event", "Event"),
     ]
 
+    conference = models.ForeignKey(
+        Conference, related_name="talks", on_delete=models.CASCADE
+    )
     day = models.ForeignKey(
         ConferenceDay,
         related_name="items",
@@ -109,6 +142,9 @@ class Talk(models.Model):
 
 
 class Organizer(models.Model):
+    conference = models.ForeignKey(
+        Conference, related_name="organizers", on_delete=models.CASCADE
+    )
     name = models.CharField(max_length=255)
     department = models.CharField(max_length=500, blank=True)
     email = models.EmailField(blank=True)
@@ -119,6 +155,9 @@ class Organizer(models.Model):
 
 
 class OrganizingCommittee(models.Model):
+    conference = models.ForeignKey(
+        Conference, related_name="committee_members", on_delete=models.CASCADE
+    )
     name = models.CharField(max_length=255)
     department = models.CharField(max_length=500, blank=True)
     email = models.EmailField(blank=True)
@@ -129,6 +168,9 @@ class OrganizingCommittee(models.Model):
 
 
 class AccommodationInfo(models.Model):
+    conference = models.ForeignKey(
+        Conference, related_name="accommodation_infos", on_delete=models.CASCADE
+    )
     description = models.TextField(blank=True)
 
     class Meta:
@@ -136,6 +178,9 @@ class AccommodationInfo(models.Model):
 
 
 class AccommodationOption(models.Model):
+    conference = models.ForeignKey(
+        Conference, related_name="accommodation_options", on_delete=models.CASCADE
+    )
     info = models.ForeignKey(
         AccommodationInfo, on_delete=models.CASCADE, related_name="options"
     )
@@ -155,6 +200,9 @@ class ParticipantSubmission(models.Model):
         ("approved", "Published"),
     ]
 
+    conference = models.ForeignKey(
+        Conference, related_name="submissions", on_delete=models.CASCADE
+    )
     name = models.CharField(max_length=255)
     email = models.EmailField()
     affiliation = models.CharField(max_length=500)
@@ -214,7 +262,9 @@ class ParticipantSubmission(models.Model):
         else:
             if self.email:
                 try:
-                    participant = Participant.objects.get(email=self.email)
+                    participant = Participant.objects.get(
+                        email=self.email, conference=self.conference
+                    )
                     participant.name = self.name
                     participant.affiliation = self.affiliation
                     if self.photo:
@@ -222,6 +272,7 @@ class ParticipantSubmission(models.Model):
                     participant.save()
                 except Participant.DoesNotExist:
                     participant = Participant.objects.create(
+                        conference=self.conference,
                         name=self.name,
                         email=self.email,
                         affiliation=self.affiliation,
@@ -229,6 +280,7 @@ class ParticipantSubmission(models.Model):
                     )
                 except Participant.MultipleObjectsReturned:
                     participant = Participant.objects.create(
+                        conference=self.conference,
                         name=self.name,
                         email=self.email,
                         affiliation=self.affiliation,
@@ -236,6 +288,7 @@ class ParticipantSubmission(models.Model):
                     )
             else:
                 participant = Participant.objects.create(
+                    conference=self.conference,
                     name=self.name,
                     email=self.email,
                     affiliation=self.affiliation,
@@ -261,6 +314,7 @@ class ParticipantSubmission(models.Model):
                 abstract.save()
             else:
                 abstract = Abstract.objects.create(
+                    conference=self.conference,
                     participant=participant,
                     title=self.abstract_title or f"Presentation by {self.name}",
                     text=self.abstract_text,
@@ -277,6 +331,7 @@ class ParticipantSubmission(models.Model):
                 talk.save()
             else:
                 talk = Talk.objects.create(
+                    conference=self.conference,
                     title=abstract.title,
                     participant=participant,
                     abstract=abstract,
@@ -307,6 +362,9 @@ class ParticipantSubmission(models.Model):
 
 
 class HikingRoute(models.Model):
+    conference = models.ForeignKey(
+        Conference, related_name="hiking_routes", on_delete=models.CASCADE
+    )
     name = models.CharField(max_length=200)
     way_description = models.TextField(blank=True)
     map_url = models.URLField(blank=True)
@@ -317,6 +375,9 @@ class HikingRoute(models.Model):
 
 
 class HikingStop(models.Model):
+    conference = models.ForeignKey(
+        Conference, related_name="hiking_stops", on_delete=models.CASCADE
+    )
     route = models.ForeignKey(
         HikingRoute, on_delete=models.CASCADE, related_name="stops"
     )
@@ -331,11 +392,18 @@ class HikingStop(models.Model):
 
 
 class ConferenceInfo(models.Model):
-    title = models.CharField(max_length=200, default="Workshop on Scientific Computing")
-    year = models.PositiveIntegerField(default=2026)
+    conference = models.ForeignKey(
+        Conference, related_name="conference_infos", on_delete=models.CASCADE
+    )
+    # Logistics
+    title = models.CharField(max_length=200, blank=True, default="")
     date_start = models.DateField(null=True, blank=True)
     date_end = models.DateField(null=True, blank=True)
-    location = models.CharField(max_length=200, default="Děčín")
+    location = models.CharField(max_length=200, blank=True, default="")
+    photo = models.ImageField(upload_to="conferences/", blank=True, null=True)
+    short_description = models.CharField(max_length=300, blank=True, default="")
+    badge_title = models.CharField(max_length=100, blank=True, default="")
+    # Web content
     description = models.TextField(blank=True)
     registration_instructions = models.TextField(blank=True)
     registration_deadline = models.DateField(null=True, blank=True)
@@ -380,3 +448,20 @@ class ConferenceInfo(models.Model):
 
     class Meta:
         verbose_name = "Conference Info"
+
+    @property
+    def year(self):
+        # derived, never a column (F6)
+        return self.date_start.year if self.date_start else None
+
+    @property
+    def status(self):
+        # "running" | "future" | "past"; missing dates -> "future"
+        if not self.date_start or not self.date_end:
+            return "future"
+        today = timezone.localdate()
+        if self.date_start <= today <= self.date_end:
+            return "running"
+        if today < self.date_start:
+            return "future"
+        return "past"
