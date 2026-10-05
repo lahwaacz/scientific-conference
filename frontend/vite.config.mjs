@@ -12,8 +12,11 @@ const stubPath = path.join(
 export default defineConfig({
   plugins: [react(), svgr({ include: "**/*.svg" })],
   // Relative base keeps the bundle deployable under any subpath
-  // (replaces CRA's "homepage": ".").
-  base: "./",
+  // (replaces CRA's "homepage": "."). Dev/screenshot builds stay on "./";
+  // the prod image sets VITE_BASE_PATH=/conference-demo/ so built asset
+  // URLs are absolute and correct at any page depth — required for
+  // per-conference pages under /conference-demo/<slug>/.
+  base: process.env.VITE_BASE_PATH || "./",
   // Keep the CRA output directory name: the Dockerfile copies /app/build
   // and scripts/capture-screenshots.sh serves it.
   build: {

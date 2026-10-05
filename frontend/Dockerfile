@@ -18,10 +18,15 @@ RUN --mount=type=cache,target=/root/.npm npm ci
 # Copy the rest of the application source code into the container
 COPY . .
 
-# FIXME: default value should not be hardcoded - pass --build-arg VITE_BACKEND_API_BASE_URL=... to override
+# FIXME: default values should not be hardcoded - pass --build-arg
+# VITE_BACKEND_API_BASE_URL=... / --build-arg VITE_BASE_PATH=... to override
 ARG VITE_BACKEND_API_BASE_URL=https://mmg-webapps.fjfi.cvut.cz/conference-demo
+# Absolute Vite base: asset URLs in the built index.html must work when the
+# SPA is served at /conference-demo/ AND at /conference-demo/<slug>/.
+ARG VITE_BASE_PATH=/conference-demo/
 # ARG does not reach RUN commands' environment; export it so Vite can inline it into the bundle
 ENV VITE_BACKEND_API_BASE_URL=${VITE_BACKEND_API_BASE_URL}
+ENV VITE_BASE_PATH=${VITE_BASE_PATH}
 
 # Build the React.js application (outputs to /app/build)
 RUN npm run build
