@@ -2,17 +2,19 @@
 
 This document describes how to use the administrative part of the conference management system. It is intended for website administrators responsible for reviewing participant submissions, publishing conference content, editing the public website, managing the conference schedule, and generating conference documents.
 
+The system can host multiple conferences at the same time. Each conference has its own website, its own data, and its own documents. The administrative interface described in this guide always administers the conference whose website it was opened from. Creating conferences themselves is done in the Django administration; their basic facts (title, dates, location, badge title, photo) are edited in the admin panel. See the **Managing Multiple Conferences** chapter.
+
 ## Access to the Administrative Interface
 
 ### Open the Admin Area
 
-The entry point to the administrative interface is located in the footer of the public website.
+The entry point to the administrative interface is located in the footer of the conference website.
 
 > **Warning:** The admin panel is best used on a desktop or large screen. On smaller screens, the interface may be harder to navigate.
 
 ![Footer with administration link](./assets/footer1.png)
 
-1. Open the public website.
+1. Open the conference website.
 2. Scroll to the footer.
 3. Select the administration link.
 4. Enter the password known to the website administrators.
@@ -36,6 +38,107 @@ After a successful login, the system opens the administrative panel. The panel c
 The administrative panel serves as the main navigation hub for all organizer tasks.
 
 ![Admin panel overview](./assets/adminpanel.png)
+
+The panel also shows which conference is currently being administered. Under the panel title, the conference title and its slug are displayed, for example `Conference: Workshop on Scientific Computing 2026 (wsc2026)`. All changes made from the panel affect this conference only.
+
+## Managing Multiple Conferences
+
+### Overview
+
+The root address of the deployment shows a landing page with one card per conference. The cards are grouped into **Running**, **Upcoming**, and **Past** conferences, based on the conference dates set in the admin panel of the conference website. The landing page is public and requires no login.
+
+Each conference website lives at its own address:
+
+```
+<root>/<slug>/
+```
+
+For example, with the demo root `https://mmg-webapps.fjfi.cvut.cz/conference-demo/`, the conference with the slug `wsc2026` is available at `https://mmg-webapps.fjfi.cvut.cz/conference-demo/wsc2026/`.
+
+Select a card on the landing page to open the corresponding conference website.
+
+All data of a conference belongs to that conference: its participants, submissions, program, accommodation, hiking routes, and website texts. Nothing is shared between conferences. The admin panel opened on a conference website can only see and change the data of that conference.
+
+Administrator accounts are shared across conferences. A single staff account can administer every conference. This is intended; administrator tokens are not scoped per conference.
+
+### Creating a New Conference
+
+Conferences are created in the Django administration. This is a separate interface from the admin panel described in this guide, and it requires a superuser account.
+
+1. Open the Django administration at `<root>admin/` (for the demo, `https://mmg-webapps.fjfi.cvut.cz/conference-demo/admin/`).
+2. Log in with a superuser account.
+3. Select **Conferences**.
+4. Select **Add Conference**.
+5. Fill in the fields described below.
+6. Select **Save**.
+
+The creation form asks only for one field:
+
+- **Slug**: the web address of the conference. The conference becomes available at `<root>/<slug>/`. The slug must be unique. The words `auth`, `admin`, `api`, `conferences`, `media`, and `static` are reserved and cannot be used.
+
+After saving, the new conference appears on the landing page immediately and is available at its own address `<root>/<slug>/`. The conference starts empty. Organizers then open its website, enter the admin panel there, fill in its logistics (see below), and build the content as usual.
+
+#### Conference Fields
+
+The logistics fields of a conference are edited in the admin panel of the conference website, in **Edit Web Info** (see **Changing Conference Logistics** below), not in the Django administration:
+
+- **Title**: the full conference name. It is shown on the landing card and in the website header. It is also used as the badges header when the badge title is empty.
+- **Start date** and **End date**: shown as the date range on the landing card. They determine whether the conference is grouped as Running, Upcoming, or Past on the landing page. A conference that does not have both dates is treated as Upcoming. The year displayed with the conference is derived from the start date.
+- **Location**: shown on the landing card and printed in the footer of the badges PDF.
+- **Photo**: the image shown on the landing card.
+- **Short description**: a one-line description shown on the landing card.
+- **Badge title**: the header printed on the badges PDF. When this field is empty, the conference title is used instead.
+
+### Changing Conference Logistics
+
+The logistical facts of a conference (title, dates, location, photo, short description, badge title) are edited in the admin panel of the conference website, in **Edit Web Info**.
+
+1. Open the conference website (`<root>/<slug>/`).
+2. Enter the admin panel from the footer.
+3. Open **Edit Web Info**.
+4. Change the required fields in the logistics block at the top of the form.
+5. Select **Save Changes**.
+
+Website texts such as the homepage description, registration instructions, venue description, and footer are edited in the same form, as described in the **Edit Website Information** chapter. Only the slug is managed in the Django administration.
+
+### Why Conferences Cannot Be Deleted
+
+The delete action is intentionally disabled for conferences in the Django administration. All data of a conference, including its participants, abstracts, submissions, and schedule, is attached to the conference record and would be deleted together with it. A single careless click could therefore destroy a whole conference, including its history.
+
+If a conference must be removed completely, this requires direct intervention in the database by a system administrator. In normal operation, finished conferences are simply left in place; they move to the **Past** group on the landing page automatically once their end date has passed.
+
+### Documents Are Per-Conference
+
+Both document-generation buttons in the admin panel work on the conference you are currently administering:
+
+- **Download Badges** produces badges from the approved submissions of the current conference. The badge header shows the conference badge title (or title), and the footer shows the conference location.
+- **Download Program PDF** produces the program from the schedule of the current conference.
+
+Generating documents on two different conferences never mixes their data.
+
+### Deployment Requirement for Conference Addresses
+
+For the per-conference addresses to work, the reverse proxy in front of the deployment must serve the frontend entry page for every path under the application root that is not a real file. Requests to `api/`, `admin/`, and `media/` under the root must keep being routed to the backend as they are today. Every other path, especially `<root>/<slug>/`, must return the frontend `index.html`, which then opens the conference named in the address.
+
+Example nginx rule for the demo deployment:
+
+```nginx
+location /conference-demo/ {
+    try_files $uri /conference-demo/index.html;
+}
+```
+
+Existing files (styles, scripts, images) are found first; everything else falls back to the entry page. Backend locations such as `location /conference-demo/api/` are longer prefixes and keep precedence automatically. Without this fallback, the landing page keeps working, but every conference address such as `<root>/wsc2026/` returns an error instead of the conference website.
+
+### Old Bookmarks
+
+The root address always shows the landing page. A bookmark to an old address such as `<root>/#/program` therefore opens the landing page instead of the expected conference page. Select the required conference card to continue.
+
+Update bookmarks to the full conference address, for example `<root>/wsc2026/#/program`.
+
+### Unknown Conference Addresses
+
+An address whose conference slug matches no existing conference, for example `<root>/typo-in-the-slug/`, also shows the landing page — the conference websites are only served for real conferences. Select the required conference card to continue, or fix the slug in the address.
 
 ## Participants Info
 
@@ -266,14 +369,16 @@ The **Edit Web Info** section is used to update the content displayed in the pub
 
 ### Home Subsection
 
-Use the **Home** subsection to update information displayed on the homepage.
+Use the **Home** subsection to update the description displayed on the homepage of the conference.
 
 1. Open **Edit Web Info**.
 2. Open the **Home** subsection.
-3. Change the required information in the input field.
+3. Change the description in the input field.
 4. Select **Save Changes**.
 
-After saving, the updated information is displayed in the public part of the website.
+After saving, the updated description is displayed in the public part of the website.
+
+The conference title, dates, location, badge title, and photo are edited in the logistics block at the top of the same form; see **Changing Conference Logistics** in **Managing Multiple Conferences**.
 
 ![Home subsection](./assets/edithome.png)
 
@@ -425,13 +530,15 @@ The admin panel contains two document-generation buttons:
 
 When you select **Download Badges**, the system automatically downloads participant badges in PDF format.
 
-The badge data is generated automatically from published submissions. To change badge information, update the corresponding participant data in **Edit Participants and Abstracts**.
+The badge data is generated automatically from published submissions of the conference you are currently administering. To change badge information, update the corresponding participant data in **Edit Participants and Abstracts**.
+
+The header of the badges PDF shows the conference badge title, or the conference title when the badge title is empty. The footer shows the conference location. To change these values, edit the logistics in **Edit Web Info**; see **Changing Conference Logistics** in **Managing Multiple Conferences**.
 
 #### Download Program PDF
 
 When you select **Download Program PDF**, the system automatically downloads the conference program in PDF format.
 
-The program PDF is generated from the currently published conference schedule. To change the exported program, update the schedule in **Edit Program**.
+The program PDF is generated from the currently published schedule of the conference you are currently administering. To change the exported program, update the schedule in **Edit Program**.
 
 ## Operational Recommendations
 
@@ -448,11 +555,11 @@ Always verify that the following fields are filled in correctly:
 
 ### Before Generating Badges
 
-Make sure all published participant information is correct, because badge data is taken from published submissions.
+Make sure all published participant information is correct, because badge data is taken from published submissions. Also check the conference badge title and location in **Edit Web Info**, because these values are printed on every badge.
 
 ### Before Generating the Program PDF
 
-Make sure all talks are assigned to the correct days, chairs, and times, because the exported PDF is based on the current published schedule.
+Make sure all talks are assigned to the correct days, chairs, and times, because the exported PDF is based on the current published schedule of the conference you are administering.
 
 ## Common Situations
 
@@ -467,6 +574,14 @@ First verify that the correct conference day is selected. If the day is correct 
 ### Changes on the Public Website Are Not Visible
 
 For content editing pages, check whether the correct **Save** or **Save Changes** button was pressed in the relevant card or subsection.
+
+### An Old Bookmark Opens the Landing Page
+
+The root address always shows the landing page. Select the required conference card to continue, or update the bookmark to the full conference address, for example `<root>/wsc2026/#/program`.
+
+### The Wrong Conference Is Being Edited
+
+The admin panel always administers the conference whose website it was opened from; the conference title and slug are shown under the admin panel title. To edit a different conference, leave the admin area, return to the landing page, and open the other conference website.
 
 ## Note
 
