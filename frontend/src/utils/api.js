@@ -1,3 +1,5 @@
+import { conferenceApiPrefix } from "./conferenceSlug";
+
 let isRefreshing = false;
 let failedQueue = [];
 
@@ -5,6 +7,8 @@ const RAW_API_BASE_URL =
   import.meta.env.VITE_BACKEND_API_BASE_URL || "http://localhost:8000";
 
 export const API_BASE_URL = RAW_API_BASE_URL.replace(/\/$/, "");
+
+const GLOBAL_API_PREFIXES = ["/api/auth/", "/api/conferences/"];
 
 function reloadAppAtHomePage() {
   window.location.hash = "/";
@@ -26,7 +30,15 @@ const processQueue = (error, token = null) => {
 export function buildApiUrl(path) {
   if (!path) return API_BASE_URL;
   if (/^https?:\/\//i.test(path)) return path;
-  return `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  const isGlobal = GLOBAL_API_PREFIXES.some(
+    (p) => normalized === p.slice(0, -1) || normalized.startsWith(p)
+  );
+  const prefix = conferenceApiPrefix();
+  if (!isGlobal && prefix && normalized.startsWith("/api/")) {
+    return `${API_BASE_URL}${prefix}${normalized.slice(4)}`;
+  }
+  return `${API_BASE_URL}${normalized}`;
 }
 
 function buildHeaders(options, token) {

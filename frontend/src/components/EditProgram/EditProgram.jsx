@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { buildApiUrl, fetchWithAuth } from "../../utils/api";
-import { clearProgramDirty } from "../../utils/programRefresh";
+import { clearProgramDirty, isProgramDirty } from "../../utils/programRefresh";
 import Loader from "../ui/Loader/Loader";
 import Modal from "../ui/Modal/Modal";
 import Title from "../ui/Title/Title";
@@ -118,7 +118,7 @@ export default function EditProgram() {
   useEffect(() => {
     fetchData();
     function handleFocus() {
-      if (localStorage.getItem("program_needs_refresh")) fetchData();
+      if (isProgramDirty()) fetchData();
     }
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);

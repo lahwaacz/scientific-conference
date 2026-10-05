@@ -27,6 +27,13 @@
   font-size: 18px;
 }
 
+.conferenceCue {
+  margin-top: 8px;
+  font-family: var(--font-main);
+  font-size: 15px;
+  color: #888;
+}
+
 .logoutButton {
   background-color: var(--secondary-color);
   color: white;

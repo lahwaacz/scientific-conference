@@ -13,7 +13,7 @@ export default function Organisers() {
     fetch(buildApiUrl("/api/organizers/"))
       .then((res) => res.json())
       .then((data) => {
-        setOrganisers(data);
+        setOrganisers(Array.isArray(data) ? data : []);
         setLoading(false);
       })
       .catch(() => setLoading(false));

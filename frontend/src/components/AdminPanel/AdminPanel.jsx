@@ -6,6 +6,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { fetchWithAuth } from "../../utils/api";
+import { getConferenceSlug } from "../../utils/conferenceSlug";
+import { useConferenceInfo } from "./../hooks/useConferenceInfo";
 import Loader from "../ui/Loader/Loader";
 import Modal from "../ui/Modal/Modal";
 import Title from "../ui/Title/Title";
@@ -26,6 +28,7 @@ export default function AdminPanel() {
   });
 
   const navigate = useNavigate();
+  const info = useConferenceInfo();
 
   function openModal(config) {
     setModal({
@@ -145,6 +148,9 @@ export default function AdminPanel() {
   return (
     <div className={styles.container}>
       <Title text="Admin Panel" />
+      <p className={styles.conferenceCue}>
+        Conference: {info?.title ?? "…"} ({getConferenceSlug() ?? "…"})
+      </p>
 
       {loading ? (
         <Loader />

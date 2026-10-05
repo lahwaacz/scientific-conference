@@ -14,7 +14,7 @@ export default function OrganisingCommittee() {
     fetch(buildApiUrl("/api/committees/"))
       .then((res) => res.json())
       .then((data) => {
-        setOrganisers(data);
+        setOrganisers(Array.isArray(data) ? data : []);
         setLoading(false);
       })
       .catch(() => setLoading(false));

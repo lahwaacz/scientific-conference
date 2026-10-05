@@ -17,8 +17,11 @@ import EditWebInfoVenue from "./components/EditWebInfoVenue/EditWebInfoVenue";
 import Footer from "./components/Footer/Footer";
 import Header from "./components/Header/Header";
 import Hiking from "./components/Hiking/Hiking";
+import Landing from "./components/Landing/Landing";
 import ParticipantsInfo from "./components/ParticipantsInfo/ParticipantsInfo";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
+import { useConferenceExists } from "./components/hooks/useConferenceExists";
+import Loader from "./components/ui/Loader/Loader";
 import ScrollToTop from "./components/ui/ScrollToTop";
 import Venue from "./components/Venue/Venue";
 import AbstractsPage from "./pages/AbstractsPage";
@@ -28,6 +31,20 @@ import ProgramPage from "./pages/ProgramPage";
 import RegistrationPage from "./pages/RegistrationPage";
 
 function App() {
+  const conferenceState = useConferenceExists();
+
+  // Landing renders bare — conference chrome is per-conference only.
+  // A path slug that matches no real conference ALSO renders the landing
+  // page: every scoped API call would 404 and the component fallbacks
+  // would otherwise fake a "ghost" conference.
+  if (conferenceState === "landing" || conferenceState === "missing") {
+    return <Landing />;
+  }
+
+  if (conferenceState === "checking") {
+    return <Loader />;
+  }
+
   return (
     <Router>
       <ScrollToTop />

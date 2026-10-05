@@ -1,0 +1,94 @@
+.landing {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: clamp(16px, 4vw, 40px);
+}
+
+.pageTitle {
+  font-family: var(--font-title);
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 400;
+  color: var(--primary-color);
+  margin-bottom: clamp(20px, 3vw, 32px);
+}
+
+.group {
+  margin-bottom: clamp(24px, 4vw, 40px);
+}
+
+.groupHeading {
+  font-family: var(--font-title);
+  font-size: clamp(20px, 2.6vw, 26px);
+  font-weight: 400;
+  color: var(--primary-color);
+  border-bottom: 2px solid #1e73be;
+  padding-bottom: 6px;
+  margin-bottom: 16px;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: clamp(12px, 2vw, 20px);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #1e73be;
+  background-color: #fff;
+  color: var(--text-color);
+  overflow: hidden;
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.card:hover {
+  border-color: #074391;
+  box-shadow: 0 4px 16px rgba(7, 67, 145, 0.25);
+}
+
+.photo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: clamp(12px, 2.5vw, 20px);
+}
+
+.cardTitle {
+  font-size: clamp(17px, 2vw, 22px);
+  font-weight: 400;
+}
+
+.dates {
+  font-size: clamp(13px, 1.5vw, 16px);
+  color: var(--primary-color);
+}
+
+.location {
+  font-size: clamp(13px, 1.5vw, 16px);
+}
+
+.description {
+  font-size: clamp(13px, 1.5vw, 16px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.empty {
+  font-size: clamp(14px, 1.6vw, 18px);
+}
+
+.error {
+  font-size: clamp(14px, 1.6vw, 18px);
+  color: #b00020;
+}

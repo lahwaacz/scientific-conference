@@ -12,7 +12,7 @@ export default function Hiking() {
     fetch(buildApiUrl("/api/hiking/"))
       .then((r) => r.json())
       .then((data) => {
-        setRoutes(data);
+        setRoutes(Array.isArray(data) ? data : []);
         setLoading(false);
       })
       .catch(() => setLoading(false));

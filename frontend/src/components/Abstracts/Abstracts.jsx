@@ -15,7 +15,7 @@ export default function Abstracts() {
     fetch(buildApiUrl("/api/abstracts/"))
       .then((res) => res.json())
       .then((data) => {
-        setAbstracts(data);
+        setAbstracts(Array.isArray(data) ? data : []);
         setLoading(false);
       })
       .catch(() => setLoading(false));

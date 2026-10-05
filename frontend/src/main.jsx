@@ -5,6 +5,7 @@ import App from "./App";
 import reportWebVitals from "./reportWebVitals";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { applyBaseUrlToFetch } from "./configuredFetch";
+import { initConferenceSlug } from "./utils/conferenceSlug";
 
 if (
   import.meta.env.VITE_BACKEND_API_BASE_URL !== undefined &&
@@ -12,6 +13,9 @@ if (
 ) {
   applyBaseUrlToFetch(import.meta.env.VITE_BACKEND_API_BASE_URL);
 }
+
+// Capture the conference slug before render (module singleton).
+initConferenceSlug();
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(

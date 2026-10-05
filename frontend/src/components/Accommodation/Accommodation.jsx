@@ -10,7 +10,12 @@ export default function Accommodation() {
   useEffect(() => {
     fetch(buildApiUrl("/api/accommodation/"))
       .then((res) => res.json())
-      .then(setData);
+      .then((payload) =>
+        setData({
+          ...payload,
+          options: Array.isArray(payload.options) ? payload.options : [],
+        })
+      );
   }, []);
 
   return (

@@ -1,11 +1,17 @@
+import { getConferenceSlug } from "./conferenceSlug";
+
+function dirtyFlagKey() {
+  return `program_needs_refresh_${getConferenceSlug() ?? "global"}`;
+}
+
 export function markProgramDirty() {
-  localStorage.setItem("program_needs_refresh", Date.now().toString());
+  localStorage.setItem(dirtyFlagKey(), Date.now().toString());
 }
 
 export function clearProgramDirty() {
-  localStorage.removeItem("program_needs_refresh");
+  localStorage.removeItem(dirtyFlagKey());
 }
 
 export function isProgramDirty() {
-  return !!localStorage.getItem("program_needs_refresh");
+  return !!localStorage.getItem(dirtyFlagKey());
 }

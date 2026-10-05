@@ -17,7 +17,7 @@ export default function Program() {
     fetch(buildApiUrl("/api/program/"))
       .then((res) => res.json())
       .then((data) => {
-        setData(data);
+        setData(Array.isArray(data) ? data : []);
         setLoading(false);
       });
   }, []);

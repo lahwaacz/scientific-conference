@@ -13,7 +13,7 @@ export default function Participants() {
     fetch(buildApiUrl("/api/participants/"))
       .then((res) => res.json())
       .then((data) => {
-        setParticipants(data);
+        setParticipants(Array.isArray(data) ? data : []);
         setLoading(false);
       });
   }, []);

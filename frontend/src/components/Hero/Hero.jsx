@@ -9,15 +9,15 @@ export default function Hero() {
       ? `${formatDate(info.date_start)} - ${formatDate(info.date_end)}. ${info.location}.`
       : "";
 
+  const title = info
+    ? [info.title, info.year].filter(Boolean).join(" ")
+    : "Workshop on Scientific Computing 2025";
+
   return (
     <section className={styles.hero}>
       <div className={styles.container}>
         <div className={styles.leftSide}>
-          <h1 className={styles.mainTitle}>
-            {info
-              ? `${info.title} ${info.year}`
-              : "Workshop on Scientific Computing 2025"}
-          </h1>
+          <h1 className={styles.mainTitle}>{title}</h1>
           <h2 className={styles.date}>{dateStr}</h2>
         </div>
         <div className={styles.rightSide}>

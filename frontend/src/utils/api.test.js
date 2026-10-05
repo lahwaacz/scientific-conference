@@ -217,3 +217,135 @@ describe("fetchWithAuth 401 refresh flow", () => {
     expect(reloadMock).toHaveBeenCalled();
   });
 });
+
+describe("buildApiUrl conference scoping", () => {
+  // conferenceSlug is a module singleton shared with api.js, so initializing
+  // the real module (fresh after vi.resetModules) before importing ./api is
+  // the least-mock way to drive the scoping branch.
+  async function loadApiWithPathname(pathname) {
+    vi.resetModules();
+    window.location.pathname = pathname;
+    const slugModule = await import("./conferenceSlug");
+    slugModule.initConferenceSlug();
+    api = await import("./api");
+  }
+
+  describe("with a conference slug captured", () => {
+    beforeEach(async () => loadApiWithPathname("/wsc2026/"));
+
+    test("scopes a regular /api path under /api/<slug>/", () => {
+      expect(api.buildApiUrl("/api/program/")).toBe(
+        `${BASE}/api/wsc2026/program/`
+      );
+    });
+
+    test("scopes an /api path given without a leading slash", () => {
+      expect(api.buildApiUrl("api/program/")).toBe(
+        `${BASE}/api/wsc2026/program/`
+      );
+    });
+
+    test("passes the global auth endpoints through unscoped", () => {
+      expect(api.buildApiUrl("/api/auth/login/")).toBe(
+        `${BASE}/api/auth/login/`
+      );
+      expect(api.buildApiUrl("/api/auth/refresh/")).toBe(
+        `${BASE}/api/auth/refresh/`
+      );
+    });
+
+    test("passes the conferences endpoint through unscoped", () => {
+      expect(api.buildApiUrl("/api/conferences/")).toBe(
+        `${BASE}/api/conferences/`
+      );
+    });
+
+    test("treats allowlist prefixes without a trailing slash as global", () => {
+      expect(api.buildApiUrl("/api/conferences")).toBe(
+        `${BASE}/api/conferences`
+      );
+      expect(api.buildApiUrl("/api/auth")).toBe(`${BASE}/api/auth`);
+    });
+
+    test("passes absolute http(s) URLs through untouched", () => {
+      expect(api.buildApiUrl("https://elsewhere.test/api/x")).toBe(
+        "https://elsewhere.test/api/x"
+      );
+      expect(api.buildApiUrl("http://elsewhere.test/api/y")).toBe(
+        "http://elsewhere.test/api/y"
+      );
+    });
+
+    test("does not slug-prefix non-/api paths", () => {
+      expect(api.buildApiUrl("/media/x.png")).toBe(`${BASE}/media/x.png`);
+    });
+  });
+
+  describe("without a conference slug (landing page)", () => {
+    beforeEach(async () => loadApiWithPathname("/"));
+
+    test("passes non-allowlisted /api paths through unscoped", () => {
+      expect(api.buildApiUrl("/api/program/")).toBe(`${BASE}/api/program/`);
+    });
+
+    test("keeps the global allowlist unscoped", () => {
+      expect(api.buildApiUrl("/api/conferences/")).toBe(
+        `${BASE}/api/conferences/`
+      );
+      expect(api.buildApiUrl("/api/auth/login/")).toBe(
+        `${BASE}/api/auth/login/`
+      );
+    });
+  });
+
+  test("tolerates the pathname-less window.location mock", async () => {
+    vi.resetModules();
+    const slugModule = await import("./conferenceSlug");
+    expect(() => slugModule.initConferenceSlug()).not.toThrow();
+    expect(slugModule.getConferenceSlug()).toBeNull();
+
+    api = await import("./api");
+    expect(api.buildApiUrl("/api/program/")).toBe(`${BASE}/api/program/`);
+  });
+
+  describe("fetchWithAuth under a captured slug", () => {
+    beforeEach(async () => loadApiWithPathname("/wsc2026/"));
+
+    test("requests hit the slug-scoped URL", async () => {
+      globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+
+      await api.fetchWithAuth("/api/admin/days/");
+
+      expect(globalThis.fetch.mock.calls[0][0]).toBe(
+        `${BASE}/api/wsc2026/admin/days/`
+      );
+    });
+
+    test("refresh stays global and the retry hits the scoped URL", async () => {
+      localStorage.setItem("access_token", "old");
+      localStorage.setItem("refresh_token", "r");
+
+      globalThis.fetch = vi.fn((url, opts) => {
+        if (url === `${BASE}/api/auth/refresh/`) {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({ access: "NEW" }),
+          });
+        }
+        if (opts?.headers?.Authorization === "Bearer NEW") {
+          return Promise.resolve({ ok: true, status: 200 });
+        }
+        return Promise.resolve({ ok: false, status: 401 });
+      });
+
+      const res = await api.fetchWithAuth("/api/data");
+
+      expect(res.status).toBe(200);
+      expect(refreshCallCount()).toBe(1);
+      const [retriedUrl, retriedOpts] = globalThis.fetch.mock.calls.at(-1);
+      expect(retriedUrl).toBe(`${BASE}/api/wsc2026/data`);
+      expect(retriedOpts.headers.Authorization).toBe("Bearer NEW");
+    });
+  });
+});
