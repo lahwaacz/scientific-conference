@@ -4,6 +4,7 @@
 # gitignored; re-run to regenerate.
 #
 # Usage: bash scripts/capture-screenshots.sh
+#        BACKEND_PORT=8001 bash scripts/capture-screenshots.sh   # port override
 #
 # Reproducibility contract:
 #   - backend: freshly migrated + loaddata core/fixtures/program.json
@@ -28,13 +29,28 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BACKEND="$ROOT/backend"
 FRONTEND="$ROOT/frontend"
 OUT="$ROOT/screenshots"
-BACKEND_PORT=8000
-FRONTEND_PORT=3741
+BACKEND_PORT="${BACKEND_PORT:-8000}"
+FRONTEND_PORT="${FRONTEND_PORT:-3741}"
 PWCLI="npx -y @playwright/cli@0.1.22"
 
+die() {
+  echo "ERROR: $*" >&2
+  exit 1
+}
+
+# --- pre-flight: the ports must be free, or the captures would silently run
+# against a foreign server (seen in the wild: an orphan dev server without
+# this script's CORS env poisoned the whole baseline with spinners).
+port_open() { (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; }
+port_open "$BACKEND_PORT" && die "port $BACKEND_PORT is already in use (set BACKEND_PORT to override)"
+port_open "$FRONTEND_PORT" && die "port $FRONTEND_PORT is already in use (set FRONTEND_PORT to override)"
+
+# --- background servers get their own process groups so cleanup kills the
+# whole tree (uv spawns python; a bare `kill $PID` only hits the subshell).
+set -m
 cleanup() {
-  [[ -n "${BACKEND_PID:-}" ]] && kill "$BACKEND_PID" 2>/dev/null || true
-  [[ -n "${FRONTEND_PID:-}" ]] && kill "$FRONTEND_PID" 2>/dev/null || true
+  [[ -n "${BACKEND_PID:-}" ]] && kill -- "-$BACKEND_PID" 2>/dev/null || true
+  [[ -n "${FRONTEND_PID:-}" ]] && kill -- "-$FRONTEND_PID" 2>/dev/null || true
   $PWCLI kill-all >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
@@ -60,17 +76,33 @@ cp "$FRONTEND/build/index.html" "$FRONTEND/build/wsc2026/index.html"
 python3 -m http.server "$FRONTEND_PORT" -d "$FRONTEND/build" \
   >/dev/null 2>&1 &
 FRONTEND_PID=$!
+set +m
 
 # --- wait for both servers ---------------------------------------------------
-for i in $(seq 1 60); do
+# The liveness checks matter: a server that dies (bad port, failed bind)
+# must abort the run instead of letting the readiness curl hit some other
+# process that happens to listen there.
+for _ in $(seq 1 60); do
   backend_up=false; frontend_up=false
   curl -sf "http://localhost:$BACKEND_PORT/api/wsc2026/conference-info/" \
     >/dev/null 2>&1 && backend_up=true
   curl -sf "http://localhost:$FRONTEND_PORT/" >/dev/null 2>&1 \
     && frontend_up=true
   $backend_up && $frontend_up && break
+  kill -0 "$BACKEND_PID" 2>/dev/null || die "backend server exited before becoming ready"
+  kill -0 "$FRONTEND_PID" 2>/dev/null || die "frontend server exited before becoming ready"
   sleep 1
 done
+$backend_up || die "backend on :$BACKEND_PORT never became ready"
+$frontend_up || die "frontend on :$FRONTEND_PORT never became ready"
+
+# --- CORS contract: the browser on :$FRONTEND_PORT must be allowed to read
+# the API, or every in-page fetch silently fails and all captures degrade
+# to spinners and fallbacks (byte-stable, but wrong).
+curl -si "http://localhost:$BACKEND_PORT/api/conferences/" \
+  -H "Origin: http://localhost:$FRONTEND_PORT" \
+  | grep -qi "^access-control-allow-origin:" \
+  || die "backend does not send CORS headers for http://localhost:$FRONTEND_PORT"
 
 # --- captures ----------------------------------------------------------------
 mkdir -p "$OUT"
@@ -128,7 +160,7 @@ capture admin-web-info         /admin-panel/edit-web-info
 capture admin-web-info-home    /admin-panel/edit-web-info/home
 capture admin-web-info-registration /admin-panel/edit-web-info/registration
 capture admin-web-info-program /admin-panel/edit-web-info/program
-capture admin-web-info-venue   /admin-panel/edit-web-info/venue
+capture admin-web-info-venue  /admin-panel/edit-web-info/venue
 capture admin-web-info-accommodation /admin-panel/edit-web-info/accommodation
 capture admin-web-info-hiking  /admin-panel/edit-web-info/hiking
 capture admin-web-info-footer  /admin-panel/edit-web-info/footer
