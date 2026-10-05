@@ -66,6 +66,37 @@ describe("useLockBodyScroll", () => {
 
     unmount();
   });
+
+  test("unlocks by restoring the saved offset without smooth scrolling", () => {
+    Object.defineProperty(window, "scrollY", {
+      configurable: true,
+      writable: true,
+      value: 250,
+    });
+    const scrollTo = vi.fn();
+    window.scrollTo = scrollTo;
+
+    const { rerender } = renderHook(({ locked }) => useLockBodyScroll(locked), {
+      initialProps: { locked: true },
+    });
+
+    rerender({ locked: false });
+
+    expect(scrollTo).toHaveBeenCalledWith(0, 250);
+    // The instant-scroll override must not leak past the restore.
+    expect(document.documentElement.style.scrollBehavior).toBe("");
+  });
+
+  test("does not touch the scroll position while unlocked", () => {
+    const scrollTo = vi.fn();
+    window.scrollTo = scrollTo;
+
+    renderHook(({ locked }) => useLockBodyScroll(locked), {
+      initialProps: { locked: false },
+    });
+
+    expect(scrollTo).not.toHaveBeenCalled();
+  });
 });
 
 describe("useConferenceExists", () => {
