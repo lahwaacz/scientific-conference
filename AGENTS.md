@@ -112,7 +112,7 @@ CI=true npm test                      # one-shot Vitest (101 tests incl. confere
 npm run build                         # compile (ESLint plugin disabled)
 npm run lint                          # Biome lint (0 errors gate, CSS included)
 npm run format:check                  # Biome format gate
-bash scripts/capture-screenshots.sh   # visual regression baseline -> screenshots/ (21 PNGs incl. landing; BACKEND_PORT/FRONTEND_PORT env-overridable, fails fast on port conflicts)
+bash scripts/capture-screenshots.sh   # visual regression baseline -> screenshots/ (21 PNGs incl. landing; --backend-port/--frontend-port flags, fails fast on port conflicts)
 
 # Docker (as CI does)
 docker build backend/                 # -> ghcr.io/<repo>-backend

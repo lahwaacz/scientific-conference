@@ -4,7 +4,9 @@
 # gitignored; re-run to regenerate.
 #
 # Usage: bash scripts/capture-screenshots.sh
-#        BACKEND_PORT=8001 bash scripts/capture-screenshots.sh   # port override
+#        bash scripts/capture-screenshots.sh --backend-port 8001
+#        bash scripts/capture-screenshots.sh --backend-port 8001 --frontend-port 3742
+#        bash scripts/capture-screenshots.sh --help
 #
 # Reproducibility contract:
 #   - backend: freshly migrated + loaddata the demo fixtures
@@ -29,21 +31,39 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BACKEND="$ROOT/backend"
 FRONTEND="$ROOT/frontend"
 OUT="$ROOT/screenshots"
-BACKEND_PORT="${BACKEND_PORT:-8000}"
-FRONTEND_PORT="${FRONTEND_PORT:-3741}"
-PWCLI="npx -y @playwright/cli@0.1.22"
+usage() {
+  echo "usage: $0 [--backend-port N] [--frontend-port N]"
+}
 
 die() {
   echo "ERROR: $*" >&2
   exit 1
 }
 
+BACKEND_PORT=8000
+FRONTEND_PORT=3741
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --backend-port)
+      [[ $# -ge 2 && "$2" =~ ^[0-9]+$ ]] || die "--backend-port needs a numeric value"
+      BACKEND_PORT="$2"; shift 2 ;;
+    --frontend-port)
+      [[ $# -ge 2 && "$2" =~ ^[0-9]+$ ]] || die "--frontend-port needs a numeric value"
+      FRONTEND_PORT="$2"; shift 2 ;;
+    -h|--help)
+      usage; exit 0 ;;
+    *)
+      usage >&2; die "unknown argument: $1" ;;
+  esac
+done
+PWCLI="npx -y @playwright/cli@0.1.22"
+
 # --- pre-flight: the ports must be free, or the captures would silently run
 # against a foreign server (seen in the wild: an orphan dev server without
 # this script's CORS env poisoned the whole baseline with spinners).
 port_open() { (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; }
-port_open "$BACKEND_PORT" && die "port $BACKEND_PORT is already in use (set BACKEND_PORT to override)"
-port_open "$FRONTEND_PORT" && die "port $FRONTEND_PORT is already in use (set FRONTEND_PORT to override)"
+port_open "$BACKEND_PORT" && die "port $BACKEND_PORT is already in use (pass --backend-port to override)"
+port_open "$FRONTEND_PORT" && die "port $FRONTEND_PORT is already in use (pass --frontend-port to override)"
 
 # --- background servers get their own process groups so cleanup kills the
 # whole tree (uv spawns python; a bare `kill $PID` only hits the subshell).
@@ -156,10 +176,10 @@ capture admin-panel            /admin-panel
 capture admin-participants     /admin-panel/participants-info
 capture admin-edit-participants /admin-panel/edit-participants
 capture admin-edit-program     /admin-panel/edit-program
+capture admin-program-info     /admin-panel/edit-program/info
 capture admin-web-info         /admin-panel/edit-web-info
 capture admin-web-info-home    /admin-panel/edit-web-info/home
 capture admin-web-info-registration /admin-panel/edit-web-info/registration
-capture admin-web-info-program /admin-panel/edit-web-info/program
 capture admin-web-info-venue  /admin-panel/edit-web-info/venue
 capture admin-web-info-accommodation /admin-panel/edit-web-info/accommodation
 capture admin-web-info-hiking  /admin-panel/edit-web-info/hiking
