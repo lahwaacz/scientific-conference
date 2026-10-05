@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import LogoIcon from "../../assets/logo.svg";
+import { buildApiUrl } from "../../utils/api";
 import { useLockBodyScroll } from "./../hooks/useLockBodyScroll";
 import styles from "./Header.module.css";
 
@@ -74,12 +75,37 @@ function Logo({ onNavigate }) {
 function Navbar({ isOpen, onNavigate }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [pinnedOpen, setPinnedOpen] = useState(false);
+  // null = not yet known; false hides the link. Fetch failures and
+  // non-list payloads fail open so a backend hiccup never hides nav.
+  const [hasAccommodation, setHasAccommodation] = useState(null);
+  const [hasHiking, setHasHiking] = useState(null);
   let timeout;
+
+  useEffect(() => {
+    fetch(buildApiUrl("/api/accommodation/"))
+      .then((res) => (res.ok ? res.json() : null))
+      .then((payload) =>
+        setHasAccommodation(
+          !payload ||
+            Boolean(payload.description) ||
+            (Array.isArray(payload.options) && payload.options.length > 0)
+        )
+      )
+      .catch(() => setHasAccommodation(true));
+    fetch(buildApiUrl("/api/hiking/"))
+      .then((res) => (res.ok ? res.json() : null))
+      .then((routes) =>
+        setHasHiking(!Array.isArray(routes) || routes.length > 0)
+      )
+      .catch(() => setHasHiking(true));
+  }, []);
 
   const open = () => {
     clearTimeout(timeout);
     setDropdownOpen(true);
   };
+
+  const hasSubmenuItems = hasAccommodation !== false || hasHiking !== false;
 
   const close = () => {
     if (pinnedOpen) {
@@ -138,11 +164,11 @@ function Navbar({ isOpen, onNavigate }) {
           </Link>
         </div>
 
-        {/* DROPDOWN */}
+        {/* DROPDOWN — hidden entirely when neither section has content */}
         <div
           className={`${styles.navItem} ${styles.dropdownWrapper}`}
-          onMouseEnter={open}
-          onMouseLeave={close}
+          onMouseEnter={hasSubmenuItems ? open : undefined}
+          onMouseLeave={hasSubmenuItems ? close : undefined}
         >
           <div className={styles.venueRow}>
             <Link
@@ -152,37 +178,43 @@ function Navbar({ isOpen, onNavigate }) {
             >
               Venue
             </Link>
-            <button
-              type="button"
-              className={styles.arrow}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleClick();
-              }}
-              aria-label="Toggle venue submenu"
-              aria-expanded={dropdownOpen}
-            >
-              ▼
-            </button>
+            {(hasAccommodation !== false || hasHiking !== false) && (
+              <button
+                type="button"
+                className={styles.arrow}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleClick();
+                }}
+                aria-label="Toggle venue submenu"
+                aria-expanded={dropdownOpen}
+              >
+                ▼
+              </button>
+            )}
           </div>
 
-          {dropdownOpen && (
+          {dropdownOpen && hasSubmenuItems && (
             <div className={styles.dropdownMenu}>
-              <Link
-                to="/accommodation"
-                className={styles.dropdownItem}
-                onClick={onNavigate}
-              >
-                Accommodation
-              </Link>
-              <Link
-                to="/hiking"
-                className={styles.dropdownItem}
-                onClick={onNavigate}
-              >
-                Hiking excursion
-              </Link>
+              {hasAccommodation !== false && (
+                <Link
+                  to="/accommodation"
+                  className={styles.dropdownItem}
+                  onClick={onNavigate}
+                >
+                  Accommodation
+                </Link>
+              )}
+              {hasHiking !== false && (
+                <Link
+                  to="/hiking"
+                  className={styles.dropdownItem}
+                  onClick={onNavigate}
+                >
+                  Hiking excursion
+                </Link>
+              )}
             </div>
           )}
         </div>
