@@ -15,7 +15,7 @@
       "day": 1,
       "chair": "Jana Novotná",
       "start_time": "14:00",
-      "end_time": "16:00"
+      "end_time": "16:15"
     }
   },
   {
@@ -28,7 +28,336 @@
       "abstract": 1,
       "title": "Finite volume schemes for two-phase flow in heterogeneous porous media",
       "start_time": "14:10",
-      "end_time": "14:30"
+      "end_time": "14:30",
+      "is_scheduled": true
+    }
+  },
+  {
+    "model": "core.talk",
+    "pk": 2,
+    "fields": {
+      "conference": 1,
+      "session": 1,
+      "participant": 2,
+      "abstract": 2,
+      "title": "Adaptive time stepping for stiff reaction-diffusion systems",
+      "start_time": "14:35",
+      "end_time": "14:55",
+      "is_scheduled": true
+    }
+  },
+  {
+    "model": "core.talk",
+    "pk": 3,
+    "fields": {
+      "conference": 1,
+      "session": 1,
+      "participant": 3,
+      "abstract": 3,
+      "title": "A posteriori error estimates for mixed finite element methods",
+      "start_time": "15:00",
+      "end_time": "15:20",
+      "is_scheduled": true
+    }
+  },
+  {
+    "model": "core.talk",
+    "pk": 4,
+    "fields": {
+      "conference": 1,
+      "session": 1,
+      "participant": 4,
+      "abstract": 4,
+      "title": "Numerical simulation of shallow water flows on unstructured meshes",
+      "start_time": "15:25",
+      "end_time": "15:45",
+      "is_scheduled": true
+    }
+  },
+  {
+    "model": "core.talk",
+    "pk": 5,
+    "fields": {
+      "conference": 1,
+      "session": 1,
+      "participant": 5,
+      "abstract": 5,
+      "title": "Higher-order discontinuous Galerkin methods for compressible flow",
+      "start_time": "15:50",
+      "end_time": "16:10",
+      "is_scheduled": true
+    }
+  },
+  {
+    "model": "core.conferenceday",
+    "pk": 2,
+    "fields": {
+      "conference": 2,
+      "date": "2026-10-05"
+    }
+  },
+  {
+    "model": "core.session",
+    "pk": 2,
+    "fields": {
+      "conference": 2,
+      "day": 2,
+      "chair": "Martin Havelka",
+      "start_time": "14:00",
+      "end_time": "15:30"
+    }
+  },
+  {
+    "model": "core.talk",
+    "pk": 6,
+    "fields": {
+      "conference": 2,
+      "session": 2,
+      "participant": 6,
+      "abstract": 6,
+      "title": "Parallel solvers for large sparse linear systems",
+      "start_time": "14:10",
+      "end_time": "14:30",
+      "is_scheduled": true
+    }
+  },
+  {
+    "model": "core.talk",
+    "pk": 7,
+    "fields": {
+      "conference": 2,
+      "session": 2,
+      "participant": 7,
+      "abstract": 7,
+      "title": "Model order reduction of parametrized partial differential equations",
+      "start_time": "14:35",
+      "end_time": "14:55",
+      "is_scheduled": true
+    }
+  },
+  {
+    "model": "core.talk",
+    "pk": 8,
+    "fields": {
+      "conference": 2,
+      "session": 2,
+      "participant": 8,
+      "abstract": 8,
+      "title": "Uncertainty quantification in groundwater flow models",
+      "start_time": "15:00",
+      "end_time": "15:20",
+      "is_scheduled": true
+    }
+  },
+  {
+    "model": "core.conferenceday",
+    "pk": 3,
+    "fields": {
+      "conference": 3,
+      "date": "2027-06-15"
+    }
+  },
+  {
+    "model": "core.session",
+    "pk": 3,
+    "fields": {
+      "conference": 3,
+      "day": 3,
+      "chair": "Ondřej Marek",
+      "start_time": "14:00",
+      "end_time": "16:00"
+    }
+  },
+  {
+    "model": "core.talk",
+    "pk": 9,
+    "fields": {
+      "conference": 3,
+      "session": 3,
+      "participant": 9,
+      "abstract": 9,
+      "title": "Particle methods for the Vlasov-Poisson system",
+      "start_time": "14:10",
+      "end_time": "14:30",
+      "is_scheduled": true
+    }
+  },
+  {
+    "model": "core.talk",
+    "pk": 10,
+    "fields": {
+      "conference": 3,
+      "session": 3,
+      "participant": 10,
+      "abstract": 10,
+      "title": "Spectral element discretizations of wave propagation problems",
+      "start_time": "14:35",
+      "end_time": "14:55",
+      "is_scheduled": true
+    }
+  },
+  {
+    "model": "core.talk",
+    "pk": 11,
+    "fields": {
+      "conference": 3,
+      "session": 3,
+      "participant": 11,
+      "abstract": 11,
+      "title": "Machine learning surrogates for multiscale simulations",
+      "start_time": "15:00",
+      "end_time": "15:20",
+      "is_scheduled": true
+    }
+  },
+  {
+    "model": "core.talk",
+    "pk": 12,
+    "fields": {
+      "conference": 3,
+      "session": 3,
+      "participant": 12,
+      "abstract": 12,
+      "title": "Structure-preserving integrators for Hamiltonian systems",
+      "start_time": "15:25",
+      "end_time": "15:45",
+      "is_scheduled": true
+    }
+  },
+  {
+    "model": "core.conferenceday",
+    "pk": 4,
+    "fields": {
+      "conference": 4,
+      "date": "2027-11-04"
+    }
+  },
+  {
+    "model": "core.session",
+    "pk": 4,
+    "fields": {
+      "conference": 4,
+      "day": 4,
+      "chair": "Tereza Bláhová",
+      "start_time": "14:00",
+      "end_time": "15:30"
+    }
+  },
+  {
+    "model": "core.talk",
+    "pk": 13,
+    "fields": {
+      "conference": 4,
+      "session": 4,
+      "participant": 13,
+      "abstract": 13,
+      "title": "Optimal control of flows in vascular networks",
+      "start_time": "14:10",
+      "end_time": "14:30",
+      "is_scheduled": true
+    }
+  },
+  {
+    "model": "core.talk",
+    "pk": 14,
+    "fields": {
+      "conference": 4,
+      "session": 4,
+      "participant": 14,
+      "abstract": 14,
+      "title": "Domain decomposition methods for coupled multiphysics problems",
+      "start_time": "14:35",
+      "end_time": "14:55",
+      "is_scheduled": true
+    }
+  },
+  {
+    "model": "core.talk",
+    "pk": 15,
+    "fields": {
+      "conference": 4,
+      "session": 4,
+      "participant": 15,
+      "abstract": 15,
+      "title": "Parameter identification in reaction-diffusion models",
+      "start_time": "15:00",
+      "end_time": "15:20",
+      "is_scheduled": true
+    }
+  },
+  {
+    "model": "core.conferenceday",
+    "pk": 5,
+    "fields": {
+      "conference": 5,
+      "date": "2024-05-23"
+    }
+  },
+  {
+    "model": "core.session",
+    "pk": 5,
+    "fields": {
+      "conference": 5,
+      "day": 5,
+      "chair": "David Černý",
+      "start_time": "14:00",
+      "end_time": "16:00"
+    }
+  },
+  {
+    "model": "core.talk",
+    "pk": 16,
+    "fields": {
+      "conference": 5,
+      "session": 5,
+      "participant": 16,
+      "abstract": 16,
+      "title": "Lattice Boltzmann methods for complex geometries",
+      "start_time": "14:10",
+      "end_time": "14:30",
+      "is_scheduled": true
+    }
+  },
+  {
+    "model": "core.talk",
+    "pk": 17,
+    "fields": {
+      "conference": 5,
+      "session": 5,
+      "participant": 17,
+      "abstract": 17,
+      "title": "Anisotropic mesh adaptation for singularly perturbed problems",
+      "start_time": "14:35",
+      "end_time": "14:55",
+      "is_scheduled": true
+    }
+  },
+  {
+    "model": "core.talk",
+    "pk": 18,
+    "fields": {
+      "conference": 5,
+      "session": 5,
+      "participant": 18,
+      "abstract": 18,
+      "title": "GPU acceleration of explicit finite difference solvers",
+      "start_time": "15:00",
+      "end_time": "15:20",
+      "is_scheduled": true
+    }
+  },
+  {
+    "model": "core.talk",
+    "pk": 19,
+    "fields": {
+      "conference": 5,
+      "session": 5,
+      "participant": 19,
+      "abstract": 19,
+      "title": "Verified numerics for enclosure of solutions of ODEs",
+      "start_time": "15:25",
+      "end_time": "15:45",
+      "is_scheduled": true
     }
   }
 ]
