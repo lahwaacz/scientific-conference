@@ -38,6 +38,7 @@
   border: 1px solid #1e73be;
   background-color: #fff;
   color: var(--text-color);
+  text-decoration: none;
   overflow: hidden;
   transition:
     border-color 0.3s ease,
