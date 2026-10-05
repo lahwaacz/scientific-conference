@@ -103,7 +103,7 @@ uv run pytest                         # backend suite (pytest-django; 146 tests 
                                       #   incl. conference model/isolation/singleton/conferences-endpoint suites)
 uv run ruff check . && uv run ruff format --check .
 uv run pyright                        # type check via django-stubs
-uv run python manage.py loaddata program.json  # seed: wsc2026 conference + sample program
+uv run python manage.py loaddata conferences.json participants.json program.json  # seed: 5 demo conferences, 19 participants with abstracts/submissions, organizers/committee, sample program
 
 # Frontend (workdir frontend/)
 npm install
@@ -112,7 +112,7 @@ CI=true npm test                      # one-shot Vitest (101 tests incl. confere
 npm run build                         # compile (ESLint plugin disabled)
 npm run lint                          # Biome lint (0 errors gate, CSS included)
 npm run format:check                  # Biome format gate
-bash scripts/capture-screenshots.sh   # visual regression baseline -> screenshots/ (21 PNGs incl. landing)
+bash scripts/capture-screenshots.sh   # visual regression baseline -> screenshots/ (21 PNGs incl. landing; BACKEND_PORT/FRONTEND_PORT env-overridable, fails fast on port conflicts)
 
 # Docker (as CI does)
 docker build backend/                 # -> ghcr.io/<repo>-backend

@@ -7,7 +7,7 @@
 #        BACKEND_PORT=8001 bash scripts/capture-screenshots.sh   # port override
 #
 # Reproducibility contract:
-#   - backend: freshly migrated + loaddata core/fixtures/program.json
+#   - backend: freshly migrated + loaddata the demo fixtures
 #   - frontend: production build against that backend, served statically
 #   - built with VITE_BASE_PATH=/ so asset URLs are absolute at the root
 #     and resolve at any page depth under python3 -m http.server
@@ -57,7 +57,7 @@ trap cleanup EXIT
 
 # --- backend: migrate + seed + runserver ------------------------------------
 (cd "$BACKEND" && uv run python manage.py migrate --run-syncdb --noinput)
-(cd "$BACKEND" && uv run python manage.py loaddata program.json)
+(cd "$BACKEND" && uv run python manage.py loaddata conferences.json participants.json program.json)
 (cd "$BACKEND" && DJANGO_ALLOWED_HOSTS=localhost \
   DJANGO_CSRF_TRUSTED_ORIGINS="http://localhost:$FRONTEND_PORT" \
   uv run python manage.py runserver "$BACKEND_PORT" \

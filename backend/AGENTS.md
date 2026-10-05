@@ -19,7 +19,7 @@ backend/
 │   ├── admin.py            # decorator-style @admin.register
 │   ├── signals.py          # email on publish; wired via CoreConfig.ready() (apps.py)
 │   ├── migrations/         # 15 migrations
-│   ├── fixtures/program.json  # seed data (wsc2026 conference + sample program)
+│   ├── fixtures/            # split demo seed: conferences.json, participants.json, program.json
 │   ├── conftest.py         # pytest fixtures: wsc()/other() two-conference factory + api() URL helper
 │   ├── tests.py            # original suites (Django TestCase, pytest runs them)
 │   ├── test_*.py           # pytest-django suites by domain (schedule, publishing,

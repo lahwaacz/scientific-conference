@@ -1,0 +1,1176 @@
+[
+  {
+    "model": "core.participant",
+    "pk": 1,
+    "fields": {
+      "conference": 1,
+      "name": "Jana Novotná",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "jana.novotna@example.org"
+    }
+  },
+  {
+    "model": "core.participant",
+    "pk": 2,
+    "fields": {
+      "conference": 1,
+      "name": "Petr Kalenský",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "petr.kalensky@example.org"
+    }
+  },
+  {
+    "model": "core.participant",
+    "pk": 3,
+    "fields": {
+      "conference": 1,
+      "name": "Markéta Doležalová",
+      "affiliation": "Charles University, Faculty of Mathematics and Physics",
+      "email": "marketa.dolezalova@example.org"
+    }
+  },
+  {
+    "model": "core.participant",
+    "pk": 4,
+    "fields": {
+      "conference": 1,
+      "name": "Tomáš Vrána",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "tomas.vrana@example.org"
+    }
+  },
+  {
+    "model": "core.participant",
+    "pk": 5,
+    "fields": {
+      "conference": 1,
+      "name": "Lucie Šimková",
+      "affiliation": "Brno University of Technology",
+      "email": "lucie.simkova@example.org"
+    }
+  },
+  {
+    "model": "core.participant",
+    "pk": 6,
+    "fields": {
+      "conference": 2,
+      "name": "Martin Havelka",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "martin.havelka@example.org"
+    }
+  },
+  {
+    "model": "core.participant",
+    "pk": 7,
+    "fields": {
+      "conference": 2,
+      "name": "Eva Beranová",
+      "affiliation": "University of West Bohemia",
+      "email": "eva.beranova@example.org"
+    }
+  },
+  {
+    "model": "core.participant",
+    "pk": 8,
+    "fields": {
+      "conference": 2,
+      "name": "Jan Kolář",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "jan.kolar@example.org"
+    }
+  },
+  {
+    "model": "core.participant",
+    "pk": 9,
+    "fields": {
+      "conference": 3,
+      "name": "Klára Sýkorová",
+      "affiliation": "Palacký University Olomouc",
+      "email": "klara.sykorova@example.org"
+    }
+  },
+  {
+    "model": "core.participant",
+    "pk": 10,
+    "fields": {
+      "conference": 3,
+      "name": "Ondřej Marek",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "ondrej.marek@example.org"
+    }
+  },
+  {
+    "model": "core.participant",
+    "pk": 11,
+    "fields": {
+      "conference": 3,
+      "name": "Barbora Krátká",
+      "affiliation": "Charles University, Faculty of Mathematics and Physics",
+      "email": "barbora.kratka@example.org"
+    }
+  },
+  {
+    "model": "core.participant",
+    "pk": 12,
+    "fields": {
+      "conference": 3,
+      "name": "Filip Holub",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "filip.holub@example.org"
+    }
+  },
+  {
+    "model": "core.participant",
+    "pk": 13,
+    "fields": {
+      "conference": 4,
+      "name": "Tereza Bláhová",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "tereza.blahova@example.org"
+    }
+  },
+  {
+    "model": "core.participant",
+    "pk": 14,
+    "fields": {
+      "conference": 4,
+      "name": "Jakub Rychtář",
+      "affiliation": "Technical University of Liberec",
+      "email": "jakub.rychtar@example.org"
+    }
+  },
+  {
+    "model": "core.participant",
+    "pk": 15,
+    "fields": {
+      "conference": 4,
+      "name": "Anna Žáková",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "anna.zakova@example.org"
+    }
+  },
+  {
+    "model": "core.participant",
+    "pk": 16,
+    "fields": {
+      "conference": 5,
+      "name": "David Černý",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "david.cerny@example.org"
+    }
+  },
+  {
+    "model": "core.participant",
+    "pk": 17,
+    "fields": {
+      "conference": 5,
+      "name": "Veronika Kučerová",
+      "affiliation": "University of South Bohemia",
+      "email": "veronika.kucerova@example.org"
+    }
+  },
+  {
+    "model": "core.participant",
+    "pk": 18,
+    "fields": {
+      "conference": 5,
+      "name": "Michal Stejskal",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "michal.stejskal@example.org"
+    }
+  },
+  {
+    "model": "core.participant",
+    "pk": 19,
+    "fields": {
+      "conference": 5,
+      "name": "Petra Malá",
+      "affiliation": "Charles University, Faculty of Mathematics and Physics",
+      "email": "petra.mala@example.org"
+    }
+  },
+  {
+    "model": "core.abstract",
+    "pk": 1,
+    "fields": {
+      "conference": 1,
+      "title": "Finite volume schemes for two-phase flow in heterogeneous porous media",
+      "text": "We propose a monotone finite volume discretization of two-phase flow in porous media with discontinuous permeability. Numerical experiments on benchmark problems confirm the expected convergence on unstructured meshes.",
+      "authors": "Jana Novotná",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "participant": 1
+    }
+  },
+  {
+    "model": "core.abstract",
+    "pk": 2,
+    "fields": {
+      "conference": 1,
+      "title": "Adaptive time stepping for stiff reaction-diffusion systems",
+      "text": "An adaptive controller based on embedded lower-order approximations is used to integrate stiff reaction-diffusion problems. The controller keeps the local error below a user-prescribed tolerance at minimal cost.",
+      "authors": "Petr Kalenský",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "participant": 2
+    }
+  },
+  {
+    "model": "core.abstract",
+    "pk": 3,
+    "fields": {
+      "conference": 1,
+      "title": "A posteriori error estimates for mixed finite element methods",
+      "text": "We derive residual-based a posteriori error estimates for mixed formulations of elliptic problems. The estimates are robust with respect to jumps in the diffusion coefficient.",
+      "authors": "Markéta Doležalová, Vojtěch Prchal",
+      "department": "Charles University, Faculty of Mathematics and Physics",
+      "participant": 3
+    }
+  },
+  {
+    "model": "core.abstract",
+    "pk": 4,
+    "fields": {
+      "conference": 1,
+      "title": "Numerical simulation of shallow water flows on unstructured meshes",
+      "text": "A well-balanced scheme for the shallow water equations with wetting and drying is presented. The method preserves lake-at-rest solutions on unstructured triangular grids.",
+      "authors": "Tomáš Vrána",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "participant": 4
+    }
+  },
+  {
+    "model": "core.abstract",
+    "pk": 5,
+    "fields": {
+      "conference": 1,
+      "title": "Higher-order discontinuous Galerkin methods for compressible flow",
+      "text": "Shock-capturing strategies for high-order discontinuous Galerkin discretizations of the Euler equations are discussed. Limiter-based and artificial-viscosity approaches are compared on standard benchmarks.",
+      "authors": "Lucie Šimková",
+      "department": "Brno University of Technology",
+      "participant": 5
+    }
+  },
+  {
+    "model": "core.abstract",
+    "pk": 6,
+    "fields": {
+      "conference": 2,
+      "title": "Parallel solvers for large sparse linear systems",
+      "text": "Algebraic multigrid preconditioners for massively parallel architectures are discussed. Weak scaling results on up to ten thousand cores are presented.",
+      "authors": "Martin Havelka",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "participant": 6
+    }
+  },
+  {
+    "model": "core.abstract",
+    "pk": 7,
+    "fields": {
+      "conference": 2,
+      "title": "Model order reduction of parametrized partial differential equations",
+      "text": "Reduced basis methods for parametrized elliptic problems are reviewed with emphasis on a posteriori certification. Applications to heat transfer and elasticity are shown.",
+      "authors": "Eva Beranová",
+      "department": "University of West Bohemia",
+      "participant": 7
+    }
+  },
+  {
+    "model": "core.abstract",
+    "pk": 8,
+    "fields": {
+      "conference": 2,
+      "title": "Uncertainty quantification in groundwater flow models",
+      "text": "A multilevel Monte Carlo method for elliptic problems with random coefficients is analyzed. The variance reduction achieved by the multilevel estimator is demonstrated on a groundwater benchmark.",
+      "authors": "Jan Kolář",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "participant": 8
+    }
+  },
+  {
+    "model": "core.abstract",
+    "pk": 9,
+    "fields": {
+      "conference": 3,
+      "title": "Particle methods for the Vlasov-Poisson system",
+      "text": "A convergent particle method with remapping for the Vlasov-Poisson system is presented. The remapping step controls the growth of particle noise over long time horizons.",
+      "authors": "Klára Sýkorová",
+      "department": "Palacký University Olomouc",
+      "participant": 9
+    }
+  },
+  {
+    "model": "core.abstract",
+    "pk": 10,
+    "fields": {
+      "conference": 3,
+      "title": "Spectral element discretizations of wave propagation problems",
+      "text": "High-order spectral elements are applied to the acoustic wave equation in complex geometry. Dispersive error analysis and time integration choices are discussed.",
+      "authors": "Ondřej Marek",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "participant": 10
+    }
+  },
+  {
+    "model": "core.abstract",
+    "pk": 11,
+    "fields": {
+      "conference": 3,
+      "title": "Machine learning surrogates for multiscale simulations",
+      "text": "Neural network surrogates replace the fine-scale solver in a multiscale elliptic problem. Training data requirements and the reliability of the surrogate are studied.",
+      "authors": "Barbora Krátká, Šimon Doležel",
+      "department": "Charles University, Faculty of Mathematics and Physics",
+      "participant": 11
+    }
+  },
+  {
+    "model": "core.abstract",
+    "pk": 12,
+    "fields": {
+      "conference": 3,
+      "title": "Structure-preserving integrators for Hamiltonian systems",
+      "text": "Variational integrators preserve energy behavior over exponentially long times. Several variants are compared on the nonlinear Schrödinger equation.",
+      "authors": "Filip Holub",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "participant": 12
+    }
+  },
+  {
+    "model": "core.abstract",
+    "pk": 13,
+    "fields": {
+      "conference": 4,
+      "title": "Optimal control of flows in vascular networks",
+      "text": "A reduced-order optimal control approach for flow in networks of elastic tubes is presented. The method enables fast parameter studies for physiological configurations.",
+      "authors": "Tereza Bláhová",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "participant": 13
+    }
+  },
+  {
+    "model": "core.abstract",
+    "pk": 14,
+    "fields": {
+      "conference": 4,
+      "title": "Domain decomposition methods for coupled multiphysics problems",
+      "text": "Robin-type interface conditions are used to couple heat and flow subproblems. Convergence of the resulting iterative scheme is analyzed and verified numerically.",
+      "authors": "Jakub Rychtář",
+      "department": "Technical University of Liberec",
+      "participant": 14
+    }
+  },
+  {
+    "model": "core.abstract",
+    "pk": 15,
+    "fields": {
+      "conference": 4,
+      "title": "Parameter identification in reaction-diffusion models",
+      "text": "An adjoint-based approach identifies diffusion coefficients from sparse observations. Tikhonov regularization stabilizes the inverse problem.",
+      "authors": "Anna Žáková",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "participant": 15
+    }
+  },
+  {
+    "model": "core.abstract",
+    "pk": 16,
+    "fields": {
+      "conference": 5,
+      "title": "Lattice Boltzmann methods for complex geometries",
+      "text": "A boundary treatment for lattice Boltzmann solvers on curved boundaries is proposed. Second-order accuracy is verified on problems in complicated domains.",
+      "authors": "David Černý",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "participant": 16
+    }
+  },
+  {
+    "model": "core.abstract",
+    "pk": 17,
+    "fields": {
+      "conference": 5,
+      "title": "Anisotropic mesh adaptation for singularly perturbed problems",
+      "text": "Recovery-based anisotropic error indicators drive mesh refinement for convection-diffusion boundary layers. The method resolves layers with far fewer degrees of freedom.",
+      "authors": "Veronika Kučerová",
+      "department": "University of South Bohemia",
+      "participant": 17
+    }
+  },
+  {
+    "model": "core.abstract",
+    "pk": 18,
+    "fields": {
+      "conference": 5,
+      "title": "GPU acceleration of explicit finite difference solvers",
+      "text": "Memory layout and kernel fusion choices for explicit stencil computations on modern GPUs are discussed. Speedups of two orders of magnitude are reported.",
+      "authors": "Michal Stejskal",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "participant": 18
+    }
+  },
+  {
+    "model": "core.abstract",
+    "pk": 19,
+    "fields": {
+      "conference": 5,
+      "title": "Verified numerics for enclosure of solutions of ODEs",
+      "text": "Interval arithmetic provides rigorous enclosures of solutions of initial value problems. The approach is demonstrated within the Taylor model framework.",
+      "authors": "Petra Malá",
+      "department": "Charles University, Faculty of Mathematics and Physics",
+      "participant": 19
+    }
+  },
+  {
+    "model": "core.participantsubmission",
+    "pk": 1,
+    "fields": {
+      "conference": 1,
+      "name": "Jana Novotná",
+      "email": "jana.novotna@example.org",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "abstract_title": "Finite volume schemes for two-phase flow in heterogeneous porous media",
+      "abstract_text": "We propose a monotone finite volume discretization of two-phase flow in porous media with discontinuous permeability. Numerical experiments on benchmark problems confirm the expected convergence on unstructured meshes.",
+      "additional_authors": "",
+      "additional_affiliations": "",
+      "arrival_date": "2025-05-29",
+      "departure_date": "2025-05-30",
+      "status": "approved",
+      "submitted_at": "2025-04-14T09:12:00Z",
+      "reviewed_at": "2025-04-20T14:03:00Z",
+      "admin_notes": "",
+      "info": "Vegetarian meals requested.",
+      "is_student": false,
+      "published_participant": 1,
+      "published_abstract": 1
+    }
+  },
+  {
+    "model": "core.participantsubmission",
+    "pk": 2,
+    "fields": {
+      "conference": 1,
+      "name": "Petr Kalenský",
+      "email": "petr.kalensky@example.org",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "abstract_title": "Adaptive time stepping for stiff reaction-diffusion systems",
+      "abstract_text": "An adaptive controller based on embedded lower-order approximations is used to integrate stiff reaction-diffusion problems. The controller keeps the local error below a user-prescribed tolerance at minimal cost.",
+      "additional_authors": "",
+      "additional_affiliations": "",
+      "arrival_date": "2025-05-29",
+      "departure_date": "2025-05-30",
+      "status": "approved",
+      "submitted_at": "2025-04-16T11:47:00Z",
+      "reviewed_at": "2025-04-21T08:30:00Z",
+      "admin_notes": "",
+      "info": "",
+      "is_student": false,
+      "published_participant": 2,
+      "published_abstract": 2
+    }
+  },
+  {
+    "model": "core.participantsubmission",
+    "pk": 3,
+    "fields": {
+      "conference": 1,
+      "name": "Markéta Doležalová",
+      "email": "marketa.dolezalova@example.org",
+      "affiliation": "Charles University, Faculty of Mathematics and Physics",
+      "abstract_title": "A posteriori error estimates for mixed finite element methods",
+      "abstract_text": "We derive residual-based a posteriori error estimates for mixed formulations of elliptic problems. The estimates are robust with respect to jumps in the diffusion coefficient.",
+      "additional_authors": "Vojtěch Prchal",
+      "additional_affiliations": "University of West Bohemia",
+      "arrival_date": "2025-05-28",
+      "departure_date": "2025-05-30",
+      "status": "approved",
+      "submitted_at": "2025-04-18T15:26:00Z",
+      "reviewed_at": "2025-04-22T10:05:00Z",
+      "admin_notes": "Talk scheduled for Thursday afternoon.",
+      "info": "",
+      "is_student": true,
+      "published_participant": 3,
+      "published_abstract": 3
+    }
+  },
+  {
+    "model": "core.participantsubmission",
+    "pk": 4,
+    "fields": {
+      "conference": 1,
+      "name": "Tomáš Vrána",
+      "email": "tomas.vrana@example.org",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "abstract_title": "Numerical simulation of shallow water flows on unstructured meshes",
+      "abstract_text": "A well-balanced scheme for the shallow water equations with wetting and drying is presented. The method preserves lake-at-rest solutions on unstructured triangular grids.",
+      "additional_authors": "",
+      "additional_affiliations": "",
+      "arrival_date": "2025-05-29",
+      "departure_date": "2025-05-30",
+      "status": "approved",
+      "submitted_at": "2025-04-21T13:58:00Z",
+      "reviewed_at": "2025-04-25T09:41:00Z",
+      "admin_notes": "",
+      "info": "Arriving by train on Wednesday evening.",
+      "is_student": false,
+      "published_participant": 4,
+      "published_abstract": 4
+    }
+  },
+  {
+    "model": "core.participantsubmission",
+    "pk": 5,
+    "fields": {
+      "conference": 1,
+      "name": "Lucie Šimková",
+      "email": "lucie.simkova@example.org",
+      "affiliation": "Brno University of Technology",
+      "abstract_title": "Higher-order discontinuous Galerkin methods for compressible flow",
+      "abstract_text": "Shock-capturing strategies for high-order discontinuous Galerkin discretizations of the Euler equations are discussed. Limiter-based and artificial-viscosity approaches are compared on standard benchmarks.",
+      "additional_authors": "",
+      "additional_affiliations": "",
+      "arrival_date": "2025-05-29",
+      "departure_date": "2025-05-30",
+      "status": "approved",
+      "submitted_at": "2025-04-24T08:05:00Z",
+      "reviewed_at": "2025-04-28T16:22:00Z",
+      "admin_notes": "",
+      "info": "",
+      "is_student": false,
+      "published_participant": 5,
+      "published_abstract": 5
+    }
+  },
+  {
+    "model": "core.participantsubmission",
+    "pk": 6,
+    "fields": {
+      "conference": 2,
+      "name": "Martin Havelka",
+      "email": "martin.havelka@example.org",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "abstract_title": "Parallel solvers for large sparse linear systems",
+      "abstract_text": "Algebraic multigrid preconditioners for massively parallel architectures are discussed. Weak scaling results on up to ten thousand cores are presented.",
+      "additional_authors": "",
+      "additional_affiliations": "",
+      "arrival_date": "2026-10-04",
+      "departure_date": "2026-10-06",
+      "status": "approved",
+      "submitted_at": "2026-09-02T10:31:00Z",
+      "reviewed_at": "2026-09-05T12:18:00Z",
+      "admin_notes": "",
+      "info": "",
+      "is_student": false,
+      "published_participant": 6,
+      "published_abstract": 6
+    }
+  },
+  {
+    "model": "core.participantsubmission",
+    "pk": 7,
+    "fields": {
+      "conference": 2,
+      "name": "Eva Beranová",
+      "email": "eva.beranova@example.org",
+      "affiliation": "University of West Bohemia",
+      "abstract_title": "Model order reduction of parametrized partial differential equations",
+      "abstract_text": "Reduced basis methods for parametrized elliptic problems are reviewed with emphasis on a posteriori certification. Applications to heat transfer and elasticity are shown.",
+      "additional_authors": "",
+      "additional_affiliations": "",
+      "arrival_date": "2026-10-04",
+      "departure_date": "2026-10-06",
+      "status": "approved",
+      "submitted_at": "2026-09-04T14:44:00Z",
+      "reviewed_at": "2026-09-07T09:26:00Z",
+      "admin_notes": "",
+      "info": "Accommodation in a single room requested.",
+      "is_student": false,
+      "published_participant": 7,
+      "published_abstract": 7
+    }
+  },
+  {
+    "model": "core.participantsubmission",
+    "pk": 8,
+    "fields": {
+      "conference": 2,
+      "name": "Jan Kolář",
+      "email": "jan.kolar@example.org",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "abstract_title": "Uncertainty quantification in groundwater flow models",
+      "abstract_text": "A multilevel Monte Carlo method for elliptic problems with random coefficients is analyzed. The variance reduction achieved by the multilevel estimator is demonstrated on a groundwater benchmark.",
+      "additional_authors": "",
+      "additional_affiliations": "",
+      "arrival_date": "2026-10-05",
+      "departure_date": "2026-10-06",
+      "status": "approved",
+      "submitted_at": "2026-09-08T09:03:00Z",
+      "reviewed_at": "2026-09-10T11:55:00Z",
+      "admin_notes": "",
+      "info": "",
+      "is_student": false,
+      "published_participant": 8,
+      "published_abstract": 8
+    }
+  },
+  {
+    "model": "core.participantsubmission",
+    "pk": 9,
+    "fields": {
+      "conference": 3,
+      "name": "Klára Sýkorová",
+      "email": "klara.sykorova@example.org",
+      "affiliation": "Palacký University Olomouc",
+      "abstract_title": "Particle methods for the Vlasov-Poisson system",
+      "abstract_text": "A convergent particle method with remapping for the Vlasov-Poisson system is presented. The remapping step controls the growth of particle noise over long time horizons.",
+      "additional_authors": "",
+      "additional_affiliations": "",
+      "arrival_date": "2027-06-14",
+      "departure_date": "2027-06-18",
+      "status": "approved",
+      "submitted_at": "2027-04-12T16:29:00Z",
+      "reviewed_at": "2027-04-15T10:40:00Z",
+      "admin_notes": "",
+      "info": "",
+      "is_student": true,
+      "published_participant": 9,
+      "published_abstract": 9
+    }
+  },
+  {
+    "model": "core.participantsubmission",
+    "pk": 10,
+    "fields": {
+      "conference": 3,
+      "name": "Ondřej Marek",
+      "email": "ondrej.marek@example.org",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "abstract_title": "Spectral element discretizations of wave propagation problems",
+      "abstract_text": "High-order spectral elements are applied to the acoustic wave equation in complex geometry. Dispersive error analysis and time integration choices are discussed.",
+      "additional_authors": "",
+      "additional_affiliations": "",
+      "arrival_date": "2027-06-14",
+      "departure_date": "2027-06-18",
+      "status": "approved",
+      "submitted_at": "2027-04-15T08:57:00Z",
+      "reviewed_at": "2027-04-19T13:12:00Z",
+      "admin_notes": "",
+      "info": "",
+      "is_student": false,
+      "published_participant": 10,
+      "published_abstract": 10
+    }
+  },
+  {
+    "model": "core.participantsubmission",
+    "pk": 11,
+    "fields": {
+      "conference": 3,
+      "name": "Barbora Krátká",
+      "email": "barbora.kratka@example.org",
+      "affiliation": "Charles University, Faculty of Mathematics and Physics",
+      "abstract_title": "Machine learning surrogates for multiscale simulations",
+      "abstract_text": "Neural network surrogates replace the fine-scale solver in a multiscale elliptic problem. Training data requirements and the reliability of the surrogate are studied.",
+      "additional_authors": "Šimon Doležel",
+      "additional_affiliations": "Czech Technical University in Prague, FNSPE",
+      "arrival_date": "2027-06-14",
+      "departure_date": "2027-06-18",
+      "status": "approved",
+      "submitted_at": "2027-04-19T12:36:00Z",
+      "reviewed_at": "2027-04-23T08:49:00Z",
+      "admin_notes": "",
+      "info": "",
+      "is_student": false,
+      "published_participant": 11,
+      "published_abstract": 11
+    }
+  },
+  {
+    "model": "core.participantsubmission",
+    "pk": 12,
+    "fields": {
+      "conference": 3,
+      "name": "Filip Holub",
+      "email": "filip.holub@example.org",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "abstract_title": "Structure-preserving integrators for Hamiltonian systems",
+      "abstract_text": "Variational integrators preserve energy behavior over exponentially long times. Several variants are compared on the nonlinear Schrödinger equation.",
+      "additional_authors": "",
+      "additional_affiliations": "",
+      "arrival_date": "2027-06-13",
+      "departure_date": "2027-06-18",
+      "status": "approved",
+      "submitted_at": "2027-04-22T15:18:00Z",
+      "reviewed_at": "2027-04-26T10:33:00Z",
+      "admin_notes": "",
+      "info": "Student accommodation requested.",
+      "is_student": true,
+      "published_participant": 12,
+      "published_abstract": 12
+    }
+  },
+  {
+    "model": "core.participantsubmission",
+    "pk": 13,
+    "fields": {
+      "conference": 4,
+      "name": "Tereza Bláhová",
+      "email": "tereza.blahova@example.org",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "abstract_title": "Optimal control of flows in vascular networks",
+      "abstract_text": "A reduced-order optimal control approach for flow in networks of elastic tubes is presented. The method enables fast parameter studies for physiological configurations.",
+      "additional_authors": "",
+      "additional_affiliations": "",
+      "arrival_date": "2027-11-04",
+      "departure_date": "2027-11-05",
+      "status": "approved",
+      "submitted_at": "2027-09-06T09:44:00Z",
+      "reviewed_at": "2027-09-09T14:27:00Z",
+      "admin_notes": "",
+      "info": "",
+      "is_student": false,
+      "published_participant": 13,
+      "published_abstract": 13
+    }
+  },
+  {
+    "model": "core.participantsubmission",
+    "pk": 14,
+    "fields": {
+      "conference": 4,
+      "name": "Jakub Rychtář",
+      "email": "jakub.rychtar@example.org",
+      "affiliation": "Technical University of Liberec",
+      "abstract_title": "Domain decomposition methods for coupled multiphysics problems",
+      "abstract_text": "Robin-type interface conditions are used to couple heat and flow subproblems. Convergence of the resulting iterative scheme is analyzed and verified numerically.",
+      "additional_authors": "",
+      "additional_affiliations": "",
+      "arrival_date": "2027-11-04",
+      "departure_date": "2027-11-05",
+      "status": "approved",
+      "submitted_at": "2027-09-09T11:21:00Z",
+      "reviewed_at": "2027-09-13T09:08:00Z",
+      "admin_notes": "",
+      "info": "",
+      "is_student": false,
+      "published_participant": 14,
+      "published_abstract": 14
+    }
+  },
+  {
+    "model": "core.participantsubmission",
+    "pk": 15,
+    "fields": {
+      "conference": 4,
+      "name": "Anna Žáková",
+      "email": "anna.zakova@example.org",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "abstract_title": "Parameter identification in reaction-diffusion models",
+      "abstract_text": "An adjoint-based approach identifies diffusion coefficients from sparse observations. Tikhonov regularization stabilizes the inverse problem.",
+      "additional_authors": "",
+      "additional_affiliations": "",
+      "arrival_date": "2027-11-03",
+      "departure_date": "2027-11-05",
+      "status": "approved",
+      "submitted_at": "2027-09-13T16:52:00Z",
+      "reviewed_at": "2027-09-16T10:14:00Z",
+      "admin_notes": "",
+      "info": "",
+      "is_student": false,
+      "published_participant": 15,
+      "published_abstract": 15
+    }
+  },
+  {
+    "model": "core.participantsubmission",
+    "pk": 16,
+    "fields": {
+      "conference": 5,
+      "name": "David Černý",
+      "email": "david.cerny@example.org",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "abstract_title": "Lattice Boltzmann methods for complex geometries",
+      "abstract_text": "A boundary treatment for lattice Boltzmann solvers on curved boundaries is proposed. Second-order accuracy is verified on problems in complicated domains.",
+      "additional_authors": "",
+      "additional_affiliations": "",
+      "arrival_date": "2024-05-23",
+      "departure_date": "2024-05-24",
+      "status": "approved",
+      "submitted_at": "2024-04-09T10:26:00Z",
+      "reviewed_at": "2024-04-12T13:37:00Z",
+      "admin_notes": "",
+      "info": "",
+      "is_student": false,
+      "published_participant": 16,
+      "published_abstract": 16
+    }
+  },
+  {
+    "model": "core.participantsubmission",
+    "pk": 17,
+    "fields": {
+      "conference": 5,
+      "name": "Veronika Kučerová",
+      "email": "veronika.kucerova@example.org",
+      "affiliation": "University of South Bohemia",
+      "abstract_title": "Anisotropic mesh adaptation for singularly perturbed problems",
+      "abstract_text": "Recovery-based anisotropic error indicators drive mesh refinement for convection-diffusion boundary layers. The method resolves layers with far fewer degrees of freedom.",
+      "additional_authors": "",
+      "additional_affiliations": "",
+      "arrival_date": "2024-05-23",
+      "departure_date": "2024-05-24",
+      "status": "approved",
+      "submitted_at": "2024-04-11T14:19:00Z",
+      "reviewed_at": "2024-04-15T08:55:00Z",
+      "admin_notes": "",
+      "info": "",
+      "is_student": false,
+      "published_participant": 17,
+      "published_abstract": 17
+    }
+  },
+  {
+    "model": "core.participantsubmission",
+    "pk": 18,
+    "fields": {
+      "conference": 5,
+      "name": "Michal Stejskal",
+      "email": "michal.stejskal@example.org",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "abstract_title": "GPU acceleration of explicit finite difference solvers",
+      "abstract_text": "Memory layout and kernel fusion choices for explicit stencil computations on modern GPUs are discussed. Speedups of two orders of magnitude are reported.",
+      "additional_authors": "",
+      "additional_affiliations": "",
+      "arrival_date": "2024-05-23",
+      "departure_date": "2024-05-24",
+      "status": "approved",
+      "submitted_at": "2024-04-16T09:34:00Z",
+      "reviewed_at": "2024-04-19T11:46:00Z",
+      "admin_notes": "",
+      "info": "",
+      "is_student": false,
+      "published_participant": 18,
+      "published_abstract": 18
+    }
+  },
+  {
+    "model": "core.participantsubmission",
+    "pk": 19,
+    "fields": {
+      "conference": 5,
+      "name": "Petra Malá",
+      "email": "petra.mala@example.org",
+      "affiliation": "Charles University, Faculty of Mathematics and Physics",
+      "abstract_title": "Verified numerics for enclosure of solutions of ODEs",
+      "abstract_text": "Interval arithmetic provides rigorous enclosures of solutions of initial value problems. The approach is demonstrated within the Taylor model framework.",
+      "additional_authors": "",
+      "additional_affiliations": "",
+      "arrival_date": "2024-05-23",
+      "departure_date": "2024-05-24",
+      "status": "approved",
+      "submitted_at": "2024-04-20T15:07:00Z",
+      "reviewed_at": "2024-04-24T09:29:00Z",
+      "admin_notes": "",
+      "info": "",
+      "is_student": true,
+      "published_participant": 19,
+      "published_abstract": 19
+    }
+  },
+  {
+    "model": "core.organizer",
+    "pk": 1,
+    "fields": {
+      "conference": 1,
+      "name": "Alice Králová",
+      "department": "Department of Software Engineering, FNSPE CTU",
+      "email": "alice.kralova@example.org"
+    }
+  },
+  {
+    "model": "core.organizer",
+    "pk": 2,
+    "fields": {
+      "conference": 1,
+      "name": "Bohumil Steiner",
+      "department": "Department of Mathematics, FNSPE CTU",
+      "email": "bohumil.steiner@example.org"
+    }
+  },
+  {
+    "model": "core.organizer",
+    "pk": 3,
+    "fields": {
+      "conference": 1,
+      "name": "Kateřina Winterová",
+      "department": "Department of Mathematics, FNSPE CTU",
+      "email": "katerina.winterova@example.org"
+    }
+  },
+  {
+    "model": "core.organizer",
+    "pk": 4,
+    "fields": {
+      "conference": 2,
+      "name": "Gabriela Šímová",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "email": "gabriela.simova@example.org"
+    }
+  },
+  {
+    "model": "core.organizer",
+    "pk": 5,
+    "fields": {
+      "conference": 2,
+      "name": "Emil Zeman",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "email": "emil.zeman@example.org"
+    }
+  },
+  {
+    "model": "core.organizer",
+    "pk": 6,
+    "fields": {
+      "conference": 2,
+      "name": "Jarmila Pokorná",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "email": "jarmila.pokorna@example.org"
+    }
+  },
+  {
+    "model": "core.organizer",
+    "pk": 7,
+    "fields": {
+      "conference": 3,
+      "name": "Iva Horáčková",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "email": "iva.horackova@example.org"
+    }
+  },
+  {
+    "model": "core.organizer",
+    "pk": 8,
+    "fields": {
+      "conference": 3,
+      "name": "Bronislav Lim",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "email": "bronislav.lim@example.org"
+    }
+  },
+  {
+    "model": "core.organizer",
+    "pk": 9,
+    "fields": {
+      "conference": 3,
+      "name": "Naděžda Bílá",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "email": "nadezda.bila@example.org"
+    }
+  },
+  {
+    "model": "core.organizer",
+    "pk": 10,
+    "fields": {
+      "conference": 4,
+      "name": "Hana Němcová",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "email": "hana.nemcova@example.org"
+    }
+  },
+  {
+    "model": "core.organizer",
+    "pk": 11,
+    "fields": {
+      "conference": 4,
+      "name": "Gustav Procházka",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "email": "gustav.prochazka@example.org"
+    }
+  },
+  {
+    "model": "core.organizer",
+    "pk": 12,
+    "fields": {
+      "conference": 4,
+      "name": "Věra Marková",
+      "department": "University of West Bohemia",
+      "email": "vera.markova@example.org"
+    }
+  },
+  {
+    "model": "core.organizer",
+    "pk": 13,
+    "fields": {
+      "conference": 5,
+      "name": "Dana Svobodová",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "email": "dana.svobodova@example.org"
+    }
+  },
+  {
+    "model": "core.organizer",
+    "pk": 14,
+    "fields": {
+      "conference": 5,
+      "name": "Alexej Čáp",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "email": "alexej.cap@example.org"
+    }
+  },
+  {
+    "model": "core.organizer",
+    "pk": 15,
+    "fields": {
+      "conference": 5,
+      "name": "Radka Fialová",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "email": "radka.fialova@example.org"
+    }
+  },
+  {
+    "model": "core.organizingcommittee",
+    "pk": 1,
+    "fields": {
+      "conference": 1,
+      "name": "Ladislav Pošta",
+      "department": "Department of Software Engineering, FNSPE CTU",
+      "email": "ladislav.posta@example.org"
+    }
+  },
+  {
+    "model": "core.organizingcommittee",
+    "pk": 2,
+    "fields": {
+      "conference": 1,
+      "name": "Nina Válková",
+      "department": "Department of Mathematics, FNSPE CTU",
+      "email": "nina.valkova@example.org"
+    }
+  },
+  {
+    "model": "core.organizingcommittee",
+    "pk": 3,
+    "fields": {
+      "conference": 1,
+      "name": "Rostislav Hrubý",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "email": "rostislav.hruby@example.org"
+    }
+  },
+  {
+    "model": "core.organizingcommittee",
+    "pk": 4,
+    "fields": {
+      "conference": 2,
+      "name": "Vít Malý",
+      "department": "Charles University, Faculty of Mathematics and Physics",
+      "email": "vit.maly@example.org"
+    }
+  },
+  {
+    "model": "core.organizingcommittee",
+    "pk": 5,
+    "fields": {
+      "conference": 2,
+      "name": "Soňa Kadlecová",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "email": "sona.kadlecova@example.org"
+    }
+  },
+  {
+    "model": "core.organizingcommittee",
+    "pk": 6,
+    "fields": {
+      "conference": 2,
+      "name": "Cyril Dvořák",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "email": "cyril.dvorak@example.org"
+    }
+  },
+  {
+    "model": "core.organizingcommittee",
+    "pk": 7,
+    "fields": {
+      "conference": 3,
+      "name": "Pavel Šedivý",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "email": "pavel.sedivy@example.org"
+    }
+  },
+  {
+    "model": "core.organizingcommittee",
+    "pk": 8,
+    "fields": {
+      "conference": 3,
+      "name": "Milena Stará",
+      "department": "Charles University, Faculty of Mathematics and Physics",
+      "email": "milena.stara@example.org"
+    }
+  },
+  {
+    "model": "core.organizingcommittee",
+    "pk": 9,
+    "fields": {
+      "conference": 3,
+      "name": "Robert Jedlička",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "email": "robert.jedlicka@example.org"
+    }
+  },
+  {
+    "model": "core.organizingcommittee",
+    "pk": 10,
+    "fields": {
+      "conference": 4,
+      "name": "Igor Salač",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "email": "igor.salac@example.org"
+    }
+  },
+  {
+    "model": "core.organizingcommittee",
+    "pk": 11,
+    "fields": {
+      "conference": 4,
+      "name": "Dagmar Lipinská",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "email": "dagmar.lipinska@example.org"
+    }
+  },
+  {
+    "model": "core.organizingcommittee",
+    "pk": 12,
+    "fields": {
+      "conference": 4,
+      "name": "Artur Pavlík",
+      "department": "Technical University of Liberec",
+      "email": "artur.pavlik@example.org"
+    }
+  },
+  {
+    "model": "core.organizingcommittee",
+    "pk": 13,
+    "fields": {
+      "conference": 5,
+      "name": "Miroslav Juřík",
+      "department": "Charles University, Faculty of Mathematics and Physics",
+      "email": "miroslav.jurik@example.org"
+    }
+  },
+  {
+    "model": "core.organizingcommittee",
+    "pk": 14,
+    "fields": {
+      "conference": 5,
+      "name": "Olga Štěpánková",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "email": "olga.stepankova@example.org"
+    }
+  },
+  {
+    "model": "core.organizingcommittee",
+    "pk": 15,
+    "fields": {
+      "conference": 5,
+      "name": "Leoš Hrubec",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "email": "leos.hrubec@example.org"
+    }
+  }
+]

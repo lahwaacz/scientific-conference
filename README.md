@@ -83,10 +83,11 @@ The backend uses [uv](https://docs.astral.sh/uv/) for dependency management
    uv run python manage.py migrate
    ```
 
-3. Optionally, load the demo fixture. It creates the `wsc2026` conference
-   with sample program data:
+3. Optionally, load the demo fixture. It seeds five demo conferences
+   (one running, two upcoming, two past) with participants and a sample
+   program:
    ```bash
-   uv run python manage.py loaddata program.json
+   uv run python manage.py loaddata conferences.json participants.json program.json
    ```
 
 4. Run the backend server:
