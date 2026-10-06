@@ -265,12 +265,12 @@ export default function RegistrationForm() {
     );
   }
 
-  if (windowStatus === "closed") {
+  if (windowStatus === "closed" || windowStatus === "ended") {
     return (
       <section className={styles.formSection}>
         <Title text="Registration Form" />
         <p className={styles.closedNotice}>
-          {info.registration_deadline
+          {windowStatus === "closed"
             ? `Registration is closed. The deadline was ${formatDate(info.registration_deadline)}.`
             : "Registration is closed. The conference has already taken place."}
         </p>

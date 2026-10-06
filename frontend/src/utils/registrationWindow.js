@@ -2,8 +2,9 @@
  * Registration window: [registration_opening, registration_deadline],
  * each bound optional. Dates are "YYYY-MM-DD" strings, so bounds compare
  * lexicographically. A conference whose date_end has passed always has
- * closed registration. Returns "open" | "not-open" | "closed"; no bounds
- * (or no info yet) on an unended conference means open.
+ * closed registration. Returns "open" | "not-open" | "closed" (the
+ * deadline has passed) | "ended" (the conference itself is over);
+ * no bounds (or no info yet) on an unended conference means open.
  */
 export function registrationWindowStatus(info, today = new Date()) {
   const todayStr = [
@@ -19,7 +20,7 @@ export function registrationWindowStatus(info, today = new Date()) {
     return "closed";
   }
   if (info?.date_end && todayStr > info.date_end) {
-    return "closed";
+    return "ended";
   }
   return "open";
 }

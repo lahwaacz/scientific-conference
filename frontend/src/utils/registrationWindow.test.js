@@ -48,17 +48,17 @@ describe("registrationWindowStatus", () => {
     expect(registrationWindowStatus(conf, afterMidnightLocal)).toBe("closed");
   });
 
-  test("a past conference is closed even without a deadline", () => {
+  test("a past conference is ended even without a deadline", () => {
     const conf = info({ date_end: "2026-05-31" });
     expect(registrationWindowStatus(conf, day("2026-05-31"))).toBe("open");
-    expect(registrationWindowStatus(conf, day("2026-06-01"))).toBe("closed");
+    expect(registrationWindowStatus(conf, day("2026-06-01"))).toBe("ended");
   });
 
-  test("a past conference stays closed even with a future deadline", () => {
+  test("a past conference stays ended even with a future deadline", () => {
     const conf = info({
       date_end: "2026-05-31",
       registration_deadline: "2030-01-01",
     });
-    expect(registrationWindowStatus(conf, day("2026-06-01"))).toBe("closed");
+    expect(registrationWindowStatus(conf, day("2026-06-01"))).toBe("ended");
   });
 });
