@@ -1,0 +1,15 @@
+Authors
+=======
+
+Jakub Klinkovský <1289205+lahwaacz@users.noreply.github.com>
+Polina Povarenkova <108479551+Ppovarenkova@users.noreply.github.com>
+
+AI assistance
+=============
+
+Parts of this repository were written with AI assistance.
+The commits carrying such changes record the model in an "Assisted-by" trailer,
+namely:
+
+  Opencode:kimi-k3
+  Opencode:glm-5.3
