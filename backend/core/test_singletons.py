@@ -19,12 +19,13 @@ from .models import AccommodationInfo, Conference, ConferenceInfo
 SLUG_A = "wsc2026-test"
 SLUG_B = "wsc2027-test"
 
-# id + 15 web fields + 7 logistics fields + derived year.
+# id + 16 web fields + 7 logistics fields + derived year.
 INFO_PAYLOAD_KEYS = frozenset(
     {
         "id",
         "description",
         "registration_instructions",
+        "registration_opening",
         "registration_deadline",
         "registration_fee_note",
         "grant_text",
@@ -106,7 +107,7 @@ class TestConferenceInfoSingleton(InfoTestCase):
             ConferenceInfo.objects.get(conference=self.conf_b).conference, self.conf_b
         )
 
-    def test_payload_has_exactly_the_24_payload_keys(self):
+    def test_payload_has_exactly_the_25_payload_keys(self):
         for slug in (SLUG_A, SLUG_B):
             with self.subTest(slug=slug):
                 response = self.client.get(api("conference-info/", slug=slug))

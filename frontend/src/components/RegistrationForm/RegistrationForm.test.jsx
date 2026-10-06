@@ -1,11 +1,17 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import RegistrationForm from "./RegistrationForm";
 
-vi.mock("../hooks/useConferenceInfo", () => ({
-  useConferenceInfo: () => ({
-    registration_deadline: "2026-09-01",
+const { mockInfo } = vi.hoisted(() => ({
+  mockInfo: {
+    registration_opening: null,
+    registration_deadline: "2099-12-31",
+    date_end: null,
     registration_fee_note: "Conference fee is free of charge",
-  }),
+  },
+}));
+
+vi.mock("../hooks/useConferenceInfo", () => ({
+  useConferenceInfo: () => mockInfo,
 }));
 
 vi.mock("../ui/Modal/Modal", () => ({
@@ -25,6 +31,12 @@ describe("RegistrationForm", () => {
   beforeEach(() => {
     globalThis.fetch = vi.fn();
     consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    Object.assign(mockInfo, {
+      registration_opening: null,
+      registration_deadline: "2099-12-31",
+      date_end: null,
+      registration_fee_note: "Conference fee is free of charge",
+    });
   });
 
   afterEach(() => {
@@ -49,6 +61,52 @@ describe("RegistrationForm", () => {
       screen.getByPlaceholderText(/Brief description of your contribution/i)
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /submit/i })).toBeInTheDocument();
+  });
+
+  test("shows a closed notice instead of the form after the deadline", () => {
+    mockInfo.registration_deadline = "2020-01-01";
+
+    render(<RegistrationForm />);
+
+    expect(screen.getByText(/Registration is closed/i)).toBeInTheDocument();
+    expect(screen.getByText(/The deadline was/i)).toBeInTheDocument();
+    expect(
+      screen.queryByPlaceholderText(/your.email@example.com/i)
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /submit/i })
+    ).not.toBeInTheDocument();
+  });
+
+  test("shows a not-yet-open notice instead of the form before the opening date", () => {
+    mockInfo.registration_opening = "2099-01-01";
+
+    render(<RegistrationForm />);
+
+    expect(
+      screen.getByText(/Registration is not open yet/i)
+    ).toBeInTheDocument();
+    expect(screen.getByText(/It opens on/i)).toBeInTheDocument();
+    expect(
+      screen.queryByPlaceholderText(/your.email@example.com/i)
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /submit/i })
+    ).not.toBeInTheDocument();
+  });
+
+  test("shows the conference-ended notice for a past conference without a deadline", () => {
+    mockInfo.registration_deadline = null;
+    mockInfo.date_end = "2020-01-01";
+
+    render(<RegistrationForm />);
+
+    expect(
+      screen.getByText(/conference has already taken place/i)
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /submit/i })
+    ).not.toBeInTheDocument();
   });
 
   test("shows error for invalid email", async () => {

@@ -380,6 +380,7 @@ class BlankAsNoneDateField(serializers.DateField):
 
 
 class ConferenceInfoWriteSerializer(serializers.ModelSerializer):
+    registration_opening = BlankAsNoneDateField(required=False, allow_null=True)
     registration_deadline = BlankAsNoneDateField(required=False, allow_null=True)
     date_start = BlankAsNoneDateField(required=False, allow_null=True)
     date_end = BlankAsNoneDateField(required=False, allow_null=True)
@@ -396,6 +397,7 @@ class ConferenceInfoWriteSerializer(serializers.ModelSerializer):
             "badge_title",
             "description",
             "registration_instructions",
+            "registration_opening",
             "registration_deadline",
             "registration_fee_note",
             "grant_text",

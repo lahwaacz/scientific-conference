@@ -33,6 +33,13 @@
   margin-bottom: clamp(24px, 5vw, 50px);
 }
 
+.closedNotice {
+  font-family: var(--font--main);
+  font-size: clamp(14px, 1.8vw, 18px);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
 .field {
   display: flex;
   flex-direction: column;

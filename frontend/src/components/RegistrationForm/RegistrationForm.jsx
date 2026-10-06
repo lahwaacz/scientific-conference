@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { buildApiUrl } from "../../utils/api";
+import { registrationWindowStatus } from "../../utils/registrationWindow";
 import { useConferenceInfo } from "../hooks/useConferenceInfo";
 import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard";
 import Modal from "../ui/Modal/Modal";
@@ -242,6 +243,40 @@ export default function RegistrationForm() {
         year: "numeric",
       })
     : null;
+
+  const formatDate = (iso) =>
+    new Date(iso).toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+
+  const windowStatus = registrationWindowStatus(info);
+
+  if (windowStatus === "not-open") {
+    return (
+      <section className={styles.formSection}>
+        <Title text="Registration Form" />
+        <p className={styles.closedNotice}>
+          Registration is not open yet. It opens on{" "}
+          {formatDate(info.registration_opening)}.
+        </p>
+      </section>
+    );
+  }
+
+  if (windowStatus === "closed") {
+    return (
+      <section className={styles.formSection}>
+        <Title text="Registration Form" />
+        <p className={styles.closedNotice}>
+          {info.registration_deadline
+            ? `Registration is closed. The deadline was ${formatDate(info.registration_deadline)}.`
+            : "Registration is closed. The conference has already taken place."}
+        </p>
+      </section>
+    );
+  }
 
   return (
     <section className={styles.formSection}>

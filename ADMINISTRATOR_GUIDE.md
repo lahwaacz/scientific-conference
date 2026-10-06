@@ -407,11 +407,13 @@ After making changes, select **Save** at the bottom of the corresponding card. T
 
 ### Registration Subsection
 
-Use the **Registration** subsection to update the registration page text.
+Use the **Registration** subsection to update the registration page text and the registration window.
 
 1. Open the **Registration** subsection.
 2. Modify the relevant input fields.
 3. Select **Save**.
+
+The registration window has two optional dates. The **Registration Opening Date** is the first day the registration form is available; before it, the public registration form is replaced by a "not open yet" notice. The **Registration Deadline** is the last day the form is available; after it, the form is replaced by a "registration closed" notice. Outside the window the backend also rejects submission attempts directly, so the form cannot be bypassed. When both dates are empty, registration is open — but a conference whose end date has passed always has closed registration, even without a deadline.
 
 ### Venue Subsection
 

@@ -14,6 +14,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
@@ -615,6 +616,14 @@ class SubmissionCreateView(ConferenceScopedMixin, generics.CreateAPIView):
     serializer_class = ParticipantSubmissionSerializer
     permission_classes = [AllowAny]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def perform_create(self, serializer):
+        info, _ = ConferenceInfo.objects.get_or_create(conference=self.conference)
+        if not info.is_registration_open():
+            raise ValidationError(
+                {"detail": "Registration is not open for this conference."}
+            )
+        serializer.save(conference=self.conference)
 
 
 class SubmissionListView(ConferenceScopedMixin, generics.ListAPIView):

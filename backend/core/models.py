@@ -406,6 +406,7 @@ class ConferenceInfo(models.Model):
     # Web content
     description = models.TextField(blank=True)
     registration_instructions = models.TextField(blank=True)
+    registration_opening = models.DateField(null=True, blank=True)
     registration_deadline = models.DateField(null=True, blank=True)
     registration_fee_note = models.CharField(
         max_length=300, blank=True, default="Conference fee is free of charge"
@@ -453,6 +454,20 @@ class ConferenceInfo(models.Model):
     def year(self):
         # derived, never a column (F6)
         return self.date_start.year if self.date_start else None
+
+    def is_registration_open(self, on=None):
+        """Registration window [opening, deadline], bounds optional.
+
+        A conference that has ended always has closed registration.
+        """
+        today = on or timezone.localdate()
+        if self.date_end and today > self.date_end:
+            return False
+        opened = not self.registration_opening or today >= self.registration_opening
+        not_closed = (
+            not self.registration_deadline or today <= self.registration_deadline
+        )
+        return opened and not_closed
 
     @property
     def status(self):

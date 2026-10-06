@@ -36,6 +36,7 @@ export default function EditWebInfoRegistration() {
         body: JSON.stringify({
           registration_fee_note: form.registration_fee_note,
           registration_instructions: form.registration_instructions,
+          registration_opening: form.registration_opening,
           registration_deadline: form.registration_deadline,
         }),
       });
@@ -97,9 +98,23 @@ export default function EditWebInfoRegistration() {
             </div>
 
             <div className={styles.field}>
+              <label>Registration Opening Date</label>
+              <small className={styles.hint}>
+                The form is unavailable before this date (optional)
+              </small>
+              <input
+                name="registration_opening"
+                type="date"
+                value={form.registration_opening || ""}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className={styles.field}>
               <label>Registration Deadline</label>
               <small className={styles.hint}>
-                Shown as "Please submit your registration until [date]"
+                Shown as "Please submit your registration until [date]"; the
+                form is unavailable after it
               </small>
               <input
                 name="registration_deadline"
