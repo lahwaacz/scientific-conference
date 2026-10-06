@@ -25,6 +25,7 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run pyright
       - run: uv run pytest
+      - run: uv run python manage.py makemigrations --check --dry-run
 
   frontend:
     runs-on: ubuntu-latest

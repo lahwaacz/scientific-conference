@@ -225,7 +225,7 @@ class ParticipantSubmission(models.Model):
     reviewed_at = models.DateTimeField(blank=True, null=True)
     admin_notes = models.TextField(blank=True, help_text="Internal notes for admins")
     info = models.TextField(blank=True, help_text="Additional info from participant")
-    is_student = models.BooleanField(default=False)  # ← для галочки Student
+    is_student = models.BooleanField(default=False)
 
     published_participant = models.ForeignKey(
         "Participant",
@@ -417,7 +417,7 @@ class ConferenceInfo(models.Model):
     )
     venue_text = models.TextField(
         blank=True,
-        default="Faculty of Nuclear Sciences and Physical Engineering, Pohraniční 1288/1, 405 02 Děčín and MS Teams online",
+        default="Faculty of Nuclear Sciences and Physical Engineering, Trojanova 13, 120 00, Prague",
     )
     conference_office_text = models.TextField(
         blank=True,
@@ -425,10 +425,10 @@ class ConferenceInfo(models.Model):
     )
     website_url = models.URLField(blank=True)
     poster_url = models.URLField(blank=True)
-    info_desk_email = models.EmailField(blank=True, default="pauspetr@cvut.cz")
+    info_desk_email = models.EmailField(blank=True)
     venue_map_embed_url = models.TextField(
         blank=True,
-        default="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2522.8151323874063!2d14.21346707611837!3d50.77900046365381!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47099fd1ace90813%3A0x7d351b85e2789db!2sCTU%20Decin!5e0!3m2!1sru!2scz!4v1777641891915!5m2!1sru!2scz",
+        default="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d1280.3159498589002!2d14.416798000000002!3d50.074455!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x470b94f4244a8a5f%3A0xcd7ab24cf4bcbdc7!2sTrojanova%20339%2F13%2C%20120%2000%20Nov%C3%A9%20M%C4%9Bsto%2C%20Czechia!5e0!3m2!1sen!2sus!4v1791310756815!5m2!1sen!2sus",
     )
     copyright_text = models.CharField(
         max_length=200, blank=True, default="©2025 MMG, FNSPE CTU in Prague"
