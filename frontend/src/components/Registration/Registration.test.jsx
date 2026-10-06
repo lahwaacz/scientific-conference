@@ -16,9 +16,7 @@ describe("Registration", () => {
     render(<Registration />);
 
     expect(screen.queryByText("Affiliation")).not.toBeInTheDocument();
-    expect(
-      screen.queryByText(/Your contact address and e-mail/i)
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/Your e-mail/i)).not.toBeInTheDocument();
   });
 
   test("falls back to the generic instructions when none are configured", () => {

@@ -92,7 +92,7 @@ export default function EditWebInfoRegistration() {
                 value={form.registration_instructions || ""}
                 onChange={handleChange}
                 placeholder={
-                  "Name\nYour contact address and e-mail\nAffiliation\nThe abstract of your contribution\nArrival and departure dates"
+                  "Name\nYour e-mail\nAffiliation\nThe abstract of your contribution\nArrival and departure dates"
                 }
               />
             </div>

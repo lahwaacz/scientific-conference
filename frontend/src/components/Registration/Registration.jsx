@@ -21,7 +21,7 @@ export default function Registration() {
       ? info.registration_instructions.split("\n").filter(Boolean)
       : [
           "Name",
-          "Your contact address and e-mail",
+          "Your e-mail",
           "Affiliation",
           "The abstract of your contribution",
           "Arrival and departure dates",
