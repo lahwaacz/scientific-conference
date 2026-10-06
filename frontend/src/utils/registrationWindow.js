@@ -4,7 +4,9 @@
  * lexicographically. A conference whose date_end has passed always has
  * closed registration. Returns "open" | "not-open" | "closed" (the
  * deadline has passed) | "ended" (the conference itself is over);
- * no bounds (or no info yet) on an unended conference means open.
+ * no bounds on an unended conference means open; a null info behaves
+ * the same way, so callers that need a distinct loading state must
+ * check for it themselves.
  */
 export function registrationWindowStatus(info, today = new Date()) {
   const todayStr = [

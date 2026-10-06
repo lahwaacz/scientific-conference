@@ -251,6 +251,14 @@ export default function RegistrationForm() {
       year: "numeric",
     });
 
+  if (!info) {
+    return (
+      <section className={styles.formSection}>
+        <Title text="Registration Form" />
+      </section>
+    );
+  }
+
   const windowStatus = registrationWindowStatus(info);
 
   if (windowStatus === "not-open") {

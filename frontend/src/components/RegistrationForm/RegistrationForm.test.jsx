@@ -1,17 +1,18 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import RegistrationForm from "./RegistrationForm";
 
-const { mockInfo } = vi.hoisted(() => ({
+const { mockInfo, holder } = vi.hoisted(() => ({
   mockInfo: {
     registration_opening: null,
     registration_deadline: "2099-12-31",
     date_end: null,
     registration_fee_note: "Conference fee is free of charge",
   },
+  holder: { info: null },
 }));
 
 vi.mock("../hooks/useConferenceInfo", () => ({
-  useConferenceInfo: () => mockInfo,
+  useConferenceInfo: () => holder.info,
 }));
 
 vi.mock("../ui/Modal/Modal", () => ({
@@ -37,6 +38,7 @@ describe("RegistrationForm", () => {
       date_end: null,
       registration_fee_note: "Conference fee is free of charge",
     });
+    holder.info = mockInfo;
   });
 
   afterEach(() => {
@@ -61,6 +63,26 @@ describe("RegistrationForm", () => {
       screen.getByPlaceholderText(/Brief description of your contribution/i)
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /submit/i })).toBeInTheDocument();
+  });
+
+  test("renders no form or notice until the conference info arrives", () => {
+    holder.info = null;
+
+    render(<RegistrationForm />);
+
+    expect(screen.getByText(/Registration Form/i)).toBeInTheDocument();
+    expect(
+      screen.queryByPlaceholderText(/your.email@example.com/i)
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /submit/i })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Registration is closed/i)
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Registration is not open yet/i)
+    ).not.toBeInTheDocument();
   });
 
   test("shows a closed notice instead of the form after the deadline", () => {

@@ -15,15 +15,17 @@ export default function Registration() {
       })
     : "";
 
-  const instructions = info?.registration_instructions
-    ? info.registration_instructions.split("\n").filter(Boolean)
-    : [
-        "Name",
-        "Your contact address and e-mail",
-        "Affiliation",
-        "The abstract of your contribution",
-        "Arrival and departure dates",
-      ];
+  const instructions = !info
+    ? []
+    : info.registration_instructions
+      ? info.registration_instructions.split("\n").filter(Boolean)
+      : [
+          "Name",
+          "Your contact address and e-mail",
+          "Affiliation",
+          "The abstract of your contribution",
+          "Arrival and departure dates",
+        ];
 
   return (
     <section className={styles.registration}>
