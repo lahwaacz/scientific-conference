@@ -63,7 +63,7 @@ Demo URL: `https://mmg-webapps.fjfi.cvut.cz/conference-demo/`
 
 The demo root shows the landing page. Each conference is available at its own address under the root, for example `https://mmg-webapps.fjfi.cvut.cz/conference-demo/wsc2026/`.
 
-The frontend production image is universal: it contains no deployment-specific values and works under any base path. The container is configured at startup with the `BASE_PATH` environment variable (the URL prefix it is served under, for example `/conference-demo`); `API_BASE` is optional and defaults to the same-origin prefix. The image's entrypoint writes these into `app-config.js`, which the app reads before its build-time Vite values. The image's nginx serves the app, its assets and the media volumes at any path depth, so the same image also works at the root or under any other prefix. The reverse proxy in front of the deployment must serve the frontend entry page for every path under the root that is not a real file and not routed to the backend (`api/`, `admin/`, `media/`), so that direct links like `/conference-demo/<slug>/` work. See `ADMINISTRATOR_GUIDE.md` for details.
+The frontend production image is universal: it contains no deployment-specific values and is configured at startup with the `BASE_PATH` environment variable (the URL prefix it is served under, for example `/conference-demo`). The reverse proxy in front of the deployment must serve the frontend entry page for every path under the root that is not a real file and not routed to the backend (`api/`, `admin/`, `media/`), so that direct links like `/conference-demo/<slug>/` work. See [docs/deployment.md](docs/deployment.md) for details.
 
 
 ## Local Setup
@@ -117,7 +117,8 @@ conferences can be created in the Django administration at
 
 - `backend/README.md` — backend setup, dependencies, environment variables, and development notes.
 - `frontend/README.md` — frontend setup, environment configuration, and development notes.
-- `ADMINISTRATOR_GUIDE.md` — guide for using the admin panel and handling administrative actions.
+- `docs/admin_guide.md` — guide for using the admin panel and handling administrative actions.
+- `docs/deployment.md` — container images, runtime configuration, and reverse-proxy requirements.
 
 ## Notes
 

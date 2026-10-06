@@ -18,12 +18,11 @@ Multi-conference: a `Conference` model owns every domain row (13 FK'd models); a
 scientific-conference/
 ├── backend/      # Django project + single app `core` (all domain logic) — see backend/AGENTS.md
 ├── frontend/     # Vite React SPA (landing + per-conference sites) — see frontend/AGENTS.md
-├── assets/       # PNG screenshots for ADMINISTRATOR_GUIDE.md ONLY (not app assets)
 ├── screenshots/  # visual regression captures (gitignored; regenerate via scripts/capture-screenshots.sh)
 ├── scripts/      # repo-level tooling (capture-screenshots.sh: seeds backend, builds frontend, captures landing + all conference routes)
 ├── .github/workflows/  # single workflow: builds/pushes 2 GHCR images on push to main
 ├── README.md           # stack + local setup + URL anatomy
-└── ADMINISTRATOR_GUIDE.md  # 579-line admin manual; MUST be updated when app is extended
+└── docs/         # admin_guide.md (admin manual; MUST be updated when app is extended) + deployment.md (container images, proxy requirements) + assets/ (guide screenshots ONLY, not app assets)
 ```
 
 No root Makefile / docker-compose / package.json / requirements.txt. Each app builds itself.
@@ -42,7 +41,8 @@ No root Makefile / docker-compose / package.json / requirements.txt. Each app bu
 | Any backend HTTP call | `frontend/src/utils/api.js` | `buildApiUrl` (slug-scoped, `GLOBAL_API_PREFIXES` allowlist) / `buildMediaUrl` / `fetchWithAuth` |
 | New UI component | `frontend/src/components/<Name>/` | `<Name>.jsx` + `<Name>.module.css` |
 | Docker images | `backend/Dockerfile`, `frontend/Dockerfile` | separate build contexts (matrix in CI); frontend has `VITE_BASE_PATH` ARG |
-| Admin usage rules | `ADMINISTRATOR_GUIDE.md` | behavioral constraints on delete/publish/multi-conference flows |
+| Admin usage rules | `docs/admin_guide.md` | behavioral constraints on delete/publish/multi-conference flows |
+| Deployment (images, proxy) | `docs/deployment.md` | universal frontend image + BASE_PATH/API_BASE, backend RELATIVE_URL_ROOT, reverse-proxy requirements |
 | Visual regression baseline | `scripts/capture-screenshots.sh` → `screenshots/` | 21 full-page PNGs (landing + 8 public + 12 admin routes), 1440x900; landing has an identical-PNG guard; rerun after UI changes and diff `screenshots/*.png` |
 
 ## CODE MAP
@@ -87,9 +87,9 @@ Codegraph covers Python only (JS unindexed); refs via pyright LSP.
 - The frontend conference-slug singleton (`utils/conferenceSlug.js`) must NOT use react-router hooks — `useLocation` is hash-based and never sees the `/<slug>/` path prefix. It parses `window.location.pathname` once at startup; keep it that way.
 - NEVER commit `.venv/`, `db.sqlite3`, `media/`, `staticfiles/` (a venv was once committed: 4c321da).
 - `.github/workflows/quality.yml` runs ruff/pyright/pytest + biome/vitest on push to `main` and PRs. The Docker publish workflow does NOT depend on it — a red quality run does not block image pushes.
-- Do not treat cascade deletes as accidental: deleting a ConferenceDay deletes its Sessions+Talks; deleting an Abstract deletes its Talk (the FK sits on Talk); deleting a HikingRoute deletes its Stops; deleting a Conference deletes everything (UI path disabled, see above). NOTE: deleting a day or an unscheduled talk ORPHANS the linked abstract — deliberate admin choice (2026-10-03); do not add cascades unilaterally. The admin guide documents these as rules (`ADMINISTRATOR_GUIDE.md:292`,`:473`); backend guards exist deliberately (e.g. `UnscheduledTalkDeleteView` 400).
+- Do not treat cascade deletes as accidental: deleting a ConferenceDay deletes its Sessions+Talks; deleting an Abstract deletes its Talk (the FK sits on Talk); deleting a HikingRoute deletes its Stops; deleting a Conference deletes everything (UI path disabled, see above). NOTE: deleting a day or an unscheduled talk ORPHANS the linked abstract — deliberate admin choice (2026-10-03); do not add cascades unilaterally. The admin guide documents these as rules (`docs/admin_guide.md:287`,`:469`); backend guards exist deliberately (e.g. `UnscheduledTalkDeleteView` 400).
 - Do not uncomment dormant Docker lines blindly: `backend/Dockerfile` collectstatic/gunicorn lines are disabled on purpose. (The `frontend/Dockerfile` nginx.conf COPY used to be dormant too; it is active again since the universal-image rework — `frontend/nginx.conf` is the universal, deployment-value-free server config.)
-- If the app is extended, update `ADMINISTRATOR_GUIDE.md` (guide rule, line 579).
+- If the app is extended, update `docs/admin_guide.md` (guide rule, line 575); deployment changes go to `docs/deployment.md`.
 
 ## COMMANDS
 
@@ -125,6 +125,6 @@ docker build frontend/                # -> ghcr.io/<repo>-frontend (universal im
 - `.env.production` is deliberately absent: the frontend image is universal and carries no deployment values. The Vite ARGs (`VITE_BACKEND_API_BASE_URL`, `VITE_BASE_PATH`, both defaulting to empty/relative) are only build-time fallbacks; deployments configure the running container with `BASE_PATH` (and optionally `API_BASE`), which the image entrypoint writes into `app-config.js` — the app reads that file before the Vite values (see `frontend/src/utils/appConfig.js`).
 - Backend prod image runs `manage.py runserver`, not gunicorn. Media files in prod must be served externally; Django serves media only in DEBUG.
 - JWT: 1h access / 7d refresh — lifetimes were a deliberate fix (f064a9e); shortening logs admins out mid-edit. Tokens are global across conferences (no per-conference scoping).
-- The prod reverse proxy (mmg-webapps) must map any non-file path under `/conference-demo/` (especially `/conference-demo/<slug>/`) to the SPA index.html; `api/`, `admin/`, `media/` keep routing to the backend. Documented in README.md and ADMINISTRATOR_GUIDE.md.
+- The prod reverse proxy (mmg-webapps) must map any non-file path under `/conference-demo/` (especially `/conference-demo/<slug>/`) to the SPA index.html; `api/`, `admin/`, `media/` keep routing to the backend. Documented in README.md and docs/deployment.md.
 - Old bookmarks like `/conference-demo/#/program` now land on the landing page (path, not hash, selects the conference) — deliberate "always render landing"; users click through. An unknown slug (`/typo-in-the-slug/`) also renders the landing, with a static banner naming the slug (`useConferenceExists` tri-state: unknown/exists/absent; fetch failures fail open to the conference shell so a backend hiccup cannot blank the site).
 - Demo: `https://mmg-webapps.fjfi.cvut.cz/conference-demo/` (root = landing; `wsc2026` = seeded conference)
