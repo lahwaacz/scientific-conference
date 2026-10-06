@@ -49,12 +49,13 @@ RUN rm -rf /usr/share/nginx/html/*
 COPY --from=builder /app/build /usr/share/nginx/html
 
 # Universal server config (no deployment values) and the runtime-config
-# entrypoint script; the html dir must be writable so the unprivileged
-# user can overwrite app-config.js at startup.
+# entrypoint script. Only app-config.js is writable by the unprivileged
+# user (the entrypoint overwrites it in place); the rest of the tree
+# stays root-owned read-only.
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY docker-entrypoint.d/20-app-config.sh /docker-entrypoint.d/20-app-config.sh
 RUN chmod +x /docker-entrypoint.d/20-app-config.sh \
-    && chown -R 101:0 /usr/share/nginx/html
+    && chown 101:0 /usr/share/nginx/html/app-config.js
 
 # Switch back to the unprivileged nginx user
 USER 101
