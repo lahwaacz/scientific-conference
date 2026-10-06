@@ -4,14 +4,15 @@ import { fetchWithAuth } from "../../utils/api";
 import styles from "./AdminLoginModal.module.css";
 
 export default function AdminLoginModal({ onSuccess, onClose }) {
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const passwordRef = useRef(null);
+  const usernameRef = useRef(null);
 
   useEffect(() => {
-    passwordRef.current?.focus();
+    usernameRef.current?.focus();
   }, []);
 
   useEffect(() => {
@@ -36,14 +37,11 @@ export default function AdminLoginModal({ onSuccess, onClose }) {
       const res = await fetchWithAuth("/api/auth/login/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: "admin",
-          password,
-        }),
+        body: JSON.stringify({ username, password }),
       });
 
       if (!res.ok) {
-        setError("Wrong password");
+        setError("Wrong username or password");
         setLoading(false);
         return;
       }
@@ -83,13 +81,26 @@ export default function AdminLoginModal({ onSuccess, onClose }) {
           <h3 className={styles.title}>Admin Login</h3>
 
           <input
+            type="text"
+            placeholder="Enter username"
+            aria-label="Username"
+            autoComplete="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            disabled={loading}
+            className={styles.input}
+            ref={usernameRef}
+          />
+
+          <input
             type="password"
             placeholder="Enter password"
+            aria-label="Password"
+            autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={loading}
             className={styles.input}
-            ref={passwordRef}
           />
 
           {error && <p className={styles.error}>{error}</p>}

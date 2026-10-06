@@ -17,7 +17,7 @@ The entry point to the administrative interface is located in the footer of the 
 1. Open the conference website.
 2. Scroll to the footer.
 3. Select the administration link.
-4. Enter the password known to the website administrators.
+4. Enter the username and password known to the website administrators.
 
 ![Admin Modal](./assets/adminmodal.png)
 

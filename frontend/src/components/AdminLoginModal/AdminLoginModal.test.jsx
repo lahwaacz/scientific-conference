@@ -10,6 +10,12 @@ describe("AdminLoginModal", () => {
   let onSuccess;
   let onClose;
 
+  const fillUsername = (value) => {
+    fireEvent.change(screen.getByPlaceholderText(/enter username/i), {
+      target: { value },
+    });
+  };
+
   const fillPassword = (value) => {
     fireEvent.change(screen.getByPlaceholderText(/enter password/i), {
       target: { value },
@@ -27,12 +33,20 @@ describe("AdminLoginModal", () => {
     fetchWithAuth.mockReset();
   });
 
-  test("posts to the login endpoint with the hardcoded admin username", async () => {
+  test("asks for a username and a password, focusing the username", () => {
+    render(<AdminLoginModal onSuccess={onSuccess} onClose={onClose} />);
+
+    expect(screen.getByPlaceholderText(/enter username/i)).toHaveFocus();
+    expect(screen.getByPlaceholderText(/enter password/i)).toBeInTheDocument();
+  });
+
+  test("posts to the login endpoint with the entered credentials", async () => {
     fetchWithAuth.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ access: "A", refresh: "R" }),
     });
     render(<AdminLoginModal onSuccess={onSuccess} onClose={onClose} />);
+    fillUsername("alice");
     fillPassword("s3cret");
     submit();
 
@@ -41,7 +55,7 @@ describe("AdminLoginModal", () => {
     expect(url).toBe("/api/auth/login/");
     expect(opts.method).toBe("POST");
     expect(JSON.parse(opts.body)).toEqual({
-      username: "admin",
+      username: "alice",
       password: "s3cret",
     });
   });
@@ -52,6 +66,7 @@ describe("AdminLoginModal", () => {
       json: async () => ({ access: "ACC", refresh: "REF" }),
     });
     render(<AdminLoginModal onSuccess={onSuccess} onClose={onClose} />);
+    fillUsername("alice");
     fillPassword("pw");
     submit();
 
@@ -60,13 +75,16 @@ describe("AdminLoginModal", () => {
     expect(localStorage.getItem("refresh_token")).toBe("REF");
   });
 
-  test("shows the wrong-password message and does not persist on non-OK", async () => {
+  test("shows the wrong-credentials message and does not persist on non-OK", async () => {
     fetchWithAuth.mockResolvedValueOnce({ ok: false });
     render(<AdminLoginModal onSuccess={onSuccess} onClose={onClose} />);
+    fillUsername("alice");
     fillPassword("bad");
     submit();
 
-    expect(await screen.findByText(/wrong password/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/wrong username or password/i)
+    ).toBeInTheDocument();
     expect(onSuccess).not.toHaveBeenCalled();
     expect(localStorage.getItem("access_token")).toBeNull();
   });
@@ -74,6 +92,7 @@ describe("AdminLoginModal", () => {
   test("shows the connection-error message when fetchWithAuth rejects", async () => {
     fetchWithAuth.mockRejectedValueOnce(new Error("boom"));
     render(<AdminLoginModal onSuccess={onSuccess} onClose={onClose} />);
+    fillUsername("alice");
     fillPassword("pw");
     submit();
 
