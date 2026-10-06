@@ -28,4 +28,4 @@ EXPOSE 8000
 
 # collect static files (frontend nginx serves them from DJANGO_STATIC_ROOT),
 # perform database migrations and run the webserver
-CMD .venv/bin/python manage.py collectstatic --no-input && .venv/bin/python manage.py migrate && .venv/bin/python manage.py runserver 0.0.0.0:8000
+CMD .venv/bin/python manage.py collectstatic --no-input && .venv/bin/python manage.py migrate && .venv/bin/gunicorn backend.wsgi:application --bind 0.0.0.0:8000 --access-logfile -
