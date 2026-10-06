@@ -30,9 +30,7 @@ export default function Registration() {
       <div className={styles.container}>
         <div className={styles.leftSide}>
           <Title text="Registration" />
-          <p className={styles.description}>
-            {info?.registration_fee_note}
-          </p>
+          <p className={styles.description}>{info?.registration_fee_note}</p>
           <p className={styles.strong}>Required registration data:</p>
           <ol>
             {instructions.map((item, i) => (

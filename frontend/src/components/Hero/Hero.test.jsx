@@ -23,34 +23,32 @@ describe("Hero", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("");
     expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("");
     expect(screen.queryByText(/workshop on scientific computing/i)).toBeNull();
-    expect(
-      screen.queryByText(/organized by the faculty/i),
-    ).toBeNull();
+    expect(screen.queryByText(/organized by the faculty/i)).toBeNull();
   });
 
   it("renders the conference title and description once the info arrives", async () => {
     globalThis.fetch = vi.fn(() =>
-      Promise.resolve({ ok: true, json: async () => INFO }),
+      Promise.resolve({ ok: true, json: async () => INFO })
     );
     render(<Hero />);
 
     expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent(
-      "Workshop on Scientific Computing 2027",
+      "Workshop on Scientific Computing 2027"
     );
     expect(screen.getByText("An annual colloquium.")).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { level: 2 }),
-    ).toHaveTextContent("25 May 2027 - 27 May 2027. Prague.");
+    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent(
+      "25 May 2027 - 27 May 2027. Prague."
+    );
   });
 
   it("syncs the browser tab title with the loaded conference", async () => {
     globalThis.fetch = vi.fn(() =>
-      Promise.resolve({ ok: true, json: async () => INFO }),
+      Promise.resolve({ ok: true, json: async () => INFO })
     );
     render(<Hero />);
 
     await waitFor(() =>
-      expect(document.title).toBe("Workshop on Scientific Computing 2027"),
+      expect(document.title).toBe("Workshop on Scientific Computing 2027")
     );
   });
 });
