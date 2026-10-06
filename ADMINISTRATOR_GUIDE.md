@@ -236,7 +236,7 @@ To delete a submission:
 
 Deletion is irreversible.
 
-Deleting a submission removes the participant information permanently. To restore the removed submission, the registration form must be filled in again from the beginning.
+Deleting a submission removes the participant information permanently. To restore the removed submission, the registration form must be filled in again from the beginning. The public registration form itself asks for confirmation when the page is left with unsubmitted input, so an accidental navigation or tab close does not discard a partially filled form.
 
 If the deleted submission has already been published, the corresponding participant and abstract are also removed from the public website.
 

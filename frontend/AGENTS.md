@@ -41,7 +41,7 @@ frontend/
 | Public site section | `src/components/<Name>/` | Home, Hero, Program, Registration, Abstracts, Venue, Hiking, Accommodation... |
 | Admin feature | `src/components/Admin*`, `Edit*` | AdminPanel (shows `Conference: <title> (<slug>)` cue), AdminLoginModal, ProtectedRoute, EditProgram, EditProgramInfo (program page texts at `/admin-panel/edit-program/info`, opened by Edit Program's Edit Page Texts button), EditParticipants, EditSubmissionModal, EditWebInfo + 6 section editors |
 | Shared primitives | `src/components/ui/` | Modal, Loader, Separator, Title, HomeCard, AbstractCard, ParticipantsCard |
-| Custom hooks | `src/components/hooks/` | useConferenceInfo, useLockBodyScroll, useConferenceExists |
+| Custom hooks | `src/components/hooks/` | useConferenceInfo, useLockBodyScroll, useConferenceExists, useUnsavedChangesGuard (beforeunload + hashchange guard for dirty forms) |
 | Styling | `<Name>/<Name>.module.css` | colocated CSS Module per component |
 
 ## CONVENTIONS

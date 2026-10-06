@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { buildApiUrl } from "../../utils/api";
 import { useConferenceInfo } from "../hooks/useConferenceInfo";
+import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard";
 import Modal from "../ui/Modal/Modal";
 import Title from "../ui/Title/Title";
 import styles from "./RegistrationForm.module.css";
@@ -71,6 +72,17 @@ export default function RegistrationForm() {
   const [photoPreview, setPhotoPreview] = useState(null);
   const [errors, setErrors] = useState({});
   const [wordCount, setWordCount] = useState(0);
+
+  const isDirty =
+    photo !== null ||
+    formData.is_student ||
+    Object.keys(formData).some(
+      (key) => key !== "is_student" && formData[key] !== ""
+    );
+  useUnsavedChangesGuard(
+    isDirty,
+    "Leave the registration form? Unsubmitted changes will be lost."
+  );
 
   const validate = () => {
     const newErrors = {};
