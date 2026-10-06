@@ -980,7 +980,8 @@ class ConferenceInfoView(ConferenceScopedMixin, APIView):
 class ConferenceInfoEditView(ConferenceScopedMixin, APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAdminUser]
-    # Multipart so the SPA can PATCH FormData with an optional photo file.
+    # Multipart so the SPA can PATCH FormData with optional photo files
+    # (card_photo / hero_photo).
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def patch(self, request, *args, **kwargs):

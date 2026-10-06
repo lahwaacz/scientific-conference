@@ -10,7 +10,7 @@
 Web app for organizing scientific conferences (CTU FNSPE, Dept. of Software Engineering).
 Django 5.2 + DRF + SimpleJWT backend, React 19 (Vite 6) frontend, SQLite DB.
 Two independent deployables, coupled only via REST API. Deployed as Docker images under subpath `/conference-demo/`.
-Multi-conference: a `Conference` model owns every domain row (13 FK'd models); a landing page at the root lists all conferences, each conference SPA lives at `/<slug>/`, and the API is scoped under `/api/<slug>/`.
+Multi-conference: a `Conference` model owns every domain row; a landing page at the root lists all conferences, each conference SPA lives at `/<slug>/`, and the API is scoped under `/api/<slug>/`.
 
 ## STRUCTURE
 
@@ -43,7 +43,7 @@ No root Makefile / docker-compose / package.json / requirements.txt. Each app bu
 | Docker images | `backend/Dockerfile`, `frontend/Dockerfile` | separate build contexts (matrix in CI); frontend has `VITE_BASE_PATH` ARG |
 | Admin usage rules | `docs/admin_guide.md` | behavioral constraints on delete/publish/multi-conference flows |
 | Deployment (images, proxy) | `docs/deployment.md` | universal frontend image + BASE_PATH/API_BASE, backend RELATIVE_URL_ROOT, reverse-proxy requirements |
-| Visual regression baseline | `scripts/capture-screenshots.sh` → `screenshots/` | 21 full-page PNGs (landing + 8 public + 12 admin routes), 1440x900; landing has an identical-PNG guard; rerun after UI changes and diff `screenshots/*.png` |
+| Visual regression baseline | `scripts/capture-screenshots.sh` → `screenshots/` | full-page PNGs (landing + public + admin routes), 1440x900; landing has an identical-PNG guard; rerun after UI changes and diff `screenshots/*.png` |
 
 ## CODE MAP
 
@@ -52,16 +52,16 @@ Codegraph covers Python only (JS unindexed); refs via pyright LSP.
 | Symbol | Type | Location | Refs | Role |
 |--------|------|----------|------|------|
 | `Conference` | model | backend/core/models.py:8 | all domain models FK to it | slug-only (`__str__` = slug); reserved slugs rejected in `clean()` |
-| `ConferenceScopedMixin` | mixin | backend/core/views.py:64 | ~35 views | resolves `conference_slug` URL kwarg → eager 404, queryset filter, `perform_create`, serializer context |
+| `ConferenceScopedMixin` | mixin | backend/core/views.py:64 | most scoped views | resolves `conference_slug` URL kwarg → eager 404, queryset filter, `perform_create`, serializer context |
 | `get_conference_or_404` | function | backend/core/views.py:59 | function views + mixin | shared slug→Conference resolution |
 | `ConferenceListView` | view | backend/core/views.py:95 | the ONLY unscoped API view | public card list, server-ordered running→future asc→past desc |
-| `ConferenceInfo` | model | backend/core/models.py:416 | per-conference web content + logistics | `get_or_create(conference=…)`; owns title/dates/location/photo/short_description/badge_title; `year`+`status` computed; GET/PATCH `conference-info/` is the plain serializer (multipart PATCH accepted) |
+| `ConferenceInfo` | model | backend/core/models.py:416 | per-conference web content + logistics | `get_or_create(conference=…)`; owns title/dates/location/card_photo/hero_photo/short_description/badge_title; `year`+`status` computed; GET/PATCH `conference-info/` is the plain serializer (multipart PATCH accepted) |
 | `ParticipantSubmission.publish()` | method | backend/core/models.py | core workflow | creates Participant + Abstract + unscheduled Talk, dedup scoped to `conference` |
-| `generate_program_pdf` / `generate_badges_pdf` | function | backend/core/views.py | 2 endpoints | per-conference reportlab PDFs; badges header = info's `badge_title or title`, footer = info's `location`; need `core/fonts/*.ttf` |
-| ~39 DRF views | classes | backend/core/views.py | 38 scoped via core/urls.py + ConferenceListView | public `AllowAny` + admin `IsAdminUser` |
+| `generate_program_pdf` / `generate_badges_pdf` | function | backend/core/views.py | PDF endpoints | per-conference reportlab PDFs; badges header = info's `badge_title or title`, footer = info's `location`; need `core/fonts/*.ttf` |
+| DRF views | classes | backend/core/views.py | scoped via core/urls.py + ConferenceListView | public `AllowAny` + admin `IsAdminUser` |
 | `App` | component | frontend/src/App.jsx | entry | renders `<Landing/>` when no slug (or unknown slug, with a not-found banner), else HashRouter + all routes + layout shell |
 | `Landing` / `ConferenceCard` | components | frontend/src/components/Landing/ | root page | cards grouped Running/Upcoming/Past; whole card is a plain `<a>` to `/<slug>/`; `unknownSlug` prop renders the not-found banner |
-| `fetchWithAuth` / `buildApiUrl` / `buildMediaUrl` | functions | frontend/src/utils/api.js | ~26 files | sole API client; 401-refresh queue; slug scoping via `GLOBAL_API_PREFIXES` allowlist |
+| `fetchWithAuth` / `buildApiUrl` / `buildMediaUrl` | functions | frontend/src/utils/api.js | many files | sole API client; 401-refresh queue; slug scoping via `GLOBAL_API_PREFIXES` allowlist |
 
 ## CONVENTIONS
 
@@ -80,10 +80,10 @@ Codegraph covers Python only (JS unindexed); refs via pyright LSP.
 ## ANTI-PATTERNS (THIS PROJECT)
 
 - NEVER switch `HashRouter` back to `BrowserRouter` or navigate with `window.location.href` — breaks `/conference-demo/` deployment (deliberate fix in ec29448). Use `useNavigate()` / `window.location.hash`.
-- NEVER hardcode backend URLs in components — always `buildApiUrl`/`buildMediaUrl`/`fetchWithAuth` (fix 7209ddc swept 20+ files for this).
+- NEVER hardcode backend URLs in components — always `buildApiUrl`/`buildMediaUrl`/`fetchWithAuth` (fix 7209ddc swept many files for this).
 - NEVER "fix" the dual fetch-prefixing (`configuredFetch.js` global patch + `buildApiUrl`): they coexist only via `startsWith('http')` guards; touching one side risks double-prefixed URLs.
 - NEVER add an API endpoint outside the `/api/<slug>/` include without conference scoping — the route-table lock in `backend/core/test_conference_isolation.py` fails the suite for any unscoped route.
-- NEVER re-enable conference deletion (Django admin `has_delete_permission=False` on `ConferenceAdmin`): all 13 domain models cascade from `Conference`; deletion is a deliberate ops-shell-only operation, not a UI action.
+- NEVER re-enable conference deletion (Django admin `has_delete_permission=False` on `ConferenceAdmin`): all domain models cascade from `Conference`; deletion is a deliberate ops-shell-only operation, not a UI action.
 - The frontend conference-slug singleton (`utils/conferenceSlug.js`) must NOT use react-router hooks — `useLocation` is hash-based and never sees the `/<slug>/` path prefix. It parses `window.location.pathname` once at startup; keep it that way.
 - NEVER commit `.venv/`, `db.sqlite3`, `media/`, `staticfiles/` (a venv was once committed: 4c321da).
 - `.github/workflows/quality.yml` runs ruff/pyright/pytest + biome/vitest on push to `main` and PRs. The Docker publish workflow does NOT depend on it — a red quality run does not block image pushes.
@@ -99,20 +99,20 @@ uv sync                               # install deps from uv.lock
 uv run python manage.py makemigrations && uv run python manage.py migrate
 uv run python manage.py createsuperuser
 uv run python manage.py runserver     # :8000
-uv run pytest                         # backend suite (pytest-django; 146 tests + 100 subtests,
+uv run pytest                         # backend suite (pytest-django;
                                       #   incl. conference model/isolation/singleton/conferences-endpoint suites)
 uv run ruff check . && uv run ruff format --check .
 uv run pyright                        # type check via django-stubs
-uv run python manage.py loaddata conferences.json participants.json program.json  # seed: 5 demo conferences, 19 participants with abstracts/submissions, organizers/committee, a scheduled program (day + chaired session + talk per participant) for every conference
+uv run python manage.py loaddata conferences.json participants.json program.json  # seed: demo conferences, participants with abstracts/submissions, organizers/committee, a scheduled program (day + chaired session + talk per participant) for every conference
 
 # Frontend (workdir frontend/)
 npm install
 npm run start                         # :3000, uses .env.development ("/" = landing, "/wsc2026/" = conference)
-CI=true npm test                      # one-shot Vitest (120 tests incl. conferenceSlug/api/programRefresh/Landing/Header suites)
+CI=true npm test                      # one-shot Vitest (incl. conferenceSlug/api/programRefresh/Landing/Header suites)
 npm run build                         # compile (ESLint plugin disabled)
 npm run lint                          # Biome lint (0 errors gate, CSS included)
 npm run format:check                  # Biome format gate
-bash scripts/capture-screenshots.sh   # visual regression baseline -> screenshots/ (21 PNGs incl. landing; --backend-port/--frontend-port flags, fails fast on port conflicts)
+bash scripts/capture-screenshots.sh   # visual regression baseline -> screenshots/ (PNGs incl. landing; --backend-port/--frontend-port flags, fails fast on port conflicts)
 
 # Docker (as CI does)
 docker build backend/                 # -> ghcr.io/<repo>-backend
@@ -121,7 +121,7 @@ docker build frontend/                # -> ghcr.io/<repo>-frontend (universal im
 
 ## NOTES
 
-- EditProgram.jsx (~1100 lines) and api.js URL helpers are the highest-churn areas. Both have real tests now (EditProgram lifecycle + api client suites), but the component depth (DaySchedule/TalkCard interactions) is still thin territory — refactor with care.
+- EditProgram.jsx and api.js URL helpers are the highest-churn areas. Both have real tests now (EditProgram lifecycle + api client suites), but the component depth (DaySchedule/TalkCard interactions) is still thin territory — refactor with care.
 - `.env.production` is deliberately absent: the frontend image is universal and carries no deployment values. The Vite ARGs (`VITE_BACKEND_API_BASE_URL`, `VITE_BASE_PATH`, both defaulting to empty/relative) are only build-time fallbacks; deployments configure the running container with `BASE_PATH` (and optionally `API_BASE`), which the image entrypoint writes into `app-config.js` — the app reads that file before the Vite values (see `frontend/src/utils/appConfig.js`).
 - Backend prod image runs gunicorn (WSGI) behind the frontend nginx; it never serves static/media itself (the frontend nginx serves the shared volumes).
 - JWT: 1h access / 7d refresh — lifetimes were a deliberate fix (f064a9e); shortening logs admins out mid-edit. Tokens are global across conferences (no per-conference scoping).

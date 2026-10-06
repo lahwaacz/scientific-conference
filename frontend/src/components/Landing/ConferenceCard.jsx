@@ -13,7 +13,7 @@ export default function ConferenceCard({ conference }) {
     date_end,
     year,
     location,
-    photo,
+    card_photo,
     short_description,
   } = conference;
   // Same title-year pairing as the conference page Hero.
@@ -21,8 +21,12 @@ export default function ConferenceCard({ conference }) {
 
   return (
     <a href={conferenceUrl(slug)} className={styles.card}>
-      {photo && (
-        <img src={buildMediaUrl(photo)} alt={title} className={styles.photo} />
+      {card_photo && (
+        <img
+          src={buildMediaUrl(card_photo)}
+          alt={title}
+          className={styles.photo}
+        />
       )}
       <div className={styles.cardBody}>
         <h3 className={styles.cardTitle}>{fullTitle}</h3>

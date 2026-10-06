@@ -11,6 +11,11 @@ const INFO = {
   location: "Prague",
 };
 
+const INFO_WITH_PHOTO = {
+  ...INFO,
+  hero_photo: "/media/conferences/wsc2026-hero.jpg",
+};
+
 describe("Hero", () => {
   beforeEach(() => {
     document.title = "";
@@ -39,6 +44,32 @@ describe("Hero", () => {
     expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent(
       "25 May 2027 - 27 May 2027. Prague."
     );
+  });
+
+  it("renders the hero photo with the media URL once the info arrives", async () => {
+    globalThis.fetch = vi.fn(() =>
+      Promise.resolve({ ok: true, json: async () => INFO_WITH_PHOTO })
+    );
+    render(<Hero />);
+
+    await screen.findByRole("heading", { level: 1 });
+    const img = screen.getByRole("img", {
+      name: "Workshop on Scientific Computing 2027",
+    });
+    expect(img).toHaveAttribute(
+      "src",
+      "http://localhost:8000/media/conferences/wsc2026-hero.jpg"
+    );
+  });
+
+  it("renders no hero photo when the info has none", async () => {
+    globalThis.fetch = vi.fn(() =>
+      Promise.resolve({ ok: true, json: async () => INFO })
+    );
+    render(<Hero />);
+
+    await screen.findByRole("heading", { level: 1 });
+    expect(screen.queryByRole("img")).toBeNull();
   });
 
   it("syncs the browser tab title with the loaded conference", async () => {

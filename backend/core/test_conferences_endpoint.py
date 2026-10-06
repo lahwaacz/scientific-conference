@@ -60,7 +60,7 @@ class TestConferenceListCards(ConferencesEndpointMixin):
                 "date_end",
                 "year",
                 "location",
-                "photo",
+                "card_photo",
                 "short_description",
                 "status",
             },
@@ -71,7 +71,7 @@ class TestConferenceListCards(ConferencesEndpointMixin):
         self.assertEqual(card["date_end"], "2027-01-29")
         self.assertEqual(card["year"], 2027)
         self.assertEqual(card["location"], "Praha")
-        self.assertIsNone(card["photo"])
+        self.assertIsNone(card["card_photo"])
         self.assertEqual(card["short_description"], "A workshop.")
         self.assertEqual(card["status"], "future")
 

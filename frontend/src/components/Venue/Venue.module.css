@@ -28,6 +28,14 @@
   line-height: 1.7;
 }
 
+.venuePhoto {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: clamp(20px, 4vw, 35px);
+  margin-bottom: clamp(20px, 4vw, 35px);
+}
+
 .mapWrapper {
   width: 100%;
   border: 1px solid #1e73be;

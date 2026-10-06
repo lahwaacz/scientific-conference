@@ -1,3 +1,4 @@
+import { buildMediaUrl } from "../../utils/api";
 import { useConferenceInfo } from "./../hooks/useConferenceInfo";
 import Loader from "../ui/Loader/Loader";
 import Title from "../ui/Title/Title";
@@ -17,6 +18,13 @@ export default function Venue() {
           <div className={styles.container}>
             <div className={styles.content}>
               <p className={styles.description}>{info?.venue_text || ""}</p>
+              {info?.venue_photo && (
+                <img
+                  src={buildMediaUrl(info.venue_photo)}
+                  alt="Venue"
+                  className={styles.venuePhoto}
+                />
+              )}
               {info?.venue_map_embed_url && (
                 <div className={styles.mapWrapper}>
                   <iframe

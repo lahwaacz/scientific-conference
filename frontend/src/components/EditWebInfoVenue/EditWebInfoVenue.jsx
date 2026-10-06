@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { fetchWithAuth } from "../../utils/api";
+import { buildMediaUrl, fetchWithAuth } from "../../utils/api";
 import Loader from "../ui/Loader/Loader";
 import Title from "../ui/Title/Title";
 import styles from "./EditWebInfoVenue.module.css";
@@ -11,6 +11,7 @@ export default function EditWebInfoVenue() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [venuePhotoFile, setVenuePhotoFile] = useState(null);
 
   useEffect(() => {
     fetchWithAuth(`/api/conference-info/`)
@@ -26,17 +27,25 @@ export default function EditWebInfoVenue() {
     setSaved(false);
   }
 
+  function handleVenuePhotoChange(e) {
+    setVenuePhotoFile(e.target.files[0]);
+    setSaved(false);
+  }
+
   async function handleSave(e) {
     e.preventDefault();
     setSaving(true);
     setError("");
     try {
+      const fd = new FormData();
+      fd.append("venue_text", form.venue_text ?? "");
+      fd.append("venue_map_embed_url", form.venue_map_embed_url ?? "");
+      // Absent key = keep the existing photo.
+      if (venuePhotoFile) fd.append("venue_photo", venuePhotoFile);
+
       const res = await fetchWithAuth(`/api/conference-info/edit/`, {
         method: "PATCH",
-        body: JSON.stringify({
-          venue_text: form.venue_text,
-          venue_map_embed_url: form.venue_map_embed_url,
-        }),
+        body: fd,
       });
 
       if (!res.ok) throw new Error();
@@ -78,6 +87,34 @@ export default function EditWebInfoVenue() {
               </div>
 
               <div className={styles.field}>
+                <label>
+                  Venue photo{" "}
+                  <span className={styles.hint}>
+                    (leave empty to keep the current one)
+                  </span>
+                </label>
+                {venuePhotoFile ? (
+                  <img
+                    src={URL.createObjectURL(venuePhotoFile)}
+                    alt="New venue preview"
+                    className={styles.photoPreview}
+                  />
+                ) : form.venue_photo ? (
+                  <img
+                    src={buildMediaUrl(form.venue_photo)}
+                    alt="Venue"
+                    className={styles.photoPreview}
+                  />
+                ) : null}
+                <input
+                  type="file"
+                  name="venue_photo"
+                  accept="image/*"
+                  onChange={handleVenuePhotoChange}
+                />
+              </div>
+
+              <div className={styles.field}>
                 <label>Google Maps Embed URL</label>
                 <small className={styles.hint}>
                   Google Maps → Share → Embed a map → Copy src from iframe
@@ -107,13 +144,30 @@ export default function EditWebInfoVenue() {
             </div>
           </form>
 
-          {(form.venue_text || form.venue_map_embed_url) && (
+          {(form.venue_text ||
+            form.venue_map_embed_url ||
+            form.venue_photo ||
+            venuePhotoFile) && (
             <section className={styles.section} style={{ marginTop: 40 }}>
               <h2 className={styles.sectionTitle}>Preview</h2>
 
               {form.venue_text && (
                 <p className={styles.previewText}>{form.venue_text}</p>
               )}
+
+              {venuePhotoFile ? (
+                <img
+                  src={URL.createObjectURL(venuePhotoFile)}
+                  alt="Venue"
+                  className={styles.photoPreview}
+                />
+              ) : form.venue_photo ? (
+                <img
+                  src={buildMediaUrl(form.venue_photo)}
+                  alt="Venue"
+                  className={styles.photoPreview}
+                />
+              ) : null}
 
               {form.venue_map_embed_url && (
                 <iframe

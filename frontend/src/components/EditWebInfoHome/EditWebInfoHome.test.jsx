@@ -10,10 +10,11 @@ vi.mock("../../utils/api", async () => ({
 /**
  * The GET conference-info payload carries the merged logistics keys
  * (title/location/date_start/date_end plus short_description,
- * badge_title, photo, year). Logistics are editable here: the form
- * renders them and PATCHes them back as multipart FormData. `year` is
- * derived from date_start on the backend and must never be sent;
- * `photo` is sent only when a replacement file is selected.
+ * badge_title, card_photo, hero_photo, year). Logistics are editable
+ * here: the form renders them and PATCHes them back as multipart
+ * FormData. `year` is derived from date_start on the backend and must
+ * never be sent; the photos are sent only when a replacement file is
+ * selected.
  */
 const mergedInfo = {
   id: 1,
@@ -24,7 +25,9 @@ const mergedInfo = {
   date_end: "2026-05-30",
   short_description: "Annual scientific computing workshop.",
   badge_title: "WSC 2026",
-  photo: "/media/conferences/wsc2026.jpg",
+  card_photo: "/media/conferences/wsc2026.jpg",
+  hero_photo: "/media/conferences/wsc2026-hero.jpg",
+  venue_photo: "/media/conferences/wsc2026-venue.jpg",
   description: "About the conference.",
   registration_fee_note: "Free of charge.",
   registration_instructions: "Fill the form.",
@@ -68,6 +71,8 @@ async function submitForm() {
 describe("EditWebInfoHome logistics editing", () => {
   beforeEach(() => {
     fetchWithAuth.mockReset();
+    // jsdom lacks URL.createObjectURL; the hero image preview needs it.
+    URL.createObjectURL = vi.fn(() => "blob:preview");
   });
 
   test("renders logistics inputs without year or Django-admin hint", async () => {
@@ -91,9 +96,18 @@ describe("EditWebInfoHome logistics editing", () => {
       "Badge Title",
       "Date Start",
       "Date End",
+      "Card photo",
+      "Hero photo",
     ]) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
+
+    expect(
+      screen.getByRole("img", { name: "Conference hero" })
+    ).toHaveAttribute(
+      "src",
+      "http://localhost:8000/media/conferences/wsc2026-hero.jpg"
+    );
 
     expect(container.querySelector('input[name="year"]')).toBeNull();
     expect(container.querySelector('input[type="file"]')).not.toBeNull();
@@ -119,20 +133,24 @@ describe("EditWebInfoHome logistics editing", () => {
     expect(body.has("year")).toBe(false);
   });
 
-  test("save omits photo from FormData when no file is selected", async () => {
+  test("save omits every photo from FormData when no file is selected", async () => {
     const call = await submitForm();
 
     expect(call[1].body).toBeInstanceOf(FormData);
-    expect(call[1].body.get("photo")).toBeNull();
+    expect(call[1].body.get("card_photo")).toBeNull();
+    expect(call[1].body.get("hero_photo")).toBeNull();
+    // venue_photo is owned by the Venue editor; sending its URL string
+    // here would make DRF's ImageField reject the whole PATCH (400).
+    expect(call[1].body.has("venue_photo")).toBe(false);
   });
 
-  test("save appends the selected photo file to FormData", async () => {
+  test("save appends the selected card photo file to FormData", async () => {
     const { container } = await renderLoaded();
 
     const file = new File(["fake"], "conference.png", {
       type: "image/png",
     });
-    fireEvent.change(container.querySelector('input[type="file"]'), {
+    fireEvent.change(container.querySelector('input[name="card_photo"]'), {
       target: { files: [file] },
     });
 
@@ -142,7 +160,28 @@ describe("EditWebInfoHome logistics editing", () => {
 
     const body = editCall()[1].body;
     expect(body).toBeInstanceOf(FormData);
-    expect(body.get("photo")).toBe(file);
+    expect(body.get("card_photo")).toBe(file);
+    expect(body.get("hero_photo")).toBeNull();
     expect(body.get("title")).toBe("Workshop on Scientific Computing 2026");
+  });
+
+  test("save appends the selected hero photo file to FormData", async () => {
+    const { container } = await renderLoaded();
+
+    const file = new File(["fake"], "hero.png", {
+      type: "image/png",
+    });
+    fireEvent.change(container.querySelector('input[name="hero_photo"]'), {
+      target: { files: [file] },
+    });
+
+    fetchWithAuth.mockResolvedValueOnce(jsonOf({}));
+    fireEvent.submit(container.querySelector("form"));
+    expect(await screen.findByText("✓ Saved successfully")).toBeInTheDocument();
+
+    const body = editCall()[1].body;
+    expect(body).toBeInstanceOf(FormData);
+    expect(body.get("hero_photo")).toBe(file);
+    expect(body.get("card_photo")).toBeNull();
   });
 });

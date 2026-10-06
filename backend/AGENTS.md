@@ -12,13 +12,13 @@ backend/
 │               # urls.py: global routes ONLY (admin/, api/auth/*, api/conferences/)
 │               # + the slug include: api/<slug:conference_slug>/ -> core.urls
 ├── core/       # the ONLY app — all domain logic
-│   ├── models.py           # 14 models (Conference + 13 domain models FK'd to it)
-│   ├── views.py            # ~1010 lines, ~39 DRF views (38 scoped + ConferenceListView)
+│   ├── models.py           # models (Conference + domain models FK'd to it)
+│   ├── views.py            # views (scoped + ConferenceListView)
 │   ├── serializers.py
 │   ├── urls.py             # slug-scoped endpoint tails (full table)
 │   ├── admin.py            # decorator-style @admin.register
 │   ├── signals.py          # email on publish; wired via CoreConfig.ready() (apps.py)
-│   ├── migrations/         # 15 migrations
+│   ├── migrations/         # migrations
 │   ├── fixtures/            # split demo seed: conferences.json, participants.json, program.json
 │   ├── conftest.py         # pytest fixtures: wsc()/other() two-conference factory + api() URL helper
 │   ├── tests.py            # original suites (Django TestCase, pytest runs them)
@@ -52,11 +52,11 @@ backend/
 - Conference scoping: every view in `core/urls.py` is served under `/api/<slug>/…` and must resolve its conference. Class views inherit `ConferenceScopedMixin` (views.py:64: eager 404 on unknown slug in `initial()`, queryset filter, `perform_create` assignment, serializer context); function views call `get_conference_or_404(conference_slug)`. The only unscoped views are auth + `ConferenceListView`, registered globally in `backend/urls.py` BEFORE the slug include.
 - Serializers: `<Model>Serializer` for read, `...WriteSerializer` split for writes. Serializer field lists are explicit and exclude `conference`; the write path gets the conference via the view's `save(conference=…)`. `TalkSerializer` narrows `session`/`day` querysets via the context conference (cross-conference FK ⇒ 400).
 - URL paths kebab-case with trailing slash; API mounted under `/{RELATIVE_URL_ROOT}api/`, admin tails under the slug prefix (e.g. `/api/<slug>/admin/...`).
-- Config tables (`ConferenceInfo`, `AccommodationInfo`) are per-conference singletons: read/edit views do `get_or_create(conference=self.conference)` — never `get_or_create(id=1)`. `ConferenceInfo` owns the logistics (title, dates, location, photo, short_description, badge_title; `year` derived read-only): `GET conference-info/` returns the plain `ConferenceInfoSerializer` payload; `PATCH conference-info/edit/` (multipart-capable, `BlankAsNoneDateField` maps empty date strings to null) writes logistics + web fields.
+- Config tables (`ConferenceInfo`, `AccommodationInfo`) are per-conference singletons: read/edit views do `get_or_create(conference=self.conference)` — never `get_or_create(id=1)`. `ConferenceInfo` owns the logistics (title, dates, location, card_photo, hero_photo, venue_photo, short_description, badge_title; `year` derived read-only): `GET conference-info/` returns the plain `ConferenceInfoSerializer` payload; `PATCH conference-info/edit/` (multipart-capable, `BlankAsNoneDateField` maps empty date strings to null) writes logistics + web fields.
 - Global default is `AllowAny`; admin views declare `authentication_classes=[JWTAuthentication]` + `permission_classes=[IsAdminUser]` per-view — do not centralize into settings.
 - JWT is global across conferences: one staff account administers every conference. Intended; do not scope tokens per conference.
 - Refresh-token rotation blacklists old tokens via `rest_framework_simplejwt.token_blacklist` (in INSTALLED_APPS); frontend refresh flow stores the rotated pair.
-- Model changes require `makemigrations` (14 migrations so far). Every domain model carries a `conference` FK (`on_delete=CASCADE`, `preserve_default=False` in the squashed 0014); 0014 is hand-written — schema ops plus two idempotent data seeds (wsc2026 conference, fallback ConferenceInfo row).
+- Model changes require `makemigrations`. Every domain model carries a `conference` FK (`on_delete=CASCADE`, `preserve_default=False` in the squashed 0014); 0014 is hand-written — schema ops plus two idempotent data seeds (wsc2026 conference, fallback ConferenceInfo row).
 - `views.py` uses explicit imports — do not reintroduce `from .models import *` / `from .serializers import *`.
 - Media uploads via `ImageField` under MEDIA_ROOT (per-model `upload_to` subdirs: conferences/, participants/, organizers/, organizingCommittee/, accommodation/, submissions/photos/, hiking/).
 - Tests: `uv run pytest` with pytest-django (`DJANGO_SETTINGS_MODULE` from pyproject). `python_files` includes the Django-style `tests.py`; new suites go in `test_<domain>.py` with `Test*`-prefixed classes. `conftest.py` provides two conferences per test (`wsc`/`other` fixtures) — never assume `conference_id=1`. The isolation suite derives its route matrix from `core/urls.py`, so any new unscoped route fails it.
@@ -65,7 +65,7 @@ backend/
 ## ANTI-PATTERNS (THIS APP)
 
 - NEVER add an endpoint outside the `/api/<slug>/` include without conference scoping — `test_conference_isolation.py` builds its route matrix from `core/urls.py` and fails the suite for any unscoped route.
-- NEVER re-enable conference deletion: `ConferenceAdmin.has_delete_permission` is deliberately `False`; all 13 domain models cascade from `Conference`, so deletion is an ops-shell decision, not a UI action.
+- NEVER re-enable conference deletion: `ConferenceAdmin.has_delete_permission` is deliberately `False`; all domain models cascade from `Conference`, so deletion is an ops-shell decision, not a UI action.
 - `AccommodationOptionListView` (views.py:321) is dead code — defined but never routed. Deliberate minimal diff; do not wire it up or delete it casually.
 - `ConferenceDayDeleteView.destroy` calls bare `day.delete()` with no guard; `UnscheduledTalkDeleteView` 400s on scheduled talks. Both deliberate — cascade rules and rationale live in root AGENTS.md; keep guards as they are. Beware: Talk→Abstract FK direction means day/talk deletes orphan the Abstract row.
 - `AccommodationOptionEditView` and `HikingStopEditView` call `objects.get(pk, conference=…)` unguarded in patch/delete: unknown or cross-conference pks surface as 500, never 404. Deliberate security choice — keep; tests pin the 500.

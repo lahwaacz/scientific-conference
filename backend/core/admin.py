@@ -36,7 +36,7 @@ class SessionInline(admin.TabularInline):
 class ConferenceAdmin(admin.ModelAdmin):
     # Conferences are managed ONLY here; deletion is forbidden (fork line 3)
     # because every other model cascades from this table. Only the slug is
-    # editable here: logistics (title, dates, location, photo, badge title)
+    # editable here: logistics (title, dates, location, card/hero photos, badge title)
     # live on ConferenceInfo and are edited via the conference's SPA admin.
     fields = ("slug",)
     list_display = ("slug",)

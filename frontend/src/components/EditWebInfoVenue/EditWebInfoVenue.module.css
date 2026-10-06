@@ -168,3 +168,12 @@
   border: none;
   margin-top: 12px;
 }
+
+.photoPreview {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border: 1px solid #ccc;
+}

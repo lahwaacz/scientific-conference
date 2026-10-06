@@ -2,7 +2,7 @@
 
 This document describes how to use the administrative part of the conference management system. It is intended for website administrators responsible for reviewing participant submissions, publishing conference content, editing the public website, managing the conference schedule, and generating conference documents.
 
-The system can host multiple conferences at the same time. Each conference has its own website, its own data, and its own documents. The administrative interface described in this guide always administers the conference whose website it was opened from. Creating conferences themselves is done in the Django administration; their basic facts (title, dates, location, badge title, photo) are edited in the admin panel. See the **Managing Multiple Conferences** chapter.
+The system can host multiple conferences at the same time. Each conference has its own website, its own data, and its own documents. The administrative interface described in this guide always administers the conference whose website it was opened from. Creating conferences themselves is done in the Django administration; their basic facts (title, dates, location, badge title, card and hero photos) are edited in the admin panel. See the **Managing Multiple Conferences** chapter.
 
 ## Access to the Administrative Interface
 
@@ -85,13 +85,14 @@ The logistics fields of a conference are edited in the admin panel of the confer
 - **Title**: the full conference name. It is shown on the landing card and in the website header. It is also used as the badges header when the badge title is empty.
 - **Start date** and **End date**: shown as the date range on the landing card. They determine whether the conference is grouped as Running, Upcoming, or Past on the landing page. A conference that does not have both dates is treated as Upcoming. The year displayed with the conference is derived from the start date.
 - **Location**: shown on the landing card and printed in the footer of the badges PDF.
-- **Photo**: the image shown on the landing card.
+- **Card photo**: the image shown on the landing card.
+- **Hero photo**: an optional hero image for the conference.
 - **Short description**: a one-line description shown on the landing card.
 - **Badge title**: the header printed on the badges PDF. When this field is empty, the conference title is used instead.
 
 ### Changing Conference Logistics
 
-The logistical facts of a conference (title, dates, location, photo, short description, badge title) are edited in the admin panel of the conference website, in **Edit Web Info**.
+The logistical facts of a conference (title, dates, location, card and hero photos, short description, badge title) are edited in the admin panel of the conference website, in **Edit Web Info**.
 
 1. Open the conference website (`<root>/<slug>/`).
 2. Enter the admin panel from the footer.
@@ -373,7 +374,7 @@ Use the **Home** subsection to update the description displayed on the homepage 
 
 After saving, the updated description is displayed in the public part of the website.
 
-The conference title, dates, location, badge title, and photo are edited in the logistics block at the top of the same form; see **Changing Conference Logistics** in **Managing Multiple Conferences**.
+The conference title, dates, location, badge title, and card and hero photos are edited in the logistics block at the top of the same form; see **Changing Conference Logistics** in **Managing Multiple Conferences**.
 
 ![Home subsection](./assets/edithome.png)
 
@@ -403,7 +404,7 @@ The registration window has two optional dates. The **Registration Opening Date*
 
 ### Venue Subsection
 
-Use the **Venue** subsection to update the venue description and embedded map.
+Use the **Venue** subsection to update the venue description, the optional venue photo, and the embedded map. The venue photo is shown on the public Venue page between the description and the map.
 
 1. Open the **Venue** subsection.
 2. Modify the relevant input fields.

@@ -19,10 +19,27 @@
   width: 100%;
   display: flex;
   justify-content: right;
+  flex: 1;
+  min-width: 0;
 }
 
 .leftSide {
   width: 100%;
+}
+
+.mediaRow {
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 3vw, 40px);
+  width: 100%;
+}
+
+.heroPhoto {
+  flex: 0 0 auto;
+  width: clamp(200px, 26vw, 360px);
+  height: auto;
+  max-height: 260px;
+  object-fit: cover;
 }
 
 .mainTitle {
@@ -54,6 +71,16 @@
 }
 
 @media (max-width: 768px) {
+  .mediaRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .heroPhoto {
+    width: 100%;
+    max-height: none;
+  }
+
   .rightSide {
     justify-content: flex-start;
     margin-top: 16px;

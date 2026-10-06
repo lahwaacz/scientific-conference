@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { fetchWithAuth } from "../../utils/api";
+import { buildMediaUrl, fetchWithAuth } from "../../utils/api";
 import Loader from "../ui/Loader/Loader";
 import Title from "../ui/Title/Title";
 import styles from "./EditWebInfoHome.module.css";
@@ -15,7 +15,9 @@ export default function EditWebInfoHome() {
   const [committee, setCommittee] = useState([]);
   const [personSaved, setPersonSaved] = useState("");
   const [personError, setPersonError] = useState("");
-  const [photoFile, setPhotoFile] = useState(null);
+  const [cardPhotoFile, setCardPhotoFile] = useState(null);
+  const [heroPhoto, setHeroPhoto] = useState(null);
+  const [heroPhotoFile, setHeroPhotoFile] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -23,10 +25,11 @@ export default function EditWebInfoHome() {
       fetchWithAuth(`/api/organizers/`).then((r) => r.json()),
       fetchWithAuth(`/api/committees/`).then((r) => r.json()),
     ]).then(([info, orgs, comm]) => {
-      // `year` is derived from date_start on the backend and `photo`
-      // is only replaced via the file input, so neither belongs in
-      // form state or the PATCH body.
-      const { year, photo, ...formInfo } = info;
+      // `year` is derived from date_start on the backend and the
+      // photos are only replaced via the file inputs, so none of them
+      // belongs in form state or the PATCH body.
+      const { year, card_photo, hero_photo, venue_photo, ...formInfo } = info;
+      setHeroPhoto(hero_photo || null);
       setForm({
         title: "",
         location: "",
@@ -47,8 +50,13 @@ export default function EditWebInfoHome() {
     setSaved(false);
   }
 
-  function handlePhotoChange(e) {
-    setPhotoFile(e.target.files[0]);
+  function handleCardPhotoChange(e) {
+    setCardPhotoFile(e.target.files[0]);
+    setSaved(false);
+  }
+
+  function handleHeroPhotoChange(e) {
+    setHeroPhotoFile(e.target.files[0]);
     setSaved(false);
   }
 
@@ -61,8 +69,9 @@ export default function EditWebInfoHome() {
       for (const [key, value] of Object.entries(form)) {
         fd.append(key, value ?? "");
       }
-      // Absent key = keep the existing photo.
-      if (photoFile) fd.append("photo", photoFile);
+      // Absent key = keep the existing photo (card and hero alike).
+      if (cardPhotoFile) fd.append("card_photo", cardPhotoFile);
+      if (heroPhotoFile) fd.append("hero_photo", heroPhotoFile);
 
       const res = await fetchWithAuth(`/api/conference-info/edit/`, {
         method: "PATCH",
@@ -220,15 +229,44 @@ export default function EditWebInfoHome() {
 
               <div className={styles.field}>
                 <label>
-                  Photo{" "}
+                  Card photo{" "}
                   <span className={styles.hint}>
                     (leave empty to keep the current photo)
                   </span>
                 </label>
                 <input
                   type="file"
+                  name="card_photo"
                   accept="image/*"
-                  onChange={handlePhotoChange}
+                  onChange={handleCardPhotoChange}
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label>
+                  Hero photo{" "}
+                  <span className={styles.hint}>
+                    (leave empty to keep the current photo)
+                  </span>
+                </label>
+                {heroPhotoFile ? (
+                  <img
+                    src={URL.createObjectURL(heroPhotoFile)}
+                    alt="New hero preview"
+                    className={styles.photoPreview}
+                  />
+                ) : heroPhoto ? (
+                  <img
+                    src={buildMediaUrl(heroPhoto)}
+                    alt="Conference hero"
+                    className={styles.photoPreview}
+                  />
+                ) : null}
+                <input
+                  type="file"
+                  name="hero_photo"
+                  accept="image/*"
+                  onChange={handleHeroPhotoChange}
                 />
               </div>
 

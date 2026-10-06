@@ -38,7 +38,7 @@ function conference(overrides) {
     date_end: "2026-05-30",
     year: 2026,
     location: "Děčín",
-    photo: "media/wsc2026.png",
+    card_photo: "media/wsc2026.png",
     short_description: "The running one.",
     status: "running",
     ...overrides,
@@ -55,7 +55,7 @@ const mixedPayload = [
     date_start: null,
     date_end: null,
     year: 2023,
-    photo: null,
+    card_photo: null,
   }),
   conference({
     slug: "future-b",
@@ -252,7 +252,11 @@ describe("Landing", () => {
     globalThis.fetch.mockResolvedValue(
       listResponse([
         conference({ slug: "with-photo", title: "With Photo" }),
-        conference({ slug: "no-photo", title: "No Photo", photo: null }),
+        conference({
+          slug: "no-photo",
+          title: "No Photo",
+          card_photo: null,
+        }),
       ])
     );
 

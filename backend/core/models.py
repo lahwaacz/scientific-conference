@@ -7,7 +7,7 @@ RESERVED_SLUGS = {"auth", "admin", "api", "conferences", "media", "static"}
 
 class Conference(models.Model):
     # Slug-only identity; the logistics fields (title, dates, location,
-    # photo, short description, badge title) live on ConferenceInfo.
+    # card/hero photos, short description, badge title) live on ConferenceInfo.
     slug = models.SlugField(max_length=64, unique=True)
 
     def clean(self):
@@ -400,7 +400,9 @@ class ConferenceInfo(models.Model):
     date_start = models.DateField(null=True, blank=True)
     date_end = models.DateField(null=True, blank=True)
     location = models.CharField(max_length=200, blank=True, default="")
-    photo = models.ImageField(upload_to="conferences/", blank=True, null=True)
+    card_photo = models.ImageField(upload_to="conferences/", blank=True, null=True)
+    hero_photo = models.ImageField(upload_to="conferences/", blank=True, null=True)
+    venue_photo = models.ImageField(upload_to="conferences/", blank=True, null=True)
     short_description = models.CharField(max_length=300, blank=True, default="")
     badge_title = models.CharField(max_length=100, blank=True, default="")
     # Web content
