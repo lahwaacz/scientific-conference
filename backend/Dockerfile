@@ -26,6 +26,6 @@ RUN uv sync --frozen --no-dev
 # Publish a port on which the application should be accessible from the host (and other containers)
 EXPOSE 8000
 
-# collect static files, perform database migrations and run the webserver
-#CMD .venv/bin/python manage.py collectstatic --no-input --clear && .venv/bin/python manage.py migrate && gunicorn backend.wsgi:application --bind 0.0.0.0:8000
-CMD .venv/bin/python manage.py migrate && .venv/bin/python manage.py runserver 0.0.0.0:8000
+# collect static files (frontend nginx serves them from DJANGO_STATIC_ROOT),
+# perform database migrations and run the webserver
+CMD .venv/bin/python manage.py collectstatic --no-input && .venv/bin/python manage.py migrate && .venv/bin/python manage.py runserver 0.0.0.0:8000
