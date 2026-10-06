@@ -8,9 +8,10 @@ Vite 6 (vite build / vitest) + React 19 SPA.
 
 ```
 frontend/
-├── public/                  # static assets
-├── index.html               # Vite entry document at the project root (not public/)
+├── public/                  # static assets + the default (empty) app-config.js
+├── index.html               # Vite entry document at the project root (not public/); loads ./app-config.js before the bundle
 ├── vite.config.mjs          # plugins, base from VITE_BASE_PATH (default './'), vitest config
+├── docker-entrypoint.d/     # 20-app-config.sh: writes app-config.js from BASE_PATH/API_BASE at container start
 ├── src/
 │   ├── main.jsx             # entry: initConferenceSlug() + applyBaseUrlToFetch, mounts App
 │   ├── App.jsx              # renders <Landing/> when isLandingPage(), else HashRouter route
@@ -58,7 +59,7 @@ frontend/
 - All API/media URLs through buildApiUrl/buildMediaUrl/fetchWithAuth. Never a literal URL in a component.
 - Landing cards are plain `<a href={conferenceUrl(slug)}>` elements — full navigation. NEVER a react-router `<Link>` for cross-conference navigation (HashRouter would hash-prefix the href).
 - `EditWebInfoHome` edits web content AND conference logistics (title, dates, location, short description, badge title, photo): logistics live on `ConferenceInfo` and are PATCHed as multipart FormData (photo file appended only when selected; `year` is derived and never sent).
-- Env via `VITE_BACKEND_API_BASE_URL` and `VITE_BASE_PATH` (Vite env, inlined at build via `import.meta.env`; the Dockerfile ARGs export them). `process.env` does not exist in app code — only `vite.config.mjs` (Node context) reads it for `base`.
+- Env via `VITE_BACKEND_API_BASE_URL` and `VITE_BASE_PATH` (Vite env, inlined at build via `import.meta.env`; the Dockerfile ARGs export them, defaulting to empty/relative so the image is universal). At runtime these are only FALLBACKS: the container entrypoint (`docker-entrypoint.d/20-app-config.sh`) writes `public/app-config.js` from the `BASE_PATH`/`API_BASE` env vars, and `utils/appConfig.js` reads it first (`getDeployedBasePath`, API base). `process.env` does not exist in app code — only `vite.config.mjs` (Node context) reads it for `base`.
 - Tooling: Biome handles both format and lint (`biome.json` here; runs over `src/`, JS/JSX and CSS Modules — CSS linting is on). `npm run lint` is a 0-errors gate (info-level diagnostics do not fail the command; keep them at zero too); `npm run format:check` the format gate. Biome and Vite are independent — no bundler-internal linter needs disabling.
 - Lint debt (known, accepted): `noLabelWithoutControl` and `useButtonType` are off — labels are not always programmatically associated with controls, and `<button>`s may lack an explicit `type`. Re-enable either only after fixing the underlying markup.
 - react-router-dom: imported as `react-router-dom` throughout `src/`. Upstream removes this package in RR v8 (the code moves to `react-router`); an import rewrite will be needed when upgrading past v7.

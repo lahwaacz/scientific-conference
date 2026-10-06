@@ -1,11 +1,12 @@
 import { conferenceApiPrefix } from "./conferenceSlug";
+import { appConfig } from "./appConfig";
 
 let isRefreshing = false;
 let failedQueue = [];
-
+const RUNTIME_API_BASE = appConfig().apiBase;
 const RAW_API_BASE_URL =
-  import.meta.env.VITE_BACKEND_API_BASE_URL || "http://localhost:8000";
-
+  (RUNTIME_API_BASE ?? import.meta.env.VITE_BACKEND_API_BASE_URL) ||
+  "http://localhost:8000";
 export const API_BASE_URL = RAW_API_BASE_URL.replace(/\/$/, "");
 
 const GLOBAL_API_PREFIXES = ["/api/auth/", "/api/conferences/"];

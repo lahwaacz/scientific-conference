@@ -18,12 +18,14 @@ RUN --mount=type=cache,target=/root/.npm npm ci
 # Copy the rest of the application source code into the container
 COPY . .
 
-# FIXME: default values should not be hardcoded - pass --build-arg
-# VITE_BACKEND_API_BASE_URL=... / --build-arg VITE_BASE_PATH=... to override
-ARG VITE_BACKEND_API_BASE_URL=https://mmg-webapps.fjfi.cvut.cz/conference-demo
-# Absolute Vite base: asset URLs in the built index.html must work when the
-# SPA is served at /conference-demo/ AND at /conference-demo/<slug>/.
-ARG VITE_BASE_PATH=/conference-demo/
+# Runtime values default to empty: the image is universal and works under
+# any base path. Set BASE_PATH (and optionally API_BASE) on the container
+# to configure it at startup; see docker-entrypoint.d/20-app-config.sh.
+# In dev, .env.development provides VITE_BACKEND_API_BASE_URL.
+ARG VITE_BACKEND_API_BASE_URL=
+# Relative Vite base: asset URLs resolve against the served page, and the
+# nginx config serves them at any path depth (see nginx.conf).
+ARG VITE_BASE_PATH=./
 # ARG does not reach RUN commands' environment; export it so Vite can inline it into the bundle
 ENV VITE_BACKEND_API_BASE_URL=${VITE_BACKEND_API_BASE_URL}
 ENV VITE_BASE_PATH=${VITE_BASE_PATH}
@@ -46,11 +48,16 @@ RUN rm -rf /usr/share/nginx/html/*
 # Copy built assets
 COPY --from=builder /app/build /usr/share/nginx/html
 
-# Custom nginx config
-#COPY nginx.conf /etc/nginx/nginx.conf
+# Universal server config (no deployment values) and the runtime-config
+# entrypoint script; the html dir must be writable so the unprivileged
+# user can overwrite app-config.js at startup.
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY docker-entrypoint.d/20-app-config.sh /docker-entrypoint.d/20-app-config.sh
+RUN chmod +x /docker-entrypoint.d/20-app-config.sh \
+    && chown -R 101:0 /usr/share/nginx/html
 
 # Switch back to the unprivileged nginx user
 USER 101
 
-EXPOSE 8080
+EXPOSE 8000
 CMD ["nginx", "-g", "daemon off;"]

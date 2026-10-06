@@ -1,22 +1,24 @@
+import { appConfig } from "./appConfig";
+
 /**
  * Conference slug singleton (multi-conference support).
  *
  * The slug is captured ONCE from window.location.pathname at app startup —
  * HashRouter's useLocation only sees the hash, never the path prefix, so
  * react-router hooks must not be used here. The deploy path prefix comes
- * from import.meta.env.BASE_URL (Vite base; "./" in dev, "/conference-demo/"
- * in the subpath deployment).
+ * from the runtime app config (BASE_PATH env of the container, see
+ * utils/appConfig.js), falling back to the Vite base (import.meta.env
+ * .BASE_URL; "./" in dev, an absolute base in a per-base-path build).
  */
 
 let conferenceSlug = null;
 
 /**
- * Deployment base path: "/" in dev, "/<subpath>/" when built with a Vite
- * `base` like "/conference-demo/". The dev default "./" means "any
- * subpath", i.e. "/".
+ * Deployment base path: "/" in dev, "/<subpath>/" when the runtime config
+ * or the Vite `base` carries one.
  */
 export function getDeployedBasePath() {
-  const base = import.meta.env.BASE_URL;
+  const base = appConfig().basePath || import.meta.env.BASE_URL;
   if (!base || base === "/" || base === "./") {
     return "/";
   }

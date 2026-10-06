@@ -63,7 +63,7 @@ Demo URL: `https://mmg-webapps.fjfi.cvut.cz/conference-demo/`
 
 The demo root shows the landing page. Each conference is available at its own address under the root, for example `https://mmg-webapps.fjfi.cvut.cz/conference-demo/wsc2026/`.
 
-The frontend production image is built with two build arguments: `VITE_BACKEND_API_BASE_URL` (the backend base URL) and `VITE_BASE_PATH` (the absolute base path, defaulting to `/conference-demo/`, which makes the built asset URLs depth-independent). The reverse proxy in front of the deployment must serve the frontend entry page for every path under the root that is not a real file and not routed to the backend (`api/`, `admin/`, `media/`), so that direct links like `/conference-demo/<slug>/` work. See `ADMINISTRATOR_GUIDE.md` for details.
+The frontend production image is universal: it contains no deployment-specific values and works under any base path. The container is configured at startup with the `BASE_PATH` environment variable (the URL prefix it is served under, for example `/conference-demo`); `API_BASE` is optional and defaults to the same-origin prefix. The image's entrypoint writes these into `app-config.js`, which the app reads before its build-time Vite values. The image's nginx serves the app, its assets and the media volumes at any path depth, so the same image also works at the root or under any other prefix. The reverse proxy in front of the deployment must serve the frontend entry page for every path under the root that is not a real file and not routed to the backend (`api/`, `admin/`, `media/`), so that direct links like `/conference-demo/<slug>/` work. See `ADMINISTRATOR_GUIDE.md` for details.
 
 
 ## Local Setup

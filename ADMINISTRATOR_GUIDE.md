@@ -130,6 +130,8 @@ location /conference-demo/ {
 
 Existing files (styles, scripts, images) are found first; everything else falls back to the entry page. Backend locations such as `location /conference-demo/api/` are longer prefixes and keep precedence automatically. Without this fallback, the landing page keeps working, but every conference address such as `<root>/wsc2026/` returns an error instead of the conference website.
 
+The frontend container image itself is universal: it is configured at startup with the `BASE_PATH` environment variable (the URL prefix, for example `/conference-demo`), and its bundled nginx serves the app, assets and media volumes at any path depth — no rebuild is needed to deploy under a different prefix. The optional `API_BASE` variable overrides where API requests are sent; by default they go to the same origin under the base path.
+
 ### Old Bookmarks
 
 The root address always shows the landing page. A bookmark to an old address such as `<root>/#/program` therefore opens the landing page instead of the expected conference page. Select the required conference card to continue.

@@ -62,6 +62,30 @@ describe("getDeployedBasePath", () => {
   });
 });
 
+describe("runtime app config (app-config.js)", () => {
+  afterEach(() => {
+    delete window.__APP_CONFIG__;
+  });
+
+  test("the runtime basePath overrides the build-time base", async () => {
+    window.__APP_CONFIG__ = { basePath: "/conference-demo" };
+    await loadSlugModule(DEV_BASE);
+    expect(slugModule.getDeployedBasePath()).toBe("/conference-demo/");
+  });
+
+  test("the slug is parsed against the runtime base", async () => {
+    window.__APP_CONFIG__ = { basePath: "/conference-demo" };
+    await initWithLocation({ pathname: "/conference-demo/wsc2026/" });
+    expect(slugModule.getConferenceSlug()).toBe("wsc2026");
+  });
+
+  test("an empty runtime config falls back to the Vite base", async () => {
+    window.__APP_CONFIG__ = {};
+    await loadSlugModule(DEPLOYED_BASE);
+    expect(slugModule.getDeployedBasePath()).toBe("/conference-demo/");
+  });
+});
+
 describe("initConferenceSlug / getConferenceSlug (dev base)", () => {
   test("root path yields null (landing page)", async () => {
     const m = await initWithLocation({ pathname: "/" });

@@ -88,7 +88,7 @@ Codegraph covers Python only (JS unindexed); refs via pyright LSP.
 - NEVER commit `.venv/`, `db.sqlite3`, `media/`, `staticfiles/` (a venv was once committed: 4c321da).
 - `.github/workflows/quality.yml` runs ruff/pyright/pytest + biome/vitest on push to `main` and PRs. The Docker publish workflow does NOT depend on it — a red quality run does not block image pushes.
 - Do not treat cascade deletes as accidental: deleting a ConferenceDay deletes its Sessions+Talks; deleting an Abstract deletes its Talk (the FK sits on Talk); deleting a HikingRoute deletes its Stops; deleting a Conference deletes everything (UI path disabled, see above). NOTE: deleting a day or an unscheduled talk ORPHANS the linked abstract — deliberate admin choice (2026-10-03); do not add cascades unilaterally. The admin guide documents these as rules (`ADMINISTRATOR_GUIDE.md:292`,`:473`); backend guards exist deliberately (e.g. `UnscheduledTalkDeleteView` 400).
-- Do not uncomment dormant Docker lines blindly: `backend/Dockerfile` collectstatic/gunicorn and `frontend/Dockerfile` nginx.conf COPY are disabled on purpose.
+- Do not uncomment dormant Docker lines blindly: `backend/Dockerfile` collectstatic/gunicorn lines are disabled on purpose. (The `frontend/Dockerfile` nginx.conf COPY used to be dormant too; it is active again since the universal-image rework — `frontend/nginx.conf` is the universal, deployment-value-free server config.)
 - If the app is extended, update `ADMINISTRATOR_GUIDE.md` (guide rule, line 579).
 
 ## COMMANDS
@@ -116,13 +116,13 @@ bash scripts/capture-screenshots.sh   # visual regression baseline -> screenshot
 
 # Docker (as CI does)
 docker build backend/                 # -> ghcr.io/<repo>-backend
-docker build frontend/                # -> ghcr.io/<repo>-frontend (ARGs: VITE_BACKEND_API_BASE_URL, VITE_BASE_PATH)
+docker build frontend/                # -> ghcr.io/<repo>-frontend (universal image; configure at runtime with BASE_PATH, see frontend/docker-entrypoint.d/)
 ```
 
 ## NOTES
 
 - EditProgram.jsx (~1100 lines) and api.js URL helpers are the highest-churn areas. Both have real tests now (EditProgram lifecycle + api client suites), but the component depth (DaySchedule/TalkCard interactions) is still thin territory — refactor with care.
-- `.env.production` is deliberately absent: the prod backend URL and base path come from the frontend Dockerfile ARGs `VITE_BACKEND_API_BASE_URL` and `VITE_BASE_PATH`, exported as `ENV` so `vite build` inlines them (defaults still hardcoded, flagged FIXME — override with `--build-arg`).
+- `.env.production` is deliberately absent: the frontend image is universal and carries no deployment values. The Vite ARGs (`VITE_BACKEND_API_BASE_URL`, `VITE_BASE_PATH`, both defaulting to empty/relative) are only build-time fallbacks; deployments configure the running container with `BASE_PATH` (and optionally `API_BASE`), which the image entrypoint writes into `app-config.js` — the app reads that file before the Vite values (see `frontend/src/utils/appConfig.js`).
 - Backend prod image runs `manage.py runserver`, not gunicorn. Media files in prod must be served externally; Django serves media only in DEBUG.
 - JWT: 1h access / 7d refresh — lifetimes were a deliberate fix (f064a9e); shortening logs admins out mid-edit. Tokens are global across conferences (no per-conference scoping).
 - The prod reverse proxy (mmg-webapps) must map any non-file path under `/conference-demo/` (especially `/conference-demo/<slug>/`) to the SPA index.html; `api/`, `admin/`, `media/` keep routing to the backend. Documented in README.md and ADMINISTRATOR_GUIDE.md.

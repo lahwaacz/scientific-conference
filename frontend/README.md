@@ -27,7 +27,7 @@ The application communicates with the Django backend through a REST API and is s
 - `src/utils/` — API utilities and helper functions.
 - `public/` — static public assets.
 - `.env.development` — local development environment variables.
-- `.env.production` — deliberately absent; production backend URL comes from the Dockerfile ARG.
+- `.env.production` — deliberately absent; the production image is universal and is configured at runtime with the `BASE_PATH` (and optional `API_BASE`) environment variables.
 
 ## Requirements
 

@@ -16,6 +16,7 @@ let reloadMock;
 
 async function loadApi() {
   vi.resetModules();
+  vi.stubEnv("VITE_BACKEND_API_BASE_URL", BASE);
   api = await import("./api");
 }
 
@@ -34,6 +35,36 @@ beforeEach(() => {
     value: { hash: "", reload: reloadMock },
   });
   localStorage.clear();
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
+describe("runtime app config (app-config.js)", () => {
+  afterEach(() => {
+    delete window.__APP_CONFIG__;
+  });
+
+  test("the runtime apiBase overrides the build-time env", async () => {
+    window.__APP_CONFIG__ = { apiBase: "/conference-demo" };
+
+    await loadApi();
+
+    expect(api.buildApiUrl("/api/conferences/")).toBe(
+      "/conference-demo/api/conferences/"
+    );
+  });
+
+  test("an empty runtime config falls back to the env value", async () => {
+    window.__APP_CONFIG__ = {};
+
+    await loadApi();
+
+    expect(api.buildApiUrl("/api/conferences/")).toBe(
+      "http://localhost:8000/api/conferences/"
+    );
+  });
 });
 
 describe("buildApiUrl", () => {
