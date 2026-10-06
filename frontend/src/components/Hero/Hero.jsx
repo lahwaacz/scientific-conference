@@ -1,4 +1,5 @@
 import { useConferenceInfo } from "./../hooks/useConferenceInfo";
+import { conferenceTitle } from "../../utils/conferenceTitle";
 import styles from "./Hero.module.css";
 
 export default function Hero() {
@@ -9,9 +10,7 @@ export default function Hero() {
       ? `${formatDate(info.date_start)} - ${formatDate(info.date_end)}. ${info.location}.`
       : "";
 
-  const title = info
-    ? [info.title, info.year].filter(Boolean).join(" ")
-    : "Workshop on Scientific Computing 2025";
+  const title = conferenceTitle(info);
 
   return (
     <section className={styles.hero}>
@@ -21,10 +20,7 @@ export default function Hero() {
           <h2 className={styles.date}>{dateStr}</h2>
         </div>
         <div className={styles.rightSide}>
-          <p className={styles.text}>
-            {info?.description ||
-              "The international scientific colloquium is organized by the Faculty of Nuclear Sciences and Physical Engineering of the Czech Technical University in Prague on annual basis. It is devoted to the meeting of students and young applied mathematicians dealing with numerical solution of partial differential equations, mathematical modelling, numerical simulation of problems in technology, environment, biology and computer science."}
-          </p>
+          <p className={styles.text}>{info?.description}</p>
         </div>
       </div>
     </section>

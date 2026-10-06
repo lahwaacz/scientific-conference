@@ -31,7 +31,7 @@ export default function Registration() {
         <div className={styles.leftSide}>
           <Title text="Registration" />
           <p className={styles.description}>
-            {info?.registration_fee_note || "Conference fee is free of charge"}
+            {info?.registration_fee_note}
           </p>
           <p className={styles.strong}>Required registration data:</p>
           <ol>
