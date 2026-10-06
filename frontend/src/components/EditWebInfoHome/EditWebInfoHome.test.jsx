@@ -14,7 +14,9 @@ vi.mock("../../utils/api", async () => ({
  * here: the form renders them and PATCHes them back as multipart
  * FormData. `year` is derived from date_start on the backend and must
  * never be sent; the photos are sent only when a replacement file is
- * selected.
+ * selected. The registration_* keys stay in the fixture because the
+ * API returns them, but they are owned by the Registration subsection
+ * editor, so the Home editor neither renders nor PATCHes them.
  */
 const mergedInfo = {
   id: 1,
@@ -109,9 +111,17 @@ describe("EditWebInfoHome logistics editing", () => {
       "http://localhost:8000/media/conferences/wsc2026-hero.jpg"
     );
 
+    expect(
+      screen.getByRole("img", { name: "Conference card" })
+    ).toHaveAttribute(
+      "src",
+      "http://localhost:8000/media/conferences/wsc2026.jpg"
+    );
+
     expect(container.querySelector('input[name="year"]')).toBeNull();
     expect(container.querySelector('input[type="file"]')).not.toBeNull();
     expect(screen.queryByText(/Django admin/)).not.toBeInTheDocument();
+    expect(screen.queryByText("Registration Deadline")).not.toBeInTheDocument();
   });
 
   test("save PATCHes logistics and web fields as FormData", async () => {
@@ -129,7 +139,8 @@ describe("EditWebInfoHome logistics editing", () => {
     );
     expect(body.get("badge_title")).toBe("WSC 2026");
     expect(body.get("description")).toBe("About the conference.");
-    expect(body.get("registration_fee_note")).toBe("Free of charge.");
+    expect(body.has("registration_fee_note")).toBe(false);
+    expect(body.has("registration_deadline")).toBe(false);
     expect(body.has("year")).toBe(false);
   });
 
@@ -163,6 +174,28 @@ describe("EditWebInfoHome logistics editing", () => {
     expect(body.get("card_photo")).toBe(file);
     expect(body.get("hero_photo")).toBeNull();
     expect(body.get("title")).toBe("Workshop on Scientific Computing 2026");
+  });
+
+  test("selecting a card photo swaps the stored image for a blob preview", async () => {
+    const { container } = await renderLoaded();
+
+    expect(
+      screen.getByRole("img", { name: "Conference card" })
+    ).toBeInTheDocument();
+
+    const file = new File(["fake"], "conference.png", {
+      type: "image/png",
+    });
+    fireEvent.change(container.querySelector('input[name="card_photo"]'), {
+      target: { files: [file] },
+    });
+
+    expect(
+      screen.queryByRole("img", { name: "Conference card" })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("img", { name: "New card preview" })
+    ).toHaveAttribute("src", "blob:preview");
   });
 
   test("save appends the selected hero photo file to FormData", async () => {

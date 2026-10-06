@@ -15,6 +15,7 @@ export default function EditWebInfoHome() {
   const [committee, setCommittee] = useState([]);
   const [personSaved, setPersonSaved] = useState("");
   const [personError, setPersonError] = useState("");
+  const [cardPhoto, setCardPhoto] = useState(null);
   const [cardPhotoFile, setCardPhotoFile] = useState(null);
   const [heroPhoto, setHeroPhoto] = useState(null);
   const [heroPhotoFile, setHeroPhotoFile] = useState(null);
@@ -26,9 +27,22 @@ export default function EditWebInfoHome() {
       fetchWithAuth(`/api/committees/`).then((r) => r.json()),
     ]).then(([info, orgs, comm]) => {
       // `year` is derived from date_start on the backend and the
-      // photos are only replaced via the file inputs, so none of them
-      // belongs in form state or the PATCH body.
-      const { year, card_photo, hero_photo, venue_photo, ...formInfo } = info;
+      // photos are only replaced via the file inputs; the registration
+      // fields are owned by the Registration subsection editor and must
+      // not be written back from here. None of them belongs in form
+      // state or the PATCH body.
+      const {
+        year,
+        card_photo,
+        hero_photo,
+        venue_photo,
+        registration_fee_note,
+        registration_instructions,
+        registration_opening,
+        registration_deadline,
+        ...formInfo
+      } = info;
+      setCardPhoto(card_photo || null);
       setHeroPhoto(hero_photo || null);
       setForm({
         title: "",
@@ -234,6 +248,19 @@ export default function EditWebInfoHome() {
                     (leave empty to keep the current photo)
                   </span>
                 </label>
+                {cardPhotoFile ? (
+                  <img
+                    src={URL.createObjectURL(cardPhotoFile)}
+                    alt="New card preview"
+                    className={styles.photoPreview}
+                  />
+                ) : cardPhoto ? (
+                  <img
+                    src={buildMediaUrl(cardPhoto)}
+                    alt="Conference card"
+                    className={styles.photoPreview}
+                  />
+                ) : null}
                 <input
                   type="file"
                   name="card_photo"
@@ -276,42 +303,6 @@ export default function EditWebInfoHome() {
                   name="description"
                   rows={5}
                   value={form.description || ""}
-                  onChange={handleChange}
-                />
-              </div>
-            </section>
-
-            <section className={styles.section}>
-              <h2 className={styles.sectionTitle}>Registration</h2>
-
-              <div className={styles.field}>
-                <label>Fee Note</label>
-                <input
-                  name="registration_fee_note"
-                  value={form.registration_fee_note || ""}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className={styles.field}>
-                <label>
-                  Registration Instructions{" "}
-                  <span className={styles.hint}>(one item per line)</span>
-                </label>
-                <textarea
-                  name="registration_instructions"
-                  rows={6}
-                  value={form.registration_instructions || ""}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className={styles.field}>
-                <label>Registration Deadline</label>
-                <input
-                  name="registration_deadline"
-                  type="date"
-                  value={form.registration_deadline || ""}
                   onChange={handleChange}
                 />
               </div>
