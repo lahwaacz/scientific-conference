@@ -34,9 +34,7 @@ export default function EditProgramInfo() {
       const res = await fetchWithAuth(`/api/conference-info/edit/`, {
         method: "PATCH",
         body: JSON.stringify({
-          program_local_registration_text: form.program_local_registration_text,
-          program_regular_talks_text: form.program_regular_talks_text,
-          program_poster_talks_text: form.program_poster_talks_text,
+          program_text: form.program_text,
         }),
       });
       if (!res.ok) throw new Error();
@@ -63,43 +61,17 @@ export default function EditProgramInfo() {
           className={`${styles.form} ${styles.fadeIn}`}
         >
           <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Program Page Texts</h2>
+            <h2 className={styles.sectionTitle}>Program Page Text</h2>
 
             <div className={styles.field}>
-              <label>Registration for Local Participants</label>
+              <label>Program Page Text</label>
               <small className={styles.hint}>
-                Shown under "Registration for local participants" heading
+                Shown above the schedule; Markdown formatting is supported
               </small>
               <textarea
-                name="program_local_registration_text"
-                rows={3}
-                value={form.program_local_registration_text || ""}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className={styles.field}>
-              <label>Regular Talks</label>
-              <small className={styles.hint}>
-                Shown under "Regular talks" heading
-              </small>
-              <textarea
-                name="program_regular_talks_text"
-                rows={3}
-                value={form.program_regular_talks_text || ""}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className={styles.field}>
-              <label>Poster Pitch Talks</label>
-              <small className={styles.hint}>
-                Shown under "Poster pitch talks" heading
-              </small>
-              <textarea
-                name="program_poster_talks_text"
-                rows={3}
-                value={form.program_poster_talks_text || ""}
+                name="program_text"
+                rows={10}
+                value={form.program_text || ""}
                 onChange={handleChange}
               />
             </div>

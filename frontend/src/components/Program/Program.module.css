@@ -7,14 +7,6 @@
   margin-bottom: 20px;
 }
 
-.subheading {
-  font-size: clamp(16px, 2vw, 20px);
-  color: #222;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  margin-bottom: 15px;
-}
-
 .scheduleContainer {
   display: flex;
   flex-direction: column;

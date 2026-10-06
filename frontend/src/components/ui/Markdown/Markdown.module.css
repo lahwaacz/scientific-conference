@@ -1,0 +1,39 @@
+.markdown {
+  line-height: 1.5;
+}
+
+.markdown h1,
+.markdown h2,
+.markdown h3 {
+  font-size: clamp(16px, 2vw, 20px);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin: 0 0 15px;
+}
+
+.markdown p,
+.markdown ul,
+.markdown ol {
+  margin: 0 0 14px;
+}
+
+.markdown ul,
+.markdown ol {
+  padding-left: 22px;
+}
+
+.markdown li {
+  margin-bottom: 6px;
+}
+
+.markdown a {
+  color: var(--hover-color);
+}
+
+.markdown > :first-child {
+  margin-top: 0;
+}
+
+.markdown > :last-child {
+  margin-bottom: 0;
+}

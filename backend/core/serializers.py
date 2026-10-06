@@ -408,9 +408,7 @@ class ConferenceInfoWriteSerializer(serializers.ModelSerializer):
             "info_desk_email",
             "venue_map_embed_url",
             "copyright_text",
-            "program_local_registration_text",
-            "program_regular_talks_text",
-            "program_poster_talks_text",
+            "program_text",
         ]
 
 

@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { buildApiUrl } from "../../utils/api";
 import { useConferenceInfo } from "./../hooks/useConferenceInfo";
 import Loader from "../ui/Loader/Loader";
+import Markdown from "../ui/Markdown/Markdown";
 import Title from "../ui/Title/Title";
 import styles from "./Program.module.css";
 import ProgramDay from "./ProgramDay";
@@ -42,22 +43,10 @@ export default function Program() {
         <Loader />
       ) : (
         <div className={styles.fadeIn}>
-          <h2 className={styles.subheading}>
-            Registration for local participants
-          </h2>
-          <p className={styles.description}>
-            {info?.program_local_registration_text || ""}
-          </p>
-
-          <h2 className={styles.subheading}>Regular talks</h2>
-          <p className={styles.description}>
-            {info?.program_regular_talks_text || ""}
-          </p>
-
-          <h2 className={styles.subheading}>Poster pitch talks</h2>
-          <p className={styles.description}>
-            {info?.program_poster_talks_text || ""}
-          </p>
+          <Markdown text={info?.program_text} className={styles.description} />
+          {data.length === 0 && (
+            <p className={styles.description}>The program is not ready yet.</p>
+          )}
 
           <div className={styles.scheduleContainer}>
             <div className={styles.program}>

@@ -443,7 +443,7 @@ export default function EditProgram() {
                     className={styles.addDayBtn}
                     onClick={() => navigate("/admin-panel/edit-program/info")}
                   >
-                    Edit Page Texts
+                    Edit Page Text
                   </button>
                 </div>
               ) : (

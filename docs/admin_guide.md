@@ -235,7 +235,7 @@ The **Edit Program** section contains two main parts:
 - **Unscheduled Talks**
 - **Conference Schedule**
 
-This section is used to create conference days, create chairs, assign talks to the schedule, add breaks, and modify already scheduled items. The explanatory texts shown on the public program page are edited here as well; see **Edit the Program Page Texts** below.
+This section is used to create conference days, create chairs, assign talks to the schedule, add breaks, and modify already scheduled items. The explanatory text shown on the public program page is edited here as well; see **Edit the Program Page Text** below.
 
 ### Unscheduled Talks Section
 
@@ -347,13 +347,13 @@ To change the time or chair of any talk or break:
 
 To move a talk to another day, select **Move to Unscheduled**. The talk is then moved to the **Unscheduled Talks** section and becomes invisible in the public part of the website. From there, assign it again to the required day, time, and chair.
 
-### Edit the Program Page Texts
+### Edit the Program Page Text
 
-The public program page shows short explanatory texts (registration for local participants, regular talks, poster pitch talks) together with the schedule. These texts are edited from the program editor.
+The public program page shows a short explanatory text above the schedule. It is edited from the program editor.
 
 1. Open **Edit Program**.
-2. In the **Conference Schedule** section, select **Edit Page Texts** next to **Add Day**.
-3. Change the relevant input fields.
+2. In the **Conference Schedule** section, select **Edit Page Text** next to **Add Day**.
+3. Change the **Program Page Text**. Markdown formatting is supported (headings, lists, emphasis, links).
 4. Select **SAVE CHANGES**.
 
 ## Edit Website Information

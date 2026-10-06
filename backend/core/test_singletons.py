@@ -19,7 +19,7 @@ from .models import AccommodationInfo, Conference, ConferenceInfo
 SLUG_A = "wsc2026-test"
 SLUG_B = "wsc2027-test"
 
-# id + 16 web fields + 7 logistics fields + derived year.
+# id + 14 web fields + 7 logistics fields + derived year.
 INFO_PAYLOAD_KEYS = frozenset(
     {
         "id",
@@ -36,9 +36,7 @@ INFO_PAYLOAD_KEYS = frozenset(
         "info_desk_email",
         "venue_map_embed_url",
         "copyright_text",
-        "program_local_registration_text",
-        "program_regular_talks_text",
-        "program_poster_talks_text",
+        "program_text",
         "title",
         "date_start",
         "date_end",

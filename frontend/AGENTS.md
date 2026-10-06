@@ -40,7 +40,7 @@ frontend/
 | Which conference is active | `src/utils/conferenceSlug.js` | module singleton; `getConferenceSlug()` (null on landing), `isLandingPage()`, `conferenceUrl(slug)` |
 | Any backend HTTP call | `src/utils/api.js` | buildApiUrl / buildMediaUrl / fetchWithAuth, used by ~26 files; only `/api/auth/*` and `/api/conferences/` pass through unscoped (`GLOBAL_API_PREFIXES`) |
 | Public site section | `src/components/<Name>/` | Home, Hero, Program, Registration, Abstracts, Venue, Hiking, Accommodation... |
-| Admin feature | `src/components/Admin*`, `Edit*` | AdminPanel (shows `Conference: <title> (<slug>)` cue), AdminLoginModal, ProtectedRoute, EditProgram, EditProgramInfo (program page texts at `/admin-panel/edit-program/info`, opened by Edit Program's Edit Page Texts button), EditParticipants, EditSubmissionModal, EditWebInfo + 6 section editors |
+| Admin feature | `src/components/Admin*`, `Edit*` | AdminPanel (shows `Conference: <title> (<slug>)` cue), AdminLoginModal, ProtectedRoute, EditProgram, EditProgramInfo (program page text at `/admin-panel/edit-program/info`, opened by Edit Program's Edit Page Text button), EditParticipants, EditSubmissionModal, EditWebInfo + 6 section editors |
 | Shared primitives | `src/components/ui/` | Modal, Loader, Separator, Title, HomeCard, AbstractCard, ParticipantsCard |
 | Custom hooks | `src/components/hooks/` | useConferenceInfo, useLockBodyScroll, useConferenceExists, useUnsavedChangesGuard (beforeunload + hashchange guard for dirty forms) |
 | Styling | `<Name>/<Name>.module.css` | colocated CSS Module per component |

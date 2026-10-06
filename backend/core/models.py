@@ -434,18 +434,7 @@ class ConferenceInfo(models.Model):
         max_length=200, blank=True, default="©2025 MMG, FNSPE CTU in Prague"
     )
     # Program page
-    program_local_registration_text = models.TextField(
-        blank=True,
-        default="Registration for local participants takes place at the conference venue: Thursday: from 13:00 to 14:00 + during coffee breaks between the sessions",
-    )
-    program_regular_talks_text = models.TextField(
-        blank=True,
-        default="Oral presentation duration is 20 min = 15 min talk + 5 min for discussion.",
-    )
-    program_poster_talks_text = models.TextField(
-        blank=True,
-        default="Each poster will be briefly introduced in a short 1–3 min presentation.",
-    )
+    program_text = models.TextField(blank=True)
 
     class Meta:
         verbose_name = "Conference Info"
