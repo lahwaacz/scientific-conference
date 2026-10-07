@@ -325,6 +325,19 @@ class ParticipantSubmissionSerializer(serializers.ModelSerializer):
                 )
 
 
+class ParticipantSubmissionCreateSerializer(ParticipantSubmissionSerializer):
+    """Anonymous create view: `status` and `admin_notes` are read-only so an
+    unauthenticated poster cannot pre-approve a submission or inject internal
+    notes."""
+
+    class Meta(ParticipantSubmissionSerializer.Meta):
+        read_only_fields = [
+            *ParticipantSubmissionSerializer.Meta.read_only_fields,
+            "status",
+            "admin_notes",
+        ]
+
+
 class HikingStopSerializer(serializers.ModelSerializer):
     class Meta:
         model = HikingStop

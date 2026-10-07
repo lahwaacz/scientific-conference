@@ -192,6 +192,37 @@ class TestSubmissionAPI(APITestCase):
         created = ParticipantSubmission.objects.first()
         assert created is not None
         self.assertEqual(created.status, "pending")
+        # self-declared on the public registration form (badge/list display)
+        self.assertTrue(created.is_student)
+
+    def test_create_submission_ignores_admin_controlled_fields(self):
+        wsc_conference()
+        url = api("submit/")
+        data = {
+            "name": "Mallory Doe",
+            "email": "mallory@example.com",
+            "affiliation": "Evil Corp",
+            "abstract_title": "Pre-approved talk",
+            "abstract_text": "A short abstract",
+            "additional_authors": "",
+            "additional_affiliations": "",
+            "arrival_date": "2026-09-10",
+            "departure_date": "2026-09-12",
+            "info": "",
+            "is_student": False,
+            "status": "approved",
+            "admin_notes": "injected by anonymous poster",
+        }
+
+        response = self.client.post(url, data, format="json")
+
+        self.assertEqual(response.status_code, 201)
+        created = ParticipantSubmission.objects.first()
+        assert created is not None
+        self.assertEqual(created.status, "pending")
+        self.assertEqual(created.admin_notes, "")
+        self.assertEqual(response.data["status"], "pending")
+        self.assertEqual(response.data["admin_notes"], "")
 
     def test_submission_rejected_before_registration_opens(self):
         ConferenceInfo.objects.create(
@@ -259,6 +290,22 @@ class TestPublishSubmissionAPI(APITestCase):
         self.assertIsNotNone(self.submission.published_participant)
         self.assertIsNotNone(self.submission.published_abstract)
         self.assertEqual(Talk.objects.count(), 1)
+
+    def test_admin_edit_endpoint_sets_admin_controlled_fields(self):
+        # the admin review workflow (EditSubmissionModal) PATCHes these
+        # through SubmissionDetailView; the read-only split only applies
+        # to the anonymous create view
+        url = api(f"admin/submissions/{self.submission.id}/")
+        response = self.client.patch(
+            url,
+            {"status": "approved", "admin_notes": "verified by phone"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.submission.refresh_from_db()
+        self.assertEqual(self.submission.status, "approved")
+        self.assertEqual(self.submission.admin_notes, "verified by phone")
 
     def test_publish_endpoint_rejects_non_staff(self):
         self.client.credentials()

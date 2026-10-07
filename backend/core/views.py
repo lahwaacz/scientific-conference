@@ -51,6 +51,7 @@ from .serializers import (
     OrganizerSerializer,
     OrganizingCommitteeSerializer,
     ParticipantSerializer,
+    ParticipantSubmissionCreateSerializer,
     ParticipantSubmissionSerializer,
     SessionSerializer,
     TalkSerializer,
@@ -613,7 +614,7 @@ class AdminPanelView(ConferenceScopedMixin, APIView):
 
 class SubmissionCreateView(ConferenceScopedMixin, generics.CreateAPIView):
     queryset = ParticipantSubmission.objects.all()
-    serializer_class = ParticipantSubmissionSerializer
+    serializer_class = ParticipantSubmissionCreateSerializer
     permission_classes = [AllowAny]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
