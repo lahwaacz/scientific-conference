@@ -62,6 +62,16 @@ CORS is enabled for the frontend running on `http://localhost:3000`.
 
 The backend also serves media files during development.
 
+### Required environment variables
+
+`DJANGO_SECRET_KEY` must be set — the server refuses to start without it.
+For local development it defaults from `.env.development` (committed to git,
+excluded from the Docker image), which also sets `DJANGO_DEBUG=True`.
+Outside that file, set the variable in the environment; in production it
+should come from a secret store (for example a Kubernetes Secret).
+
+`DJANGO_DEBUG` defaults to `False`; enable it only for debugging.
+
 ## API Overview
 
 The backend exposes endpoints for:

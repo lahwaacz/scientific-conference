@@ -12,6 +12,8 @@ The backend image runs gunicorn (WSGI) and expects its URL prefix through the `R
 
 The backend container runs as a non-root user (uid and gid 1000). Every volume it writes to — `DJANGO_STATIC_ROOT`, `DJANGO_MEDIA_ROOT` and the SQLite database at `DJANGO_DB_PATH` — must be writable by that user (for a host bind mount, `chown 1000:1000` the directory).
 
+The backend also requires `DJANGO_SECRET_KEY` — the key that signs sessions and JWTs — in its environment, for example from a Kubernetes Secret. The image contains no default value: if the variable is missing, the container exits at startup instead of signing tokens with a publicly known key. `DJANGO_DEBUG` defaults to `False` and should only be enabled for debugging.
+
 ## Reverse Proxy Requirements
 
 For the per-conference addresses to work, the reverse proxy in front of the deployment must serve the frontend entry page for every path under the application root that is not a real file. Requests to `api/`, `admin/`, and `media/` under the root must keep being routed to the backend as they are today. Every other path, especially `<root>/<slug>/`, must return the frontend `index.html`, which then opens the conference named in the address.
