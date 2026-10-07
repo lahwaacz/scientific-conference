@@ -10,6 +10,8 @@ The frontend image is universal: it contains no deployment-specific values and w
 
 The backend image runs gunicorn (WSGI) and expects its URL prefix through the `RELATIVE_URL_ROOT` environment variable (for example `conference-demo/`); every route, the static URL, the media URL and the cookie paths are derived from it. It never serves static or media files itself. At startup it collects the static files of Django and its apps into `DJANGO_STATIC_ROOT` (for example `/data/static`), and media uploads go to `DJANGO_MEDIA_ROOT` (for example `/data/media`) — both volumes are served externally by the frontend container, the static files under the `back-static/` prefix (set `DJANGO_STATIC_URL` to `<root>/back-static/`).
 
+The backend container runs as a non-root user (uid and gid 1000). Every volume it writes to — `DJANGO_STATIC_ROOT`, `DJANGO_MEDIA_ROOT` and the SQLite database at `DJANGO_DB_PATH` — must be writable by that user (for a host bind mount, `chown 1000:1000` the directory).
+
 ## Reverse Proxy Requirements
 
 For the per-conference addresses to work, the reverse proxy in front of the deployment must serve the frontend entry page for every path under the application root that is not a real file. Requests to `api/`, `admin/`, and `media/` under the root must keep being routed to the backend as they are today. Every other path, especially `<root>/<slug>/`, must return the frontend `index.html`, which then opens the conference named in the address.

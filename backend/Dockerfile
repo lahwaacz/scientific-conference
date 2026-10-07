@@ -1,12 +1,65 @@
-FROM python:3.14
+# an adaptation of the standalone multistage pattern from
+# https://github.com/astral-sh/uv-docker-example/blob/main/standalone.Dockerfile
+# (the builder tag pins the uv version that wrote uv.lock)
+
+# first, build the application in the /app directory
+FROM ghcr.io/astral-sh/uv:0.12.22-trixie-slim AS builder
+
+# compile bytecode while installing (faster startup), copy files from the
+# cache mount instead of hardlinking (it is a separate filesystem)
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
+
+# omit development dependencies
+ENV UV_NO_DEV=1
+
+# configure the Python directory so it is consistent across stages
+ENV UV_PYTHON_INSTALL_DIR=/python
+
+# only use the managed Python version
+ENV UV_PYTHON_PREFERENCE=only-managed
+
+# install the interpreter pinned by .python-version (3.13, same as dev/CI)
+# before the project, for caching
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=.python-version,target=.python-version \
+    uv python install
+
+WORKDIR /app
+
+# install dependencies from the locked set in a layer keyed on the lock
+# files only, so source changes do not reinstall them
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=.python-version,target=.python-version \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked --no-install-project
 
 # copy the entire project source tree
-COPY . /project
-WORKDIR /project
+COPY . /app
 
-# install uv, then dependencies from the locked set (no dev group)
-COPY --from=ghcr.io/astral-sh/uv:0.12.22 /uv /bin/uv
-RUN uv sync --frozen --no-dev
+# create the project environment
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked
+
+# then, use a final image without uv
+FROM debian:trixie-slim
+
+# setup a non-root user
+RUN groupadd --gid 1000 nonroot \
+ && useradd --gid 1000 --uid 1000 --create-home nonroot
+
+# copy the Python installation from the builder
+COPY --from=builder /python /python
+
+# copy the application from the builder
+COPY --from=builder --chown=nonroot:nonroot /app /app
+
+# place executables in the environment at the front of the path
+ENV PATH="/app/.venv/bin:$PATH"
+
+# keeps Python from buffering stdout and stderr to avoid situations where
+# the application crashes without emitting any logs due to buffering.
+ENV PYTHONUNBUFFERED=1
 
 # NOTE: this does not work with gunicorn - it does not serve static files
 # collect static files into the STATIC_ROOT directory
@@ -16,16 +69,24 @@ RUN uv sync --frozen --no-dev
 #       from the RUN command would not affect the existing volume
 
 # create a directory for staticfiles (will be mounted as a volume)
-#RUN mkdir /project/staticfiles
-#VOLUME /project/staticfiles
+#RUN mkdir /app/staticfiles
+#VOLUME /app/staticfiles
 
 # the MEDIA_ROOT directory exists in the project but must be set as a volume
 # (the content from git will initialize the container volume when it is created)
-#VOLUME /project/media
+#VOLUME /app/media
 
-# Publish a port on which the application should be accessible from the host (and other containers)
+# use the non-root user to run our application
+USER nonroot
+
+# use /app as the working directory
+WORKDIR /app
+
+# publish a port on which the application should be accessible from the host
+# (and other containers)
 EXPOSE 8000
 
 # collect static files (frontend nginx serves them from DJANGO_STATIC_ROOT),
-# perform database migrations and run the webserver
-CMD .venv/bin/python manage.py collectstatic --no-input && .venv/bin/python manage.py migrate && .venv/bin/gunicorn backend.wsgi:application --bind 0.0.0.0:8000 --access-logfile -
+# perform database migrations and run the webserver; exec makes gunicorn PID 1
+# so it receives SIGTERM directly (graceful worker shutdown)
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
