@@ -1,3 +1,6 @@
+import secrets
+
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
@@ -194,6 +197,10 @@ class AccommodationOption(models.Model):
         ordering = ["order"]
 
 
+def generate_tracking_token():
+    return secrets.token_urlsafe(24)
+
+
 class ParticipantSubmission(models.Model):
     STATUS_CHOICES = [
         ("pending", "Pending Review"),
@@ -242,6 +249,21 @@ class ParticipantSubmission(models.Model):
         related_name="submission",
     )
 
+    tracking_token = models.CharField(
+        max_length=64,
+        unique=True,
+        db_index=True,
+        editable=False,
+        default=generate_tracking_token,
+    )
+    linked_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="linked_submissions",
+    )
+
     class Meta:
         ordering = ["-submitted_at"]
 
@@ -254,11 +276,28 @@ class ParticipantSubmission(models.Model):
             return (self.departure_date - self.arrival_date).days
         return 0
 
+    @property
+    def participant_reference(self):
+        # pk-None guard must come first: admin add pages render this
+        # property against an unsaved instance (no conference -> 500).
+        if self.pk is None:
+            return ""
+        return f"{self.conference.slug}-{self.pk:04d}"
+
     def publish(self):
         from django.utils import timezone
 
         if self.published_participant:
             participant = self.published_participant
+            # Sync the participant-controlled fields the way the dedup-update
+            # branch below does; otherwise a participant edit followed by an
+            # admin re-publish leaves the public row stale.
+            participant.name = self.name
+            participant.affiliation = self.affiliation
+            participant.email = self.email
+            if self.photo:
+                participant.photo = self.photo
+            participant.save()
         else:
             if self.email:
                 try:
@@ -410,6 +449,7 @@ class ConferenceInfo(models.Model):
     registration_instructions = models.TextField(blank=True)
     registration_opening = models.DateField(null=True, blank=True)
     registration_deadline = models.DateField(null=True, blank=True)
+    submission_edit_deadline = models.DateField(null=True, blank=True)
     registration_fee_note = models.CharField(
         max_length=300, blank=True, default="Conference fee is free of charge"
     )
@@ -441,6 +481,28 @@ class ConferenceInfo(models.Model):
     class Meta:
         verbose_name = "Conference Info"
 
+    def clean(self):
+        super().clean()
+        if self.submission_edit_deadline is not None:
+            if (
+                self.registration_deadline is not None
+                and self.submission_edit_deadline < self.registration_deadline
+            ):
+                raise ValidationError(
+                    {
+                        "submission_edit_deadline": "Submission editing deadline must be on or after the registration deadline."
+                    }
+                )
+            if (
+                self.date_end is not None
+                and self.submission_edit_deadline > self.date_end
+            ):
+                raise ValidationError(
+                    {
+                        "submission_edit_deadline": "Submission editing deadline must be on or before the conference end date."
+                    }
+                )
+
     @property
     def year(self):
         # derived, never a column (F6)
@@ -459,6 +521,24 @@ class ConferenceInfo(models.Model):
             not self.registration_deadline or today <= self.registration_deadline
         )
         return opened and not_closed
+
+    def is_submission_edit_open(self, on=None):
+        """Submission-editing window.
+
+        The conference end date always ends editing. Otherwise an explicit
+        ``submission_edit_deadline`` (inclusive) wins; when unset, editing
+        falls back to the day before the conference starts (open while
+        ``today < date_start``); with neither set, editing stays open.
+        Registration closing never blocks an edit.
+        """
+        today = on or timezone.localdate()
+        if self.date_end is not None and today > self.date_end:
+            return False
+        if self.submission_edit_deadline is not None:
+            return today <= self.submission_edit_deadline
+        if self.date_start is not None:
+            return today < self.date_start
+        return True
 
     @property
     def status(self):

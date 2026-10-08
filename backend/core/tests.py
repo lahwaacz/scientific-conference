@@ -148,6 +148,73 @@ class TestRegistrationWindow(TestCase):
         self.assertTrue(info.is_registration_open(date(2026, 6, 1)))
 
 
+class TestSubmissionEditWindow(TestCase):
+    def info_with(self, **kwargs):
+        return ConferenceInfo.objects.create(conference=wsc_conference(), **kwargs)
+
+    def test_open_when_no_deadline_and_no_start_date(self):
+        info = self.info_with()
+        self.assertTrue(info.is_submission_edit_open(date(2099, 1, 1)))
+
+    def test_open_before_deadline(self):
+        info = self.info_with(submission_edit_deadline=date(2026, 5, 1))
+        self.assertTrue(info.is_submission_edit_open(date(2026, 4, 30)))
+
+    def test_open_on_deadline_day(self):
+        info = self.info_with(submission_edit_deadline=date(2026, 5, 1))
+        self.assertTrue(info.is_submission_edit_open(date(2026, 5, 1)))
+
+    def test_closed_after_deadline(self):
+        info = self.info_with(submission_edit_deadline=date(2026, 5, 1))
+        self.assertFalse(info.is_submission_edit_open(date(2026, 5, 2)))
+
+    def test_open_day_before_conference_start(self):
+        info = self.info_with(date_start=date(2026, 5, 10))
+        self.assertTrue(info.is_submission_edit_open(date(2026, 5, 9)))
+
+    def test_closed_on_conference_start_day(self):
+        info = self.info_with(date_start=date(2026, 5, 10))
+        self.assertFalse(info.is_submission_edit_open(date(2026, 5, 10)))
+
+    def test_closed_after_conference_start(self):
+        info = self.info_with(date_start=date(2026, 5, 10))
+        self.assertFalse(info.is_submission_edit_open(date(2026, 5, 11)))
+
+    def test_explicit_deadline_overrides_start_date(self):
+        info = self.info_with(
+            date_start=date(2026, 5, 10),
+            submission_edit_deadline=date(2026, 6, 1),
+        )
+        self.assertTrue(info.is_submission_edit_open(date(2026, 6, 1)))
+        self.assertFalse(info.is_submission_edit_open(date(2026, 6, 2)))
+
+    def test_open_even_when_registration_deadline_passed(self):
+        info = self.info_with(registration_deadline=date(2026, 5, 1))
+        self.assertFalse(info.is_registration_open(date(2026, 6, 1)))
+        self.assertTrue(info.is_submission_edit_open(date(2026, 6, 1)))
+
+    def test_closed_when_conference_started_without_edit_deadline(self):
+        info = self.info_with(
+            date_start=date(2026, 5, 10),
+            date_end=date(2026, 5, 14),
+        )
+        self.assertFalse(info.is_registration_open(date(2026, 5, 17)))
+        self.assertFalse(info.is_submission_edit_open(date(2026, 5, 17)))
+
+    def test_open_on_conference_end_day_closed_the_day_after(self):
+        info = self.info_with(date_end=date(2026, 5, 31))
+        self.assertTrue(info.is_submission_edit_open(date(2026, 5, 31)))
+        self.assertFalse(info.is_submission_edit_open(date(2026, 6, 1)))
+
+    def test_date_end_caps_a_later_explicit_deadline(self):
+        # Defensive: date_end wins even if data bypasses validation.
+        info = self.info_with(
+            date_end=date(2026, 5, 31),
+            submission_edit_deadline=date(2026, 6, 30),
+        )
+        self.assertFalse(info.is_submission_edit_open(date(2026, 6, 1)))
+
+
 class TestSubmissionAPI(APITestCase):
     def post_submission(self):
         return self.client.post(

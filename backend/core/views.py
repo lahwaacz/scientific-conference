@@ -53,6 +53,8 @@ from .serializers import (
     ParticipantSerializer,
     ParticipantSubmissionCreateSerializer,
     ParticipantSubmissionSerializer,
+    ParticipantTrackingSerializer,
+    ParticipantTrackingUpdateSerializer,
     SessionSerializer,
     TalkSerializer,
 )
@@ -625,6 +627,35 @@ class SubmissionCreateView(ConferenceScopedMixin, generics.CreateAPIView):
                 {"detail": "Registration is not open for this conference."}
             )
         serializer.save(conference=self.conference)
+
+
+class SubmissionTrackingView(ConferenceScopedMixin, generics.RetrieveUpdateAPIView):
+    """Public tracking endpoint: the tracking token is the capability.
+
+    GET is always allowed (even after the registration window closes) so a
+    participant can still inspect their submission; PATCH is gated on the
+    separate submission-editing deadline, not the registration window.
+    """
+
+    queryset = ParticipantSubmission.objects.all()
+    lookup_field = "tracking_token"
+    lookup_url_kwarg = "tracking_token"
+    permission_classes = [AllowAny]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    http_method_names = ["get", "patch"]
+
+    def get_serializer_class(self):
+        if self.request.method == "PATCH":
+            return ParticipantTrackingUpdateSerializer
+        return ParticipantTrackingSerializer
+
+    def patch(self, request, *args, **kwargs):
+        info, _ = ConferenceInfo.objects.get_or_create(conference=self.conference)
+        if not info.is_submission_edit_open():
+            raise ValidationError(
+                {"detail": "Editing submissions is not open for this conference."}
+            )
+        return super().patch(request, *args, **kwargs)
 
 
 class SubmissionListView(ConferenceScopedMixin, generics.ListAPIView):

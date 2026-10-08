@@ -19,7 +19,7 @@ from .models import AccommodationInfo, Conference, ConferenceInfo
 SLUG_A = "wsc2026-test"
 SLUG_B = "wsc2027-test"
 
-# id + 15 web fields + 8 logistics fields + derived year.
+# id + 16 web fields + 8 logistics fields + derived year.
 INFO_PAYLOAD_KEYS = frozenset(
     {
         "id",
@@ -27,6 +27,7 @@ INFO_PAYLOAD_KEYS = frozenset(
         "registration_instructions",
         "registration_opening",
         "registration_deadline",
+        "submission_edit_deadline",
         "registration_fee_note",
         "grant_text",
         "venue_text",
@@ -107,7 +108,7 @@ class TestConferenceInfoSingleton(InfoTestCase):
             ConferenceInfo.objects.get(conference=self.conf_b).conference, self.conf_b
         )
 
-    def test_payload_has_exactly_the_25_payload_keys(self):
+    def test_payload_has_exactly_the_26_payload_keys(self):
         for slug in (SLUG_A, SLUG_B):
             with self.subTest(slug=slug):
                 response = self.client.get(api("conference-info/", slug=slug))
@@ -153,6 +154,64 @@ class TestConferenceInfoSingleton(InfoTestCase):
         self.assertEqual(payload["title"], "Renamed Alpha")
         self.assertEqual(payload["date_start"], "2030-01-01")
         self.assertEqual(payload["year"], 2030)
+
+
+class TestConferenceInfoEditValidation(InfoTestCase):
+    def test_deadline_before_registration_deadline_rejected(self):
+        staff = self.staff_client()
+        response = staff.patch(
+            api("conference-info/edit/"),
+            {
+                "registration_deadline": "2026-06-30",
+                "submission_edit_deadline": "2026-06-01",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("submission_edit_deadline", response.json())
+
+    def test_deadline_after_conference_end_rejected(self):
+        staff = self.staff_client()
+        response = staff.patch(
+            api("conference-info/edit/"),
+            {
+                "date_end": "2026-05-31",
+                "submission_edit_deadline": "2026-06-30",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("submission_edit_deadline", response.json())
+
+    def test_in_range_deadline_accepted_and_persisted(self):
+        staff = self.staff_client()
+        response = staff.patch(
+            api("conference-info/edit/"),
+            {
+                "registration_deadline": "2026-05-01",
+                "date_end": "2026-06-30",
+                "submission_edit_deadline": "2026-06-15",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+        info = ConferenceInfo.objects.get(conference=self.conf_a)
+        self.assertEqual(info.submission_edit_deadline, date(2026, 6, 15))
+
+    def test_unpatched_registration_deadline_still_bounds_the_deadline(self):
+        # Partial PATCH: the instance supplies the unpatched bound.
+        ConferenceInfo.objects.create(
+            conference=self.conf_a,
+            registration_deadline=date(2026, 6, 30),
+        )
+        staff = self.staff_client()
+        response = staff.patch(
+            api("conference-info/edit/"),
+            {"submission_edit_deadline": "2026-06-01"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("submission_edit_deadline", response.json())
 
 
 class TestAccommodationInfoSingleton(InfoTestCase):

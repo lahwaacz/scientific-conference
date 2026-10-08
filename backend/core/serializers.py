@@ -1,5 +1,6 @@
 import datetime
 
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from .models import (
@@ -17,6 +18,8 @@ from .models import (
     Session,
     Talk,
 )
+
+User = get_user_model()
 
 
 class ParticipantSerializer(serializers.ModelSerializer):
@@ -187,6 +190,9 @@ class AccommodationOptionWriteSerializer(serializers.ModelSerializer):
 
 class ParticipantSubmissionSerializer(serializers.ModelSerializer):
     stay_duration = serializers.ReadOnlyField()
+    linked_user = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(), allow_null=True, required=False
+    )
 
     class Meta:
         model = ParticipantSubmission
@@ -211,6 +217,9 @@ class ParticipantSubmissionSerializer(serializers.ModelSerializer):
             "published_abstract",
             "info",
             "is_student",
+            "tracking_token",
+            "participant_reference",
+            "linked_user",
         ]
         read_only_fields = [
             "submitted_at",
@@ -218,6 +227,8 @@ class ParticipantSubmissionSerializer(serializers.ModelSerializer):
             "published_participant",
             "published_abstract",
             "stay_duration",
+            "tracking_token",
+            "participant_reference",
         ]
 
     def validate(self, data):
@@ -326,16 +337,130 @@ class ParticipantSubmissionSerializer(serializers.ModelSerializer):
 
 
 class ParticipantSubmissionCreateSerializer(ParticipantSubmissionSerializer):
-    """Anonymous create view: `status` and `admin_notes` are read-only so an
-    unauthenticated poster cannot pre-approve a submission or inject internal
-    notes."""
+    """Anonymous create view: `status`, `admin_notes` and `linked_user` are
+    read-only so an unauthenticated poster cannot pre-approve a submission,
+    inject internal notes or claim someone else's account."""
+
+    # The child MUST redeclare the field: read_only_fields only feed
+    # extra_kwargs, and extra_kwargs are applied solely to auto-built fields
+    # (DRF's get_fields takes the declared-fields branch and skips them), so
+    # the parent's writable declaration would survive into the public create.
+    linked_user = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta(ParticipantSubmissionSerializer.Meta):
+        fields = [*ParticipantSubmissionSerializer.Meta.fields]
         read_only_fields = [
             *ParticipantSubmissionSerializer.Meta.read_only_fields,
             "status",
             "admin_notes",
         ]
+
+
+class ParticipantTrackingSerializer(serializers.ModelSerializer):
+    """Participant-facing read serializer for the tracking endpoint.
+
+    Exposes only what a participant may inspect about their own submission:
+    no admin notes, no tracking token, no linked user, no published rows."""
+
+    class Meta:
+        model = ParticipantSubmission
+        fields = [
+            "participant_reference",
+            "name",
+            "email",
+            "affiliation",
+            "photo",
+            "abstract_title",
+            "abstract_text",
+            "additional_authors",
+            "additional_affiliations",
+            "arrival_date",
+            "departure_date",
+            "stay_duration",
+            "status",
+            "submitted_at",
+            "reviewed_at",
+            "info",
+            "is_student",
+        ]
+        read_only_fields = fields
+
+
+class ParticipantTrackingUpdateSerializer(serializers.ModelSerializer):
+    """Participant-facing write serializer for the tracking endpoint.
+
+    Editing an approved submission reverts it to pending (and clears
+    reviewed_at) so the admin re-reviews before republication; the published
+    Participant/Abstract rows are deliberately left untouched."""
+
+    class Meta:
+        model = ParticipantSubmission
+        fields = [
+            "participant_reference",
+            "name",
+            "email",
+            "affiliation",
+            "photo",
+            "abstract_title",
+            "abstract_text",
+            "additional_authors",
+            "additional_affiliations",
+            "arrival_date",
+            "departure_date",
+            "status",
+            "submitted_at",
+            "reviewed_at",
+            "info",
+            "is_student",
+        ]
+        read_only_fields = [
+            "participant_reference",
+            "status",
+            "submitted_at",
+            "reviewed_at",
+        ]
+
+    def validate(self, data):
+        arrival = data.get("arrival_date") or (
+            self.instance.arrival_date if self.instance else None
+        )
+        departure = data.get("departure_date") or (
+            self.instance.departure_date if self.instance else None
+        )
+
+        if departure and arrival and departure <= arrival:
+            raise serializers.ValidationError(
+                {"departure_date": "Departure date must be after arrival date"}
+            )
+        return data
+
+    def update(self, instance, validated_data):
+        was_approved = instance.status == "approved"
+
+        if "photo" in validated_data:
+            photo = validated_data.pop("photo")
+
+            # Same photo semantics as the admin serializer: absent key keeps
+            # the file, explicit null deletes it, a new file replaces it.
+            if photo is None and instance.photo:
+                instance.photo.delete(save=False)
+                instance.photo = None
+            elif photo:
+                if instance.photo:
+                    instance.photo.delete(save=False)
+                instance.photo = photo
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.save()
+
+        if was_approved:
+            instance.status = "pending"
+            instance.reviewed_at = None
+            instance.save()
+
+        return instance
 
 
 class HikingStopSerializer(serializers.ModelSerializer):
@@ -395,6 +520,7 @@ class BlankAsNoneDateField(serializers.DateField):
 class ConferenceInfoWriteSerializer(serializers.ModelSerializer):
     registration_opening = BlankAsNoneDateField(required=False, allow_null=True)
     registration_deadline = BlankAsNoneDateField(required=False, allow_null=True)
+    submission_edit_deadline = BlankAsNoneDateField(required=False, allow_null=True)
     date_start = BlankAsNoneDateField(required=False, allow_null=True)
     date_end = BlankAsNoneDateField(required=False, allow_null=True)
 
@@ -413,6 +539,7 @@ class ConferenceInfoWriteSerializer(serializers.ModelSerializer):
             "registration_instructions",
             "registration_opening",
             "registration_deadline",
+            "submission_edit_deadline",
             "registration_fee_note",
             "grant_text",
             "venue_text",
@@ -425,6 +552,30 @@ class ConferenceInfoWriteSerializer(serializers.ModelSerializer):
             "copyright_text",
             "program_text",
         ]
+
+    def validate(self, attrs):
+        def current(field):
+            if field in attrs:
+                return attrs[field]
+            return getattr(self.instance, field, None)
+
+        deadline = current("submission_edit_deadline")
+        if deadline is not None:
+            registration_deadline = current("registration_deadline")
+            date_end = current("date_end")
+            if registration_deadline is not None and deadline < registration_deadline:
+                raise serializers.ValidationError(
+                    {
+                        "submission_edit_deadline": "Submission editing deadline must be on or after the registration deadline."
+                    }
+                )
+            if date_end is not None and deadline > date_end:
+                raise serializers.ValidationError(
+                    {
+                        "submission_edit_deadline": "Submission editing deadline must be on or before the conference end date."
+                    }
+                )
+        return attrs
 
 
 class ConferenceInfoSerializer(serializers.ModelSerializer):

@@ -28,6 +28,7 @@ from .views import (
     SubmissionCreateView,
     SubmissionDetailView,
     SubmissionListView,
+    SubmissionTrackingView,
     TalkDetailView,
     TalkListView,
     TalkScheduleUpdateView,
@@ -69,6 +70,11 @@ urlpatterns = [
     path("committees/<int:pk>/", OrganizingCommitteeDetailView.as_view()),
     # Public submission form
     path("submit/", SubmissionCreateView.as_view(), name="submission-create"),
+    path(
+        "track/<str:tracking_token>/",
+        SubmissionTrackingView.as_view(),
+        name="submission-tracking",
+    ),
     # Admin endpoints
     path("admin-panel/", AdminPanelView.as_view(), name="admin-panel"),
     path("admin/submissions/", SubmissionListView.as_view(), name="submissions-list"),

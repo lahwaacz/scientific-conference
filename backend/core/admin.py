@@ -119,11 +119,18 @@ class ParticipantSubmissionAdmin(admin.ModelAdmin):
         "email",
         "abstract_title",
         "status",
+        "participant_reference",
+        "linked_user",
         "submitted_at",
     ]
     list_filter = ["conference", "status", "submitted_at"]
     search_fields = ["name", "email", "abstract_title"]
-    readonly_fields = ["submitted_at", "reviewed_at"]
+    readonly_fields = [
+        "tracking_token",
+        "participant_reference",
+        "submitted_at",
+        "reviewed_at",
+    ]
 
     actions = ["publish_selected"]
 
