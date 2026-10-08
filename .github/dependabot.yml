@@ -54,6 +54,30 @@ updates:
       prefix: "build"
       include: "scope"
     groups:
+      # Vite toolchain moves as one unit (mirrors strapi/strapi).
+      # `vite` and its `@vitejs/*` plugins are peer-coupled and can only resolve together
+      # (e.g. @vitejs/plugin-react@6 requires vite@8, while vite@8 rejects plugin-react<=4).
+      # No `update-types`, so majors are grouped too.
+      # Listed first: a dependency goes to the first group it matches.
+      vite:
+        applies-to: version-updates
+        patterns:
+          - "vite"
+          - "@vitejs/*"
+      # Per-scope groups. Order matters (first match wins).
+      fortawesome:
+        applies-to: version-updates
+        patterns:
+          - "@fortawesome/*"
+      testing-library:
+        applies-to: version-updates
+        patterns:
+          - "@testing-library/*"
+      biome:
+        applies-to: version-updates
+        patterns:
+          - "@biomejs/*"
+      # Catch-all groups.
       frontend-production:
         dependency-type: "production"
         patterns: ["*"]
