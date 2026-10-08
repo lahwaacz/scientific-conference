@@ -2,7 +2,7 @@
 # Stage 1: Build the React (Vite) Application
 # =========================================
 
-ARG NODE_VERSION=24.14.0-alpine
+ARG NODE_VERSION=24.14.0-alpine@sha256:7fddd9ddeae8196abf4a3ef2de34e11f7b1a722119f91f28ddf1e99dcafdf114
 # Use a lightweight Node.js image for building (customizable via ARG)
 FROM node:${NODE_VERSION} AS builder
 
@@ -37,7 +37,7 @@ RUN npm run build
 ## =========================================
 ## Stage 2: Serve static files + proxy API requests with nginx
 ## =========================================
-FROM quay.io/nginx/nginx-unprivileged:1-alpine-slim AS runner
+FROM quay.io/nginx/nginx-unprivileged:1-alpine-slim@sha256:1517d8c358e2e093957ebee087afa9eb19a32f5d7ecb711b7429e369cb998224 AS runner
 
 # Switch to root for the following RUN and COPY
 USER root
