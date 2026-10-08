@@ -227,6 +227,36 @@ Deleting a submission removes the participant information permanently. To restor
 
 If the deleted submission has already been published, the corresponding participant and abstract are also removed from the public website.
 
+### Participant Tracking Links and Self-Service Edits
+
+Every submission carries two identifiers that connect the participant with their registration:
+
+- A **participant reference** in the form `<slug>-<number>`, for example `wsc2026-0042`. The number is assigned automatically and never changes.
+- A **tracking link** in the form `<root>/<slug>/#/track/<token>`. The link is personal to the one submission and opens without a login.
+
+When a participant submits the registration form, the confirmation screen shows the reference and the tracking link, together with a **Copy link** button and a warning to save the link. The link is the only way for the participant to reach their submission again, so participants are asked to keep it.
+
+Opening the tracking link shows the participant their own submission: the reference, the current status (**Pending review** or **Published**), the submitted details, and, while submission editing is open, an **Edit submission** button. Through this form, participants correct their own details (name, affiliation, email, abstract, arrival and departure dates, photo) without contacting the organizers. Editing is governed by the **Submission Editing Deadline** (see the **Registration** subsection), which is independent of the registration window: participants can keep editing after registration has closed, up to that date.
+
+For administrators, participant self-service edits have the following consequences:
+
+- When a participant edits a submission that is already published, the submission automatically returns to the **Pending review** state. The public participant and abstract entries are not changed by the participant's edit; they keep the previously published data. (Edits made by administrators in **Edit Participants and Abstracts** are different; see **Edit an Already Published Submission** above.)
+- The public entries are refreshed only when the submission is published again. Re-publishing also transfers the participant's edits to the public website: the public participant entry is updated to match the submission (name, affiliation, email, and photo; a photo is replaced only when the submission has one).
+- Re-publishing sends the automated publication email again. This is expected behavior: every transition of a submission into the published state sends the email, including re-publication after a participant edit.
+
+The conference end date always ends editing: once the conference has ended (or the submission-editing deadline has passed), the tracking link still shows the submission and its status, but the edit form is replaced by a notice that online editing is closed. When no submission-editing deadline is set, editing closes automatically the day before the conference start date (and stays open only if no start date is set either).
+
+If a participant loses the tracking link, it can be recovered from the administrative interface:
+
+1. Open **Edit Participants and Abstracts**.
+2. Find the participant card. Every card shows the participant reference.
+3. Select **Copy tracking link** on the card.
+4. Send the copied link to the participant.
+
+The copied address opens the participant's submission directly; no login is required on either side.
+
+Each submission also carries a `linked_user` field, visible in the Django administration and in the API. It is an optional connection between a submission and a user account. It is not used by any current feature of the conference website; it exists as a reserved seam for possible future login-based access to submissions. It can be set only in the Django administration or through the API, never by participants themselves.
+
 ## Edit Program
 
 ### Overview
@@ -400,7 +430,11 @@ Use the **Registration** subsection to update the registration page text and the
 2. Modify the relevant input fields.
 3. Select **Save**.
 
+After a successful submission, the public registration form is replaced by a confirmation screen showing the participant reference and the personal tracking link; see **Participant Tracking Links and Self-Service Edits** in **Edit Participants and Abstracts**.
+
 The registration window has two optional dates. The **Registration Opening Date** is the first day the registration form is available; before it, the public registration form is replaced by a "not open yet" notice. The **Registration Deadline** is the last day the form is available; after it, the form is replaced by a "registration closed" notice. Outside the window the backend also rejects submission attempts directly, so the form cannot be bypassed. When both dates are empty, registration is open — but a conference whose end date has passed always has closed registration, even without a deadline.
+
+The **Submission Editing Deadline** is an independent optional date that controls how long participants can edit their own submission through the personal tracking link (see **Participant Tracking Links and Self-Service Edits** in **Edit Participants and Abstracts**). Participants can keep editing until this date even after registration has closed. The deadline must fall on or after the registration deadline and on or before the conference end date (when those dates are set), because the conference end date always ends editing — even a later deadline cannot keep editing open past the end of the conference. When the field is empty, editing closes the day before the conference starts, based on the conference start date; if no start date is set either, editing stays open.
 
 ### Venue Subsection
 
