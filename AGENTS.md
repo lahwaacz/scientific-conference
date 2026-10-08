@@ -8,7 +8,7 @@
 ## OVERVIEW
 
 Web app for organizing scientific conferences (CTU FNSPE, Dept. of Software Engineering).
-Django 5.2 + DRF + SimpleJWT backend, React 19 (Vite 6) frontend, SQLite DB.
+Django 6.1 + DRF + SimpleJWT backend, React 19 (Vite 6) frontend, SQLite DB.
 Two independent deployables, coupled only via REST API. Deployed as Docker images under subpath `/conference-demo/`.
 Multi-conference: a `Conference` model owns every domain row; a landing page at the root lists all conferences, each conference SPA lives at `/<slug>/`, and the API is scoped under `/api/<slug>/`.
 

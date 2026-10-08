@@ -63,7 +63,7 @@ ENV PYTHONUNBUFFERED=1
 
 # NOTE: this does not work with gunicorn - it does not serve static files
 # collect static files into the STATIC_ROOT directory
-# see https://docs.djangoproject.com/en/5.2/howto/static-files/
+# see https://docs.djangoproject.com/en/6.1/howto/static-files/
 #RUN python manage.py collectstatic
 # NOTE: when combined with the VOLUME instruction below, changes in the files
 #       from the RUN command would not affect the existing volume

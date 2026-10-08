@@ -2,7 +2,7 @@
 
 ## OVERVIEW
 
-Django 5.2 + DRF 3.16 + SimpleJWT backend, single app `core`, SQLite (root-level contract/subpath/CI rules live in the repo-root AGENTS.md, not here).
+Django 6.1 + DRF 3.16 + SimpleJWT backend, single app `core`, SQLite (root-level contract/subpath/CI rules live in the repo-root AGENTS.md, not here).
 
 ## STRUCTURE
 
