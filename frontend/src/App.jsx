@@ -30,6 +30,7 @@ import HomePage from "./pages/HomePage";
 import Participants from "./pages/ParticipantsPage";
 import ProgramPage from "./pages/ProgramPage";
 import RegistrationPage from "./pages/RegistrationPage";
+import TrackingPage from "./pages/TrackingPage";
 
 function App() {
   const slug = getConferenceSlug();
@@ -62,6 +63,7 @@ function App() {
           <Route path="/participants" element={<Participants />} />
           <Route path="/abstracts" element={<AbstractsPage />} />
           <Route path="/registration" element={<RegistrationPage />} />
+          <Route path="/track/:trackingToken" element={<TrackingPage />} />
           <Route path="/program" element={<ProgramPage />} />
           <Route path="/venue" element={<Venue />} />
           <Route path="/accommodation" element={<Accommodation />} />

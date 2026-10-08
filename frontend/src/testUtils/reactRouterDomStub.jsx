@@ -9,7 +9,10 @@ export const Link = ({ to, children, ...rest }) => (
   </a>
 );
 
-export const useNavigate = () => () => {};
+// Recorded navigate for tests to assert on; vi.clearAllMocks() resets it.
+export const mockNavigate = vi.fn();
+
+export const useNavigate = () => mockNavigate;
 
 let testLocation = { pathname: "/", search: "" };
 
@@ -19,3 +22,12 @@ export const setTestLocation = (location) => {
 };
 
 export const useLocation = () => testLocation;
+
+let testParams = {};
+
+/** Set the route params useParams() returns for the current test. */
+export const setTestParams = (params) => {
+  testParams = params;
+};
+
+export const useParams = () => testParams;

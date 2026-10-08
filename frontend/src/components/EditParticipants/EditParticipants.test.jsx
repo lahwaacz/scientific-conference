@@ -105,6 +105,47 @@ describe("EditParticipants workflows", () => {
     expect(isProgramDirty()).toBe(true);
   });
 
+  test("renders the participant reference and copies the tracking link", async () => {
+    fetchWithAuth.mockResolvedValueOnce(
+      listResponse([
+        {
+          ...pendingSubmission,
+          tracking_token: "tok123",
+          participant_reference: "wsc2026-0042",
+        },
+      ])
+    );
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      configurable: true,
+    });
+
+    render(<EditParticipants />);
+
+    expect(await screen.findByText("wsc2026-0042")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Copy tracking link" }));
+
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+    expect(writeText.mock.calls[0][0]).toMatch(/#\/track\/tok123$/);
+    expect(
+      await screen.findByRole("button", { name: "Link copied" })
+    ).toBeInTheDocument();
+
+    delete navigator.clipboard;
+  });
+
+  test("renders no copy button when the submission has no tracking token", async () => {
+    fetchWithAuth.mockResolvedValueOnce(listResponse([pendingSubmission]));
+
+    render(<EditParticipants />);
+
+    await screen.findByText("Pending Person");
+    expect(
+      screen.queryByRole("button", { name: "Copy tracking link" })
+    ).not.toBeInTheDocument();
+  });
+
   test("a ?submission= link loads the All tab and scrolls to that card", async () => {
     setTestLocation({
       pathname: "/admin-panel/edit-participants",

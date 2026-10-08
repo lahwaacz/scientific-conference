@@ -28,9 +28,9 @@ export default function EditWebInfoHome() {
     ]).then(([info, orgs, comm]) => {
       // `year` is derived from date_start on the backend and the
       // photos are only replaced via the file inputs; the registration
-      // fields are owned by the Registration subsection editor and must
-      // not be written back from here. None of them belongs in form
-      // state or the PATCH body.
+      // fields (including the submission-editing deadline) are owned by
+      // the Registration subsection editor and must not be written back
+      // from here. None of them belongs in form state or the PATCH body.
       const {
         year,
         card_photo,
@@ -40,6 +40,7 @@ export default function EditWebInfoHome() {
         registration_instructions,
         registration_opening,
         registration_deadline,
+        submission_edit_deadline,
         ...formInfo
       } = info;
       setCardPhoto(card_photo || null);

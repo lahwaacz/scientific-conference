@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { mockNavigate } from "react-router-dom";
 import RegistrationForm from "./RegistrationForm";
 
 const { mockInfo, holder } = vi.hoisted(() => ({
@@ -26,6 +27,39 @@ vi.mock("../ui/Modal/Modal", () => ({
   },
 }));
 
+const successResponse = {
+  ok: true,
+  status: 201,
+  json: async () => ({
+    participant_reference: "wsc2026-0042",
+    tracking_token: "abc123",
+  }),
+};
+
+function submitValidForm() {
+  fireEvent.change(document.querySelector('input[name="name"]'), {
+    target: { name: "name", value: "Alice Smith" },
+  });
+
+  fireEvent.change(screen.getByPlaceholderText(/your.email@example.com/i), {
+    target: { name: "email", value: "alice@example.com" },
+  });
+
+  fireEvent.change(screen.getByPlaceholderText(/University or Institution/i), {
+    target: { name: "affiliation", value: "CTU Prague" },
+  });
+
+  fireEvent.change(document.querySelector('input[name="arrival"]'), {
+    target: { name: "arrival", value: "2026-09-10" },
+  });
+
+  fireEvent.change(document.querySelector('input[name="departure"]'), {
+    target: { name: "departure", value: "2026-09-12" },
+  });
+
+  fireEvent.click(screen.getByRole("button", { name: /^submit$/i }));
+}
+
 describe("RegistrationForm", () => {
   let consoleErrorSpy;
 
@@ -44,6 +78,8 @@ describe("RegistrationForm", () => {
   afterEach(() => {
     vi.clearAllMocks();
     consoleErrorSpy.mockRestore();
+    Reflect.deleteProperty(window.navigator, "clipboard");
+    delete document.execCommand;
   });
 
   test("renders main form fields", () => {
@@ -227,38 +263,12 @@ describe("RegistrationForm", () => {
     ).toBeInTheDocument();
   });
 
-  test("submits valid form data successfully", async () => {
-    globalThis.fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ message: "ok" }),
-    });
+  test("submits valid form data successfully and shows the tracking panel", async () => {
+    globalThis.fetch.mockResolvedValueOnce(successResponse);
 
     render(<RegistrationForm />);
 
-    fireEvent.change(document.querySelector('input[name="name"]'), {
-      target: { name: "name", value: "Alice Smith" },
-    });
-
-    fireEvent.change(screen.getByPlaceholderText(/your.email@example.com/i), {
-      target: { name: "email", value: "alice@example.com" },
-    });
-
-    fireEvent.change(
-      screen.getByPlaceholderText(/University or Institution/i),
-      {
-        target: { name: "affiliation", value: "CTU Prague" },
-      }
-    );
-
-    fireEvent.change(document.querySelector('input[name="arrival"]'), {
-      target: { name: "arrival", value: "2026-09-10" },
-    });
-
-    fireEvent.change(document.querySelector('input[name="departure"]'), {
-      target: { name: "departure", value: "2026-09-12" },
-    });
-
-    fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+    submitValidForm();
 
     await waitFor(() => {
       expect(globalThis.fetch).toHaveBeenCalledTimes(1);
@@ -272,11 +282,122 @@ describe("RegistrationForm", () => {
       })
     );
 
-    expect(await screen.findByTestId("modal")).toBeInTheDocument();
-    expect(screen.getByText(/Registration successful!/i)).toBeInTheDocument();
+    expect(await screen.findByText("wsc2026-0042")).toBeInTheDocument();
+    expect(screen.getByText(/#\/track\/abc123/)).toBeInTheDocument();
     expect(
-      screen.getByText(/Your submission is pending review./i)
+      screen.getByText(
+        /Save this link — it is the only way to access and edit your submission/i
+      )
     ).toBeInTheDocument();
+    expect(screen.getByText(/contact the organizers/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /copy link/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Open my submission/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Submit another registration/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByPlaceholderText(/your.email@example.com/i)
+    ).not.toBeInTheDocument();
+  });
+
+  test("Open my submission navigates to the tracking route", async () => {
+    globalThis.fetch.mockResolvedValueOnce(successResponse);
+
+    render(<RegistrationForm />);
+
+    submitValidForm();
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Open my submission/i })
+    );
+
+    expect(mockNavigate).toHaveBeenCalledWith("/track/abc123");
+  });
+
+  test("Submit another registration restores the empty form", async () => {
+    globalThis.fetch.mockResolvedValueOnce(successResponse);
+
+    render(<RegistrationForm />);
+
+    submitValidForm();
+
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: /Submit another registration/i,
+      })
+    );
+
+    expect(screen.getByPlaceholderText(/your.email@example.com/i)).toHaveValue(
+      ""
+    );
+    expect(document.querySelector('input[name="name"]')).toHaveValue("");
+    expect(screen.queryByText("wsc2026-0042")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /^submit$/i })
+    ).toBeInTheDocument();
+  });
+
+  test("copies the tracking link to the clipboard", async () => {
+    const writeText = vi.fn().mockResolvedValue();
+    Object.defineProperty(window.navigator, "clipboard", {
+      value: { writeText },
+      configurable: true,
+    });
+    globalThis.fetch.mockResolvedValueOnce(successResponse);
+
+    render(<RegistrationForm />);
+
+    submitValidForm();
+
+    fireEvent.click(await screen.findByRole("button", { name: /copy link/i }));
+
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(
+        expect.stringContaining("#/track/abc123")
+      );
+    });
+    expect(await screen.findByText(/Copied!/i)).toBeInTheDocument();
+  });
+
+  test("shows the generic error alert when the success response lacks tracking fields", async () => {
+    globalThis.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ message: "ok" }),
+    });
+
+    render(<RegistrationForm />);
+
+    submitValidForm();
+
+    expect(await screen.findByTestId("modal")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Connection error. Please try again./i)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText(/your.email@example.com/i)
+    ).toBeInTheDocument();
+  });
+
+  test("falls back to execCommand when the clipboard API is unavailable", async () => {
+    Object.defineProperty(window.navigator, "clipboard", {
+      value: undefined,
+      configurable: true,
+    });
+    document.execCommand = vi.fn(() => true);
+    globalThis.fetch.mockResolvedValueOnce(successResponse);
+
+    render(<RegistrationForm />);
+
+    submitValidForm();
+
+    fireEvent.click(await screen.findByRole("button", { name: /copy link/i }));
+
+    expect(document.execCommand).toHaveBeenCalledWith("copy");
+    expect(await screen.findByText(/Copied!/i)).toBeInTheDocument();
   });
 
   test("shows error modal when server returns error", async () => {

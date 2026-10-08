@@ -1,0 +1,206 @@
+.field {
+  display: flex;
+  flex-direction: column;
+}
+
+.field input:not([type="checkbox"]),
+.field textarea {
+  padding: clamp(8px, 1.5vw, 10px) clamp(10px, 2vw, 12px);
+  font-size: clamp(14px, 1.6vw, 16px);
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  font-family: "Roboto", sans-serif;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+input:focus {
+  outline: none;
+  border: 1px solid #0056b3;
+}
+textarea:focus {
+  outline: none;
+  border: 1px solid #0056b3;
+}
+.field textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.fieldRow {
+  display: flex;
+  gap: clamp(12px, 3vw, 24px);
+  flex-wrap: wrap;
+}
+
+.fieldRow > div {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.error {
+  color: red;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.date {
+  margin-right: 20px;
+  font-family: var(--font--main);
+  font-size: clamp(14px, 1.8vw, 18px);
+  font-weight: 400;
+}
+
+.label {
+  font-family: var(--font--main);
+  font-size: clamp(14px, 1.8vw, 18px);
+  font-weight: 400;
+  margin-bottom: 10px;
+}
+
+input[type="date"] {
+  background-color: #f5f5f5;
+  color: #222;
+  border: none;
+  border-radius: 8px;
+  padding: clamp(10px, 2vw, 12px) clamp(12px, 2.5vw, 16px);
+  font-size: clamp(14px, 1.6vw, 16px);
+  font-family: "Roboto", sans-serif;
+  outline: none;
+  transition: all 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+input[type="date"]:focus {
+  background-color: #fff;
+  box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.3);
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(30%) sepia(60%) saturate(500%) hue-rotate(180deg);
+  cursor: pointer;
+}
+
+.required {
+  color: #dc3545;
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+.wordCount {
+  color: #666;
+  font-size: 14px;
+  font-weight: 400;
+  margin-left: 8px;
+}
+
+.field textarea[rows="3"] {
+  min-height: 80px;
+}
+
+.photoUpload {
+  margin-top: 8px;
+}
+
+.uploadButton {
+  display: inline-block;
+  background-color: #f0f0f0;
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  padding: clamp(14px, 3vw, 20px) clamp(20px, 6vw, 40px);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: clamp(14px, 1.6vw, 16px);
+  color: #666;
+}
+
+.uploadButton:hover {
+  border-color: #007bff;
+  background-color: #f8f9fa;
+  color: #007bff;
+}
+
+.photoPreview {
+  display: flex;
+  width: 100%;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.photoPreview img {
+  max-width: clamp(100px, 25vw, 200px);
+  max-height: clamp(100px, 25vw, 200px);
+  border-radius: 8px;
+  border: 2px solid #e0e0e0;
+  object-fit: cover;
+}
+
+.removePhoto {
+  background-color: var(--secondary-color);
+  color: white;
+  border: none;
+  padding: clamp(6px, 1.5vw, 8px) clamp(14px, 3vw, 20px);
+  font-size: clamp(13px, 1.5vw, 15px);
+  font-weight: 300;
+  font-family: "Metrophobic", sans-serif;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.removePhoto:hover {
+  background-color: var(--primary-color);
+}
+
+.hint {
+  display: block;
+  margin-top: 8px;
+  color: #999;
+  font-size: 13px;
+}
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  margin-right: 10px;
+}
+.checkboxLabel {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  font-family: var(--font--main);
+  font-size: clamp(14px, 1.8vw, 18px);
+  font-weight: 400;
+  cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  .fieldRow {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .fieldRow > div {
+    flex: 1 1 auto;
+  }
+
+  .date {
+    margin-right: 0;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .photoPreview {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

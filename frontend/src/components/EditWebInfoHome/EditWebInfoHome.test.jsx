@@ -34,6 +34,7 @@ const mergedInfo = {
   registration_fee_note: "Free of charge.",
   registration_instructions: "Fill the form.",
   registration_deadline: "2026-04-01",
+  submission_edit_deadline: "2026-04-15",
 };
 
 function jsonOf(payload) {
@@ -141,6 +142,7 @@ describe("EditWebInfoHome logistics editing", () => {
     expect(body.get("description")).toBe("About the conference.");
     expect(body.has("registration_fee_note")).toBe(false);
     expect(body.has("registration_deadline")).toBe(false);
+    expect(body.has("submission_edit_deadline")).toBe(false);
     expect(body.has("year")).toBe(false);
   });
 

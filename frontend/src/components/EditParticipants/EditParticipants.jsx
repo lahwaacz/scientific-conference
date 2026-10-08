@@ -22,6 +22,7 @@ export default function EditParticipants() {
   );
   const [loading, setLoading] = useState(true);
   const [editingSubmission, setEditingSubmission] = useState(null);
+  const [copiedId, setCopiedId] = useState(null);
   const navigate = useNavigate();
   const scrolledToFocus = useRef(false);
 
@@ -191,6 +192,39 @@ export default function EditParticipants() {
     return status;
   }
 
+  async function copyTextToClipboard(text) {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+    // Fallback for browsers without the async clipboard API.
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand("copy");
+    textarea.remove();
+  }
+
+  async function handleCopyTrackingLink(sub) {
+    const url = `${window.location.origin}${window.location.pathname}#/track/${sub.tracking_token}`;
+    try {
+      await copyTextToClipboard(url);
+    } catch {
+      openModal({
+        title: "Copy failed",
+        message: url,
+        type: "danger",
+        onConfirm: closeModal,
+      });
+      return;
+    }
+    setCopiedId(sub.id);
+    setTimeout(() => setCopiedId(null), 2000);
+  }
+
   function getPhotoUrl(photoPath) {
     return buildMediaUrl(photoPath);
   }
@@ -267,6 +301,11 @@ export default function EditParticipants() {
                       <div>
                         <h3>{sub.name}</h3>
                         <p className={styles.email}>{sub.email}</p>
+                        {sub.participant_reference && (
+                          <p className={styles.reference}>
+                            {sub.participant_reference}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <span className={`${styles.badge} ${styles[sub.status]}`}>
@@ -344,6 +383,16 @@ export default function EditParticipants() {
                       >
                         Edit
                       </button>
+                      {sub.tracking_token && (
+                        <button
+                          className={styles.copyBtn}
+                          onClick={() => handleCopyTrackingLink(sub)}
+                        >
+                          {copiedId === sub.id
+                            ? "Link copied"
+                            : "Copy tracking link"}
+                        </button>
+                      )}
                       <button
                         className={styles.deleteBtn}
                         onClick={() =>

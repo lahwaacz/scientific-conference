@@ -38,6 +38,7 @@ export default function EditWebInfoRegistration() {
           registration_instructions: form.registration_instructions,
           registration_opening: form.registration_opening,
           registration_deadline: form.registration_deadline,
+          submission_edit_deadline: form.submission_edit_deadline,
         }),
       });
       if (!res.ok) throw new Error();
@@ -120,6 +121,25 @@ export default function EditWebInfoRegistration() {
                 name="registration_deadline"
                 type="date"
                 value={form.registration_deadline || ""}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className={styles.field}>
+              <label>Submission Editing Deadline</label>
+              <small className={styles.hint}>
+                Participants can edit their submission until this date, even
+                after registration closes. Optional — must be on or after the
+                registration deadline and on or before the conference end date;
+                empty defaults to the day before the conference starts. The
+                conference end date always ends editing.
+              </small>
+              <input
+                name="submission_edit_deadline"
+                type="date"
+                min={form.registration_deadline || undefined}
+                max={form.date_end || undefined}
+                value={form.submission_edit_deadline || ""}
                 onChange={handleChange}
               />
             </div>

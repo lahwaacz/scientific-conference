@@ -1,0 +1,224 @@
+.section {
+  background-color: var(--accent-color);
+  padding: clamp(24px, 6vw, 60px) clamp(16px, 8vw, 80px);
+  box-sizing: border-box;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(12px, 2vw, 20px);
+  max-width: 800px;
+  border: 1px solid #1e73be;
+  padding: clamp(20px, 5vw, 40px) clamp(16px, 6vw, 60px);
+  margin: auto;
+  box-sizing: border-box;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.reference {
+  font-family: var(--font--main);
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--primary-color);
+}
+
+.badgePending,
+.badgePublished {
+  font-family: "Metrophobic", sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  border: 1px solid var(--primary-color);
+  color: var(--primary-color);
+}
+
+.badgePublished {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.timestamp {
+  font-family: var(--font--main);
+  font-size: clamp(13px, 1.6vw, 16px);
+  font-weight: 400;
+  letter-spacing: 0.5px;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 1.8vw, 16px);
+}
+
+.fieldRow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fieldLabel {
+  font-family: var(--font--main);
+  font-size: clamp(13px, 1.6vw, 16px);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.fieldValue {
+  font-family: var(--font--main);
+  font-size: clamp(14px, 1.8vw, 18px);
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  white-space: pre-wrap;
+}
+
+.photoImg {
+  max-width: 180px;
+  border: 1px solid #1e73be;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(16px, 2.5vw, 24px);
+  border-top: 1px solid #1e73be;
+  padding-top: clamp(16px, 3vw, 24px);
+}
+
+.formActions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.button {
+  background-color: var(--secondary-color);
+  color: white;
+  border: none;
+  padding: clamp(8px, 2vw, 8px) clamp(30px, 8vw, 60px);
+  font-size: clamp(16px, 2.5vw, 23px);
+  font-weight: 300;
+  font-family: "Metrophobic", sans-serif;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  width: auto;
+  max-width: 100%;
+  text-decoration: none;
+}
+
+.button:hover {
+  background-color: #004494;
+}
+
+.button:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.secondaryButton {
+  background-color: transparent;
+  color: var(--secondary-color);
+  border: 1px solid var(--secondary-color);
+  padding: clamp(8px, 2vw, 8px) clamp(30px, 8vw, 60px);
+  font-size: clamp(14px, 2vw, 18px);
+  font-weight: 300;
+  font-family: "Metrophobic", sans-serif;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+  width: auto;
+  max-width: 100%;
+}
+
+.secondaryButton:hover {
+  background-color: var(--secondary-color);
+  color: white;
+}
+
+.approvedNotice {
+  font-family: var(--font--main);
+  font-size: clamp(14px, 1.8vw, 17px);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  border-left: 4px solid var(--secondary-color);
+  background-color: rgba(0, 101, 189, 0.08);
+  padding: 10px 14px;
+}
+
+.lockedNotice {
+  font-family: var(--font--main);
+  font-size: clamp(14px, 1.8vw, 18px);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: #dc3545;
+}
+
+.savedNotice {
+  font-family: var(--font--main);
+  font-size: clamp(14px, 1.8vw, 18px);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--primary-color);
+  text-align: center;
+  max-width: 800px;
+  margin: 0 auto clamp(12px, 2vw, 20px);
+}
+
+.errorText {
+  font-family: var(--font--main);
+  font-size: clamp(13px, 1.6vw, 16px);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: #dc3545;
+}
+
+.notFoundText {
+  font-family: var(--font--main);
+  font-size: clamp(14px, 1.8vw, 18px);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+
+.fadeIn {
+  opacity: 0;
+  animation: fadeInAnim 0.4s ease forwards;
+}
+
+@keyframes fadeInAnim {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 600px) {
+  .button,
+  .secondaryButton {
+    width: 100%;
+    padding: 12px 20px;
+  }
+}
