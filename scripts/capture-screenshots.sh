@@ -78,6 +78,17 @@ trap cleanup EXIT
 # --- backend: migrate + seed + runserver ------------------------------------
 (cd "$BACKEND" && uv run python manage.py migrate --run-syncdb --noinput)
 (cd "$BACKEND" && uv run python manage.py loaddata conferences.json participants.json program.json)
+
+# --- demo tracking token: the fixtures seed wsc2026 submissions and the
+# token is auto-generated, so resolve it from the DB to capture the public
+# tracking page below. tail strips Django 5.2's shell auto-import notice
+# ("N objects imported automatically"), which is printed on stdout. Fail
+# loudly if the seeding yielded nothing usable.
+TRACKING_TOKEN=$(cd "$BACKEND" && uv run python manage.py shell -c \
+  "from core.models import ParticipantSubmission; \
+   print(ParticipantSubmission.objects.filter(conference__slug='wsc2026').order_by('pk').first().tracking_token)" \
+  | tail -n 1)
+[[ -n "$TRACKING_TOKEN" ]] || die "no tracking token resolved from seeded wsc2026 submissions"
 (cd "$BACKEND" && DJANGO_ALLOWED_HOSTS=localhost \
   DJANGO_CSRF_TRUSTED_ORIGINS="http://localhost:$FRONTEND_PORT" \
   uv run python manage.py runserver "$BACKEND_PORT" \
@@ -151,6 +162,7 @@ capture registration /registration
 capture venue     /venue
 capture accommodation /accommodation
 capture hiking    /hiking
+capture track     "/track/$TRACKING_TOKEN"
 
 # --- admin captures (deterministic dev superuser, JWT in localStorage) ------
 ADMIN_USER=screenshots
