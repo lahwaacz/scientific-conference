@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { setTestLocation } from "../../testUtils/reactRouterDomStub";
 import { fetchWithAuth } from "../../utils/api";
 import { isProgramDirty } from "../../utils/programRefresh";
-import { setTestLocation } from "../../testUtils/reactRouterDomStub";
 import EditParticipants from "./EditParticipants";
 
 vi.mock("../../utils/api", async () => ({

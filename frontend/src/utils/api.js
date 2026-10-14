@@ -1,5 +1,5 @@
-import { conferenceApiPrefix } from "./conferenceSlug";
 import { appConfig } from "./appConfig";
+import { conferenceApiPrefix } from "./conferenceSlug";
 
 let isRefreshing = false;
 let failedQueue = [];

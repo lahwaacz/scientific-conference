@@ -6,11 +6,11 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { Link } from "react-router-dom";
+import { initConferenceSlug } from "../../utils/conferenceSlug";
 import { useConferenceExists } from "./useConferenceExists";
 import { useConferenceInfo } from "./useConferenceInfo";
 import { useLockBodyScroll } from "./useLockBodyScroll";
 import { useUnsavedChangesGuard } from "./useUnsavedChangesGuard";
-import { initConferenceSlug } from "../../utils/conferenceSlug";
 
 function setLocation(pathname) {
   Object.defineProperty(window, "location", {

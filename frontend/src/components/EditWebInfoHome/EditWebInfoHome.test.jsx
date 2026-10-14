@@ -301,7 +301,9 @@ describe("EditWebInfoHome people management", () => {
     await screen.findByDisplayValue("Jane Doe");
 
     fireEvent.click(screen.getByRole("checkbox", { name: "Organiser" }));
-    expect(screen.getByRole("checkbox", { name: "Organiser" })).not.toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Organiser" })
+    ).not.toBeChecked();
 
     fetchWithAuth.mockResolvedValueOnce(
       textOf({ ...peopleFixture[0], roles: [] })

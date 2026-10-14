@@ -17,20 +17,20 @@ import EditWebInfoVenue from "./components/EditWebInfoVenue/EditWebInfoVenue";
 import Footer from "./components/Footer/Footer";
 import Header from "./components/Header/Header";
 import Hiking from "./components/Hiking/Hiking";
+import { useConferenceExists } from "./components/hooks/useConferenceExists";
 import Landing from "./components/Landing/Landing";
 import ParticipantsInfo from "./components/ParticipantsInfo/ParticipantsInfo";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
-import { useConferenceExists } from "./components/hooks/useConferenceExists";
 import Loader from "./components/ui/Loader/Loader";
 import ScrollToTop from "./components/ui/ScrollToTop";
 import Venue from "./components/Venue/Venue";
-import { getConferenceSlug } from "./utils/conferenceSlug";
 import AbstractsPage from "./pages/AbstractsPage";
 import HomePage from "./pages/HomePage";
 import Participants from "./pages/ParticipantsPage";
 import ProgramPage from "./pages/ProgramPage";
 import RegistrationPage from "./pages/RegistrationPage";
 import TrackingPage from "./pages/TrackingPage";
+import { getConferenceSlug } from "./utils/conferenceSlug";
 
 function App() {
   const slug = getConferenceSlug();
