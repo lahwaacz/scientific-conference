@@ -37,7 +37,7 @@ RUN npm run build
 ## =========================================
 ## Stage 2: Serve static files + proxy API requests with nginx
 ## =========================================
-FROM quay.io/nginx/nginx-unprivileged:1-alpine-slim@sha256:1517d8c358e2e093957ebee087afa9eb19a32f5d7ecb711b7429e369cb998224 AS runner
+FROM quay.io/nginx/nginx-unprivileged:1-alpine-slim@sha256:ac4d9c7e457c6510b95ac72dd84b27f7cc68ecb9a83fbd44f05a6460cf08aba4 AS runner
 
 # Switch to root for the following RUN and COPY
 USER root
