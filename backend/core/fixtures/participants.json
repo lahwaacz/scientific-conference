@@ -874,303 +874,469 @@
     }
   },
   {
-    "model": "core.organizer",
+    "model": "core.role",
     "pk": 1,
+    "fields": {
+      "name": "organizer",
+      "label": "Organiser"
+    }
+  },
+  {
+    "model": "core.role",
+    "pk": 2,
+    "fields": {
+      "name": "committee",
+      "label": "Organising Committee"
+    }
+  },
+  {
+    "model": "core.person",
+    "pk": 101,
     "fields": {
       "conference": 1,
       "name": "Alice Králová",
-      "department": "Department of Software Engineering, FNSPE CTU",
-      "email": "alice.kralova@example.org"
+      "affiliation": "Department of Software Engineering, FNSPE CTU",
+      "email": "alice.kralova@example.org",
+      "photo": null,
+      "roles": [
+        1
+      ],
+      "user": null
     }
   },
   {
-    "model": "core.organizer",
-    "pk": 2,
+    "model": "core.person",
+    "pk": 102,
     "fields": {
       "conference": 1,
       "name": "Bohumil Steiner",
-      "department": "Department of Mathematics, FNSPE CTU",
-      "email": "bohumil.steiner@example.org"
+      "affiliation": "Department of Mathematics, FNSPE CTU",
+      "email": "bohumil.steiner@example.org",
+      "photo": null,
+      "roles": [
+        1
+      ],
+      "user": null
     }
   },
   {
-    "model": "core.organizer",
-    "pk": 3,
+    "model": "core.person",
+    "pk": 103,
     "fields": {
       "conference": 1,
       "name": "Kateřina Winterová",
-      "department": "Department of Mathematics, FNSPE CTU",
-      "email": "katerina.winterova@example.org"
+      "affiliation": "Department of Mathematics, FNSPE CTU",
+      "email": "katerina.winterova@example.org",
+      "photo": null,
+      "roles": [
+        1
+      ],
+      "user": null
     }
   },
   {
-    "model": "core.organizer",
-    "pk": 4,
+    "model": "core.person",
+    "pk": 104,
     "fields": {
       "conference": 2,
       "name": "Gabriela Šímová",
-      "department": "Czech Technical University in Prague, FNSPE",
-      "email": "gabriela.simova@example.org"
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "gabriela.simova@example.org",
+      "photo": null,
+      "roles": [
+        1
+      ],
+      "user": null
     }
   },
   {
-    "model": "core.organizer",
-    "pk": 5,
+    "model": "core.person",
+    "pk": 105,
     "fields": {
       "conference": 2,
       "name": "Emil Zeman",
-      "department": "Czech Technical University in Prague, FNSPE",
-      "email": "emil.zeman@example.org"
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "emil.zeman@example.org",
+      "photo": null,
+      "roles": [
+        1
+      ],
+      "user": null
     }
   },
   {
-    "model": "core.organizer",
-    "pk": 6,
+    "model": "core.person",
+    "pk": 106,
     "fields": {
       "conference": 2,
       "name": "Jarmila Pokorná",
-      "department": "Czech Technical University in Prague, FNSPE",
-      "email": "jarmila.pokorna@example.org"
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "jarmila.pokorna@example.org",
+      "photo": null,
+      "roles": [
+        1
+      ],
+      "user": null
     }
   },
   {
-    "model": "core.organizer",
-    "pk": 7,
+    "model": "core.person",
+    "pk": 107,
     "fields": {
       "conference": 3,
       "name": "Iva Horáčková",
-      "department": "Czech Technical University in Prague, FNSPE",
-      "email": "iva.horackova@example.org"
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "iva.horackova@example.org",
+      "photo": null,
+      "roles": [
+        1
+      ],
+      "user": null
     }
   },
   {
-    "model": "core.organizer",
-    "pk": 8,
+    "model": "core.person",
+    "pk": 108,
     "fields": {
       "conference": 3,
       "name": "Bronislav Lim",
-      "department": "Czech Technical University in Prague, FNSPE",
-      "email": "bronislav.lim@example.org"
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "bronislav.lim@example.org",
+      "photo": null,
+      "roles": [
+        1
+      ],
+      "user": null
     }
   },
   {
-    "model": "core.organizer",
-    "pk": 9,
+    "model": "core.person",
+    "pk": 109,
     "fields": {
       "conference": 3,
       "name": "Naděžda Bílá",
-      "department": "Czech Technical University in Prague, FNSPE",
-      "email": "nadezda.bila@example.org"
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "nadezda.bila@example.org",
+      "photo": null,
+      "roles": [
+        1
+      ],
+      "user": null
     }
   },
   {
-    "model": "core.organizer",
-    "pk": 10,
+    "model": "core.person",
+    "pk": 110,
     "fields": {
       "conference": 4,
       "name": "Hana Němcová",
-      "department": "Czech Technical University in Prague, FNSPE",
-      "email": "hana.nemcova@example.org"
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "hana.nemcova@example.org",
+      "photo": null,
+      "roles": [
+        1
+      ],
+      "user": null
     }
   },
   {
-    "model": "core.organizer",
-    "pk": 11,
+    "model": "core.person",
+    "pk": 111,
     "fields": {
       "conference": 4,
       "name": "Gustav Procházka",
-      "department": "Czech Technical University in Prague, FNSPE",
-      "email": "gustav.prochazka@example.org"
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "gustav.prochazka@example.org",
+      "photo": null,
+      "roles": [
+        1
+      ],
+      "user": null
     }
   },
   {
-    "model": "core.organizer",
-    "pk": 12,
+    "model": "core.person",
+    "pk": 112,
     "fields": {
       "conference": 4,
       "name": "Věra Marková",
-      "department": "University of West Bohemia",
-      "email": "vera.markova@example.org"
+      "affiliation": "University of West Bohemia",
+      "email": "vera.markova@example.org",
+      "photo": null,
+      "roles": [
+        1
+      ],
+      "user": null
     }
   },
   {
-    "model": "core.organizer",
-    "pk": 13,
+    "model": "core.person",
+    "pk": 113,
     "fields": {
       "conference": 5,
       "name": "Dana Svobodová",
-      "department": "Czech Technical University in Prague, FNSPE",
-      "email": "dana.svobodova@example.org"
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "dana.svobodova@example.org",
+      "photo": null,
+      "roles": [
+        1
+      ],
+      "user": null
     }
   },
   {
-    "model": "core.organizer",
-    "pk": 14,
+    "model": "core.person",
+    "pk": 114,
     "fields": {
       "conference": 5,
       "name": "Alexej Čáp",
-      "department": "Czech Technical University in Prague, FNSPE",
-      "email": "alexej.cap@example.org"
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "alexej.cap@example.org",
+      "photo": null,
+      "roles": [
+        1
+      ],
+      "user": null
     }
   },
   {
-    "model": "core.organizer",
-    "pk": 15,
+    "model": "core.person",
+    "pk": 115,
     "fields": {
       "conference": 5,
       "name": "Radka Fialová",
-      "department": "Czech Technical University in Prague, FNSPE",
-      "email": "radka.fialova@example.org"
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "radka.fialova@example.org",
+      "photo": null,
+      "roles": [
+        1
+      ],
+      "user": null
     }
   },
   {
-    "model": "core.organizingcommittee",
-    "pk": 1,
+    "model": "core.person",
+    "pk": 116,
     "fields": {
       "conference": 1,
       "name": "Ladislav Pošta",
-      "department": "Department of Software Engineering, FNSPE CTU",
-      "email": "ladislav.posta@example.org"
+      "affiliation": "Department of Software Engineering, FNSPE CTU",
+      "email": "ladislav.posta@example.org",
+      "photo": null,
+      "roles": [
+        2
+      ],
+      "user": null
     }
   },
   {
-    "model": "core.organizingcommittee",
-    "pk": 2,
+    "model": "core.person",
+    "pk": 117,
     "fields": {
       "conference": 1,
       "name": "Nina Válková",
-      "department": "Department of Mathematics, FNSPE CTU",
-      "email": "nina.valkova@example.org"
+      "affiliation": "Department of Mathematics, FNSPE CTU",
+      "email": "nina.valkova@example.org",
+      "photo": null,
+      "roles": [
+        2
+      ],
+      "user": null
     }
   },
   {
-    "model": "core.organizingcommittee",
-    "pk": 3,
+    "model": "core.person",
+    "pk": 118,
     "fields": {
       "conference": 1,
       "name": "Rostislav Hrubý",
-      "department": "Czech Technical University in Prague, FNSPE",
-      "email": "rostislav.hruby@example.org"
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "rostislav.hruby@example.org",
+      "photo": null,
+      "roles": [
+        2
+      ],
+      "user": null
     }
   },
   {
-    "model": "core.organizingcommittee",
-    "pk": 4,
+    "model": "core.person",
+    "pk": 119,
     "fields": {
       "conference": 2,
       "name": "Vít Malý",
-      "department": "Charles University, Faculty of Mathematics and Physics",
-      "email": "vit.maly@example.org"
+      "affiliation": "Charles University, Faculty of Mathematics and Physics",
+      "email": "vit.maly@example.org",
+      "photo": null,
+      "roles": [
+        2
+      ],
+      "user": null
     }
   },
   {
-    "model": "core.organizingcommittee",
-    "pk": 5,
+    "model": "core.person",
+    "pk": 120,
     "fields": {
       "conference": 2,
       "name": "Soňa Kadlecová",
-      "department": "Czech Technical University in Prague, FNSPE",
-      "email": "sona.kadlecova@example.org"
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "sona.kadlecova@example.org",
+      "photo": null,
+      "roles": [
+        2
+      ],
+      "user": null
     }
   },
   {
-    "model": "core.organizingcommittee",
-    "pk": 6,
+    "model": "core.person",
+    "pk": 121,
     "fields": {
       "conference": 2,
       "name": "Cyril Dvořák",
-      "department": "Czech Technical University in Prague, FNSPE",
-      "email": "cyril.dvorak@example.org"
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "cyril.dvorak@example.org",
+      "photo": null,
+      "roles": [
+        2
+      ],
+      "user": null
     }
   },
   {
-    "model": "core.organizingcommittee",
-    "pk": 7,
+    "model": "core.person",
+    "pk": 122,
     "fields": {
       "conference": 3,
       "name": "Pavel Šedivý",
-      "department": "Czech Technical University in Prague, FNSPE",
-      "email": "pavel.sedivy@example.org"
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "pavel.sedivy@example.org",
+      "photo": null,
+      "roles": [
+        2
+      ],
+      "user": null
     }
   },
   {
-    "model": "core.organizingcommittee",
-    "pk": 8,
+    "model": "core.person",
+    "pk": 123,
     "fields": {
       "conference": 3,
       "name": "Milena Stará",
-      "department": "Charles University, Faculty of Mathematics and Physics",
-      "email": "milena.stara@example.org"
+      "affiliation": "Charles University, Faculty of Mathematics and Physics",
+      "email": "milena.stara@example.org",
+      "photo": null,
+      "roles": [
+        2
+      ],
+      "user": null
     }
   },
   {
-    "model": "core.organizingcommittee",
-    "pk": 9,
+    "model": "core.person",
+    "pk": 124,
     "fields": {
       "conference": 3,
       "name": "Robert Jedlička",
-      "department": "Czech Technical University in Prague, FNSPE",
-      "email": "robert.jedlicka@example.org"
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "robert.jedlicka@example.org",
+      "photo": null,
+      "roles": [
+        2
+      ],
+      "user": null
     }
   },
   {
-    "model": "core.organizingcommittee",
-    "pk": 10,
+    "model": "core.person",
+    "pk": 125,
     "fields": {
       "conference": 4,
       "name": "Igor Salač",
-      "department": "Czech Technical University in Prague, FNSPE",
-      "email": "igor.salac@example.org"
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "igor.salac@example.org",
+      "photo": null,
+      "roles": [
+        2
+      ],
+      "user": null
     }
   },
   {
-    "model": "core.organizingcommittee",
-    "pk": 11,
+    "model": "core.person",
+    "pk": 126,
     "fields": {
       "conference": 4,
       "name": "Dagmar Lipinská",
-      "department": "Czech Technical University in Prague, FNSPE",
-      "email": "dagmar.lipinska@example.org"
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "dagmar.lipinska@example.org",
+      "photo": null,
+      "roles": [
+        2
+      ],
+      "user": null
     }
   },
   {
-    "model": "core.organizingcommittee",
-    "pk": 12,
+    "model": "core.person",
+    "pk": 127,
     "fields": {
       "conference": 4,
       "name": "Artur Pavlík",
-      "department": "Technical University of Liberec",
-      "email": "artur.pavlik@example.org"
+      "affiliation": "Technical University of Liberec",
+      "email": "artur.pavlik@example.org",
+      "photo": null,
+      "roles": [
+        2
+      ],
+      "user": null
     }
   },
   {
-    "model": "core.organizingcommittee",
-    "pk": 13,
+    "model": "core.person",
+    "pk": 128,
     "fields": {
       "conference": 5,
       "name": "Miroslav Juřík",
-      "department": "Charles University, Faculty of Mathematics and Physics",
-      "email": "miroslav.jurik@example.org"
+      "affiliation": "Charles University, Faculty of Mathematics and Physics",
+      "email": "miroslav.jurik@example.org",
+      "photo": null,
+      "roles": [
+        2
+      ],
+      "user": null
     }
   },
   {
-    "model": "core.organizingcommittee",
-    "pk": 14,
+    "model": "core.person",
+    "pk": 129,
     "fields": {
       "conference": 5,
       "name": "Olga Štěpánková",
-      "department": "Czech Technical University in Prague, FNSPE",
-      "email": "olga.stepankova@example.org"
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "olga.stepankova@example.org",
+      "photo": null,
+      "roles": [
+        2
+      ],
+      "user": null
     }
   },
   {
-    "model": "core.organizingcommittee",
-    "pk": 15,
+    "model": "core.person",
+    "pk": 130,
     "fields": {
       "conference": 5,
       "name": "Leoš Hrubec",
-      "department": "Czech Technical University in Prague, FNSPE",
-      "email": "leos.hrubec@example.org"
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "leos.hrubec@example.org",
+      "photo": null,
+      "roles": [
+        2
+      ],
+      "user": null
     }
   }
 ]

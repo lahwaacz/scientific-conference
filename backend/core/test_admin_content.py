@@ -13,7 +13,7 @@ from .models import (
     ConferenceInfo,
     HikingRoute,
     HikingStop,
-    Organizer,
+    Person,
 )
 
 
@@ -175,34 +175,29 @@ class TestHikingAdmin(AdminTestCase):
 class TestPeoplePermissions(AdminTestCase):
     def setUp(self):
         super().setUp()
-        self.organizer = Organizer.objects.create(
+        self.person = Person.objects.create(
             conference=wsc_conference(), name="Org", email="o@x.cz"
         )
 
-    def test_organizer_list_get_is_public(self):
+    def test_people_list_get_is_public(self):
         self.client.credentials()
-        response = self.client.get(api("organizers/"))
+        response = self.client.get(api("people/"))
         self.assertEqual(response.status_code, 200)
 
-    def test_organizer_list_post_requires_admin(self):
+    def test_people_list_post_requires_admin(self):
         self.client.credentials()
-        response = self.client.post(api("organizers/"), {"name": "Anon"}, format="json")
+        response = self.client.post(api("people/"), {"name": "Anon"}, format="json")
         self.assertEqual(response.status_code, 401)
 
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token.access_token}")
         response = self.client.post(
-            api("organizers/"),
+            api("people/"),
             {"name": "Staff Member", "email": "s@x.cz"},
             format="json",
         )
         self.assertEqual(response.status_code, 201)
 
-    def test_organizer_detail_get_requires_admin(self):
+    def test_people_detail_get_requires_admin(self):
         self.client.credentials()
-        response = self.client.get(api(f"organizers/{self.organizer.id}/"))
+        response = self.client.get(api(f"people/{self.person.id}/"))
         self.assertEqual(response.status_code, 401)
-
-    def test_committee_list_get_is_public(self):
-        self.client.credentials()
-        response = self.client.get(api("committees/"))
-        self.assertEqual(response.status_code, 200)

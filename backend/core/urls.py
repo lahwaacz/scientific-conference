@@ -14,12 +14,10 @@ from .views import (
     HikingRouteEditView,
     HikingRouteListView,
     HikingStopEditView,
-    OrganizerDetailView,
-    OrganizerListAPIView,
-    OrganizingCommitteeDetailView,
-    OrganizingCommitteeListAPIView,
     ParticipantDetailView,
     ParticipantListView,
+    PersonDetailView,
+    PersonListAPIView,
     ProgramView,
     ScheduleBreakCreateView,
     SessionCreateView,
@@ -54,9 +52,11 @@ urlpatterns = [
     path("abstracts/<int:pk>/", AbstractDetailView.as_view(), name="abstract-detail"),
     path("talks/", TalkListView.as_view(), name="talk-list"),
     path("talks/<int:pk>/", TalkDetailView.as_view(), name="talk-detail"),
-    path("organizers/", OrganizerListAPIView.as_view(), name="organizer-list"),
+    path("people/", PersonListAPIView.as_view(), name="people-list"),
     path(
-        "committees/", OrganizingCommitteeListAPIView.as_view(), name="committee-list"
+        "people/<int:pk>/",
+        PersonDetailView.as_view(),
+        name="people-detail",
     ),
     path("accommodation/", AccommodationInfoView.as_view()),
     path("admin/accommodation/", AccommodationInfoEditView.as_view()),
@@ -66,8 +66,6 @@ urlpatterns = [
     ),
     path("conference-info/", ConferenceInfoView.as_view()),
     path("conference-info/edit/", ConferenceInfoEditView.as_view()),
-    path("organizers/<int:pk>/", OrganizerDetailView.as_view()),
-    path("committees/<int:pk>/", OrganizingCommitteeDetailView.as_view()),
     # Public submission form
     path("submit/", SubmissionCreateView.as_view(), name="submission-create"),
     path(

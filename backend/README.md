@@ -81,7 +81,7 @@ The backend exposes endpoints for:
 - participants,
 - abstracts,
 - talks,
-- organizers and committees,
+- people (organisers and committee members),
 - accommodation,
 - conference information editing,
 - submissions,

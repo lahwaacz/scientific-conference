@@ -30,10 +30,9 @@ from .models import (
     ConferenceInfo,
     HikingRoute,
     HikingStop,
-    Organizer,
-    OrganizingCommittee,
     Participant,
     ParticipantSubmission,
+    Person,
     Session,
     Talk,
 )
@@ -48,13 +47,13 @@ from .serializers import (
     ConferenceInfoWriteSerializer,
     HikingRouteSerializer,
     HikingStopSerializer,
-    OrganizerSerializer,
-    OrganizingCommitteeSerializer,
     ParticipantSerializer,
     ParticipantSubmissionCreateSerializer,
     ParticipantSubmissionSerializer,
     ParticipantTrackingSerializer,
     ParticipantTrackingUpdateSerializer,
+    PersonAdminSerializer,
+    PersonSerializer,
     SessionSerializer,
     TalkSerializer,
 )
@@ -553,10 +552,18 @@ class TalkDetailView(ConferenceScopedMixin, generics.RetrieveAPIView):
     serializer_class = TalkSerializer
 
 
-class OrganizerListAPIView(ConferenceScopedMixin, generics.ListCreateAPIView):
-    queryset = Organizer.objects.all()
-    serializer_class = OrganizerSerializer
+class PersonListAPIView(ConferenceScopedMixin, generics.ListCreateAPIView):
+    queryset = Person.objects.all()
+    serializer_class = PersonSerializer
     parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def get_serializer_class(self):
+        # GET is the public read (it runs without authenticators, so every
+        # caller is anonymous there) and must use the user-free shape;
+        # writes are admin-gated and carry the auth-user link fields.
+        if self.request.method == "GET":
+            return PersonSerializer
+        return PersonAdminSerializer
 
     def get_permissions(self):
         if self.request.method == "GET":
@@ -568,36 +575,17 @@ class OrganizerListAPIView(ConferenceScopedMixin, generics.ListCreateAPIView):
             return []
         return [JWTAuthentication()]
 
-
-class OrganizingCommitteeListAPIView(ConferenceScopedMixin, generics.ListCreateAPIView):
-    queryset = OrganizingCommittee.objects.all()
-    serializer_class = OrganizingCommitteeSerializer
-    parser_classes = [MultiPartParser, FormParser, JSONParser]
-
-    def get_permissions(self):
-        if self.request.method == "GET":
-            return []
-        return [IsAdminUser()]
-
-    def get_authenticators(self):
-        if self.request.method == "GET":
-            return []
-        return [JWTAuthentication()]
+    def get_queryset(self):
+        qs = super().get_queryset()
+        role = self.request.query_params.get("role", None)
+        if role:
+            return qs.filter(roles__name=role)
+        return qs
 
 
-class OrganizerDetailView(ConferenceScopedMixin, generics.RetrieveUpdateDestroyAPIView):
-    queryset = Organizer.objects.all()
-    serializer_class = OrganizerSerializer
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAdminUser]
-    parser_classes = [MultiPartParser, FormParser, JSONParser]
-
-
-class OrganizingCommitteeDetailView(
-    ConferenceScopedMixin, generics.RetrieveUpdateDestroyAPIView
-):
-    queryset = OrganizingCommittee.objects.all()
-    serializer_class = OrganizingCommitteeSerializer
+class PersonDetailView(ConferenceScopedMixin, generics.RetrieveUpdateDestroyAPIView):
+    queryset = Person.objects.all()
+    serializer_class = PersonAdminSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAdminUser]
     parser_classes = [MultiPartParser, FormParser, JSONParser]

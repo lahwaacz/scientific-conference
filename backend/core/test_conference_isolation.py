@@ -27,10 +27,10 @@ from .models import (
     ConferenceInfo,
     HikingRoute,
     HikingStop,
-    Organizer,
-    OrganizingCommittee,
     Participant,
     ParticipantSubmission,
+    Person,
+    Role,
     Session,
     Talk,
 )
@@ -110,10 +110,14 @@ def make_conference_data(conference, mark):
         talk_type="talk",
         is_scheduled=False,
     )
-    organizer = Organizer.objects.create(conference=conference, name=f"Org {mark}")
-    committee = OrganizingCommittee.objects.create(
-        conference=conference, name=f"Committee {mark}"
+    organizer_role, _ = Role.objects.get_or_create(
+        name="organizer", defaults={"label": "Organiser"}
     )
+    committee_role, _ = Role.objects.get_or_create(
+        name="committee", defaults={"label": "Organising Committee"}
+    )
+    person = Person.objects.create(conference=conference, name=f"People {mark}")
+    person.roles.add(organizer_role, committee_role)
     acco_info = AccommodationInfo.objects.create(
         conference=conference, description=f"Stay {mark}"
     )
@@ -143,8 +147,7 @@ def make_conference_data(conference, mark):
         abstract=abstract,
         talk=talk,
         unscheduled_talk=unscheduled_talk,
-        organizer=organizer,
-        committee=committee,
+        person=person,
         acco_info=acco_info,
         acco_option=acco_option,
         route=route,
@@ -173,10 +176,8 @@ EXPECTED_ROUTE_TAILS = frozenset(
         "abstracts/<int:pk>/",
         "talks/",
         "talks/<int:pk>/",
-        "organizers/",
-        "organizers/<int:pk>/",
-        "committees/",
-        "committees/<int:pk>/",
+        "people/",
+        "people/<int:pk>/",
         "accommodation/",
         "admin/accommodation/",
         "admin/accommodation/options/",
@@ -235,10 +236,8 @@ class TestGetRouteMatrix(ConferencePairTestCase):
             f"abstracts/{data.abstract.pk}/",
             "talks/",
             f"talks/{data.talk.pk}/",
-            "organizers/",
-            f"organizers/{data.organizer.pk}/",
-            "committees/",
-            f"committees/{data.committee.pk}/",
+            "people/",
+            f"people/{data.person.pk}/",
             "accommodation/",
             "conference-info/",
             "hiking/",
@@ -292,16 +291,11 @@ UNKNOWN_SLUG_MATRIX = [
     ("get", "abstracts/1/", None),
     ("get", "talks/", None),
     ("get", "talks/1/", None),
-    ("get", "organizers/", None),
-    ("post", "organizers/", {"name": "X"}),
-    ("get", "organizers/1/", None),
-    ("patch", "organizers/1/", {"name": "X"}),
-    ("delete", "organizers/1/", None),
-    ("get", "committees/", None),
-    ("post", "committees/", {"name": "X"}),
-    ("get", "committees/1/", None),
-    ("patch", "committees/1/", {"name": "X"}),
-    ("delete", "committees/1/", None),
+    ("get", "people/", None),
+    ("post", "people/", {"name": "X"}),
+    ("get", "people/1/", None),
+    ("patch", "people/1/", {"name": "X"}),
+    ("delete", "people/1/", None),
     ("get", "accommodation/", None),
     ("patch", "admin/accommodation/", {"description": "x"}),
     ("post", "admin/accommodation/options/", {"name": "x", "order": 1}),
@@ -382,14 +376,8 @@ class TestCrossConferencePkAccess(ConferencePairTestCase):
                 )
 
     def test_people_detail_pks_under_wrong_slug_404(self):
-        for tail in (
-            f"organizers/{self.a.organizer.pk}/",
-            f"committees/{self.a.committee.pk}/",
-        ):
-            with self.subTest(route=tail):
-                self.assertEqual(
-                    self.client.get(api(tail, slug=SLUG_B)).status_code, 404
-                )
+        response = self.client.get(api(f"people/{self.a.person.pk}/", slug=SLUG_B))
+        self.assertEqual(response.status_code, 404)
 
     def test_submission_detail_and_publish_under_wrong_slug_404(self):
         sub_pk = self.a.submission.pk

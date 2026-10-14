@@ -9,7 +9,7 @@ from django.urls import resolve
 from rest_framework.test import APIClient
 
 from .admin import ConferenceAdmin
-from .models import Conference, ConferenceInfo
+from .models import Conference, ConferenceInfo, Role
 from .views import ConferenceListView
 
 TODAY = date(2026, 10, 4)
@@ -169,13 +169,15 @@ class TestConferenceAdminPolicy(TestCase):
     def test_every_other_core_admin_shows_conference_column_and_filter(self):
         registered = django_admin.site._registry
 
+        # Role is conference-free reference data (like auth tables), so
+        # it is exempt alongside Conference itself.
         core_admins = {
             model._meta.object_name: admin_instance
             for model, admin_instance in registered.items()
-            if model._meta.app_label == "core" and model is not Conference
+            if model._meta.app_label == "core" and model not in (Conference, Role)
         }
 
-        self.assertEqual(len(core_admins), 12)
+        self.assertEqual(len(core_admins), 11)
         for object_name, admin_instance in core_admins.items():
             self.assertIn("conference", admin_instance.list_display, msg=object_name)
             self.assertIn("conference", admin_instance.list_filter, msg=object_name)

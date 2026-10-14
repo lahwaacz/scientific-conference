@@ -9,10 +9,10 @@ from .models import (
     ConferenceInfo,
     HikingRoute,
     HikingStop,
-    Organizer,
-    OrganizingCommittee,
     Participant,
     ParticipantSubmission,
+    Person,
+    Role,
     Session,
     Talk,
 )
@@ -97,18 +97,21 @@ class AbstractAdmin(admin.ModelAdmin):
     search_fields = ("title", "authors")
 
 
-@admin.register(Organizer)
-class OrganizerAdmin(admin.ModelAdmin):
-    list_display = ("conference", "name", "department", "email")
-    list_filter = ("conference",)
-    search_fields = ("name", "department")
+@admin.register(Role)
+class RoleAdmin(admin.ModelAdmin):
+    # Reference lookup data (like auth tables): no conference FK by design.
+    list_display = ("name", "label")
+    search_fields = ("name",)
 
 
-@admin.register(OrganizingCommittee)
-class OrganizingCommitteeAdmin(admin.ModelAdmin):
-    list_display = ("conference", "name", "department", "email")
-    list_filter = ("conference",)
-    search_fields = ("name", "department")
+@admin.register(Person)
+class PersonAdmin(admin.ModelAdmin):
+    list_display = ("conference", "name", "affiliation", "email")
+    list_filter = ("conference", "roles")
+    search_fields = ("name", "affiliation", "email")
+    filter_horizontal = ("roles",)
+    autocomplete_fields = ("user",)
+    list_select_related = ("user",)
 
 
 @admin.register(ParticipantSubmission)

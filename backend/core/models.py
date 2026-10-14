@@ -144,27 +144,31 @@ class Talk(models.Model):
         return f"{self.title} ({self.talk_type})"
 
 
-class Organizer(models.Model):
-    conference = models.ForeignKey(
-        Conference, related_name="organizers", on_delete=models.CASCADE
-    )
-    name = models.CharField(max_length=255)
-    department = models.CharField(max_length=500, blank=True)
-    email = models.EmailField(blank=True)
-    photo = models.ImageField(upload_to="organizers/", blank=True, null=True)
+class Role(models.Model):
+    # Reference lookup, intentionally NOT conference-scoped (like auth tables).
+    name = models.CharField(max_length=32, unique=True)  # "organizer" | "committee"
+    label = models.CharField(max_length=64)  # "Organiser" | "Organising Committee"
 
     def __str__(self):
-        return self.name
+        return self.label
 
 
-class OrganizingCommittee(models.Model):
+class Person(models.Model):
     conference = models.ForeignKey(
-        Conference, related_name="committee_members", on_delete=models.CASCADE
+        Conference, related_name="people", on_delete=models.CASCADE
     )
     name = models.CharField(max_length=255)
-    department = models.CharField(max_length=500, blank=True)
+    affiliation = models.CharField(max_length=500, blank=True)
     email = models.EmailField(blank=True)
-    photo = models.ImageField(upload_to="organizingCommittee/", blank=True, null=True)
+    photo = models.ImageField(upload_to="people/", blank=True, null=True)
+    roles = models.ManyToManyField(Role, related_name="people", blank=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="conference_person_profiles",
+    )
 
     def __str__(self):
         return self.name

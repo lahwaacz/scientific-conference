@@ -58,7 +58,7 @@ backend/
 - Refresh-token rotation blacklists old tokens via `rest_framework_simplejwt.token_blacklist` (in INSTALLED_APPS); frontend refresh flow stores the rotated pair.
 - Model changes require `makemigrations`. Every domain model carries a `conference` FK (`on_delete=CASCADE`, `preserve_default=False` in the squashed 0014); 0014 is hand-written — schema ops plus two idempotent data seeds (wsc2026 conference, fallback ConferenceInfo row).
 - `views.py` uses explicit imports — do not reintroduce `from .models import *` / `from .serializers import *`.
-- Media uploads via `ImageField` under MEDIA_ROOT (per-model `upload_to` subdirs: conferences/, participants/, organizers/, organizingCommittee/, accommodation/, submissions/photos/, hiking/).
+- Media uploads via `ImageField` under MEDIA_ROOT (per-model `upload_to` subdirs: conferences/, participants/, people/, accommodation/, submissions/photos/, hiking/).
 - Tests: `uv run pytest` with pytest-django (`DJANGO_SETTINGS_MODULE` from pyproject). `python_files` includes the Django-style `tests.py`; new suites go in `test_<domain>.py` with `Test*`-prefixed classes. `conftest.py` provides two conferences per test (`wsc`/`other` fixtures) — never assume `conference_id=1`. The isolation suite derives its route matrix from `core/urls.py`, so any new unscoped route fails it.
 - Lint/typing: `uv run ruff check .` (extend-select I,B,SIM,BLE,EXE,RUF; RUF012 off for Django class attrs) and `uv run pyright` (django-stubs; attribute-access/function-member rules off — pyright can't run the stubs' mypy plugin; `venvPath`/`venv` also set here). Config lives in pyproject.toml.
 

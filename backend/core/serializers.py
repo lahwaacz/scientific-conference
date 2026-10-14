@@ -11,10 +11,10 @@ from .models import (
     ConferenceInfo,
     HikingRoute,
     HikingStop,
-    Organizer,
-    OrganizingCommittee,
     Participant,
     ParticipantSubmission,
+    Person,
+    Role,
     Session,
     Talk,
 )
@@ -156,16 +156,30 @@ class ConferenceDaySerializer(serializers.ModelSerializer):
         return items
 
 
-class OrganizerSerializer(serializers.ModelSerializer):
+class PersonSerializer(serializers.ModelSerializer):
+    # Public read shape: backs the AllowAny list view, so it deliberately
+    # omits the auth-user fields (staff usernames must not leak publicly).
+    roles = serializers.SlugRelatedField(
+        slug_field="name", many=True, queryset=Role.objects.all(), required=False
+    )
+
     class Meta:
-        model = Organizer
-        fields = ["id", "name", "department", "email", "photo"]
+        model = Person
+        fields = ["id", "name", "affiliation", "email", "photo", "roles"]
 
 
-class OrganizingCommitteeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = OrganizingCommittee
-        fields = ["id", "name", "department", "email", "photo"]
+class PersonAdminSerializer(PersonSerializer):
+    # Staff shape for admin-gated writes and detail reads: adds the
+    # reference-only auth-user link (writable pk, read-only username).
+    user = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(), required=False, allow_null=True
+    )
+    user_username = serializers.CharField(
+        source="user.username", read_only=True, allow_null=True
+    )
+
+    class Meta(PersonSerializer.Meta):
+        fields = [*PersonSerializer.Meta.fields, "user", "user_username"]
 
 
 class AccommodationOptionSerializer(serializers.ModelSerializer):
