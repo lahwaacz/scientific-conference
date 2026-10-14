@@ -14,7 +14,7 @@
   margin-bottom: 15px;
 }
 
-.department {
+.affiliation {
   font-size: clamp(13px, 1.5vw, 17px);
   line-height: 1.4;
   margin-bottom: 15px;
@@ -67,7 +67,7 @@
     text-overflow: ellipsis;
   }
 
-  .department {
+  .affiliation {
     font-size: 12px;
     margin-bottom: 0;
     line-height: 1.2;

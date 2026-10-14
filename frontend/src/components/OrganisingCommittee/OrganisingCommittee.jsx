@@ -11,7 +11,7 @@ export default function OrganisingCommittee() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(buildApiUrl("/api/committees/"))
+    fetch(buildApiUrl("/api/people/?role=committee"))
       .then((res) => res.json())
       .then((data) => {
         setOrganisers(Array.isArray(data) ? data : []);
@@ -32,7 +32,7 @@ export default function OrganisingCommittee() {
               <HomeCard
                 key={person.id}
                 name={person.name}
-                department={person.department}
+                affiliation={person.affiliation}
                 email={person.email}
                 photo={person.photo}
               />

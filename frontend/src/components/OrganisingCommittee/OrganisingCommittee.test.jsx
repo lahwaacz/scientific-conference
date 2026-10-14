@@ -16,9 +16,12 @@ describe("OrganisingCommittee payload tolerance", () => {
         {
           id: 1,
           name: "Jane Doe",
-          department: "FNSPE",
+          affiliation: "FNSPE",
           email: "jane@example.com",
           photo: null,
+          roles: ["committee"],
+          user: null,
+          user_username: null,
         },
       ],
     });
@@ -26,6 +29,20 @@ describe("OrganisingCommittee payload tolerance", () => {
     render(<OrganisingCommittee />);
 
     expect(await screen.findByText("Jane Doe")).toBeInTheDocument();
+  });
+
+  test("requests the committee-filtered people endpoint", async () => {
+    globalThis.fetch.mockResolvedValue({
+      ok: true,
+      json: async () => [],
+    });
+
+    render(<OrganisingCommittee />);
+
+    await screen.findByText("Organising Committee");
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/people/?role=committee")
+    );
   });
 
   test("renders an empty section when the API returns a 404 body", async () => {

@@ -11,9 +11,8 @@ export default function EditWebInfoHome() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
-  const [organizers, setOrganizers] = useState([]);
-  const [committee, setCommittee] = useState([]);
-  const [personSaved, setPersonSaved] = useState("");
+  const [people, setPeople] = useState([]);
+  const [personSaved, setPersonSaved] = useState(false);
   const [personError, setPersonError] = useState("");
   const [cardPhoto, setCardPhoto] = useState(null);
   const [cardPhotoFile, setCardPhotoFile] = useState(null);
@@ -23,9 +22,8 @@ export default function EditWebInfoHome() {
   useEffect(() => {
     Promise.all([
       fetchWithAuth(`/api/conference-info/`).then((r) => r.json()),
-      fetchWithAuth(`/api/organizers/`).then((r) => r.json()),
-      fetchWithAuth(`/api/committees/`).then((r) => r.json()),
-    ]).then(([info, orgs, comm]) => {
+      fetchWithAuth(`/api/people/`).then((r) => r.json()),
+    ]).then(([info, personList]) => {
       // `year` is derived from date_start on the backend and the
       // photos are only replaced via the file inputs; the registration
       // fields (including the submission-editing deadline) are owned by
@@ -54,8 +52,7 @@ export default function EditWebInfoHome() {
         badge_title: "",
         ...formInfo,
       });
-      setOrganizers(orgs);
-      setCommittee(comm);
+      setPeople(Array.isArray(personList) ? personList : []);
       setLoading(false);
     });
   }, []);
@@ -101,66 +98,96 @@ export default function EditWebInfoHome() {
     }
   }
 
-  function handlePersonChange(list, setList, index, field, value) {
-    const updated = [...list];
-    updated[index] = { ...updated[index], [field]: value };
-    setList(updated);
+  function handlePersonChange(index, field, value) {
+    setPeople((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
   }
 
-  function handlePersonPhoto(list, setList, index, file) {
-    const updated = [...list];
-    updated[index] = { ...updated[index], _photoFile: file };
-    setList(updated);
+  function handlePersonRole(index, role) {
+    setPeople((prev) => {
+      const updated = [...prev];
+      const person = updated[index];
+      const roles = person.roles || [];
+      updated[index] = {
+        ...person,
+        roles: roles.includes(role)
+          ? roles.filter((r) => r !== role)
+          : [...roles, role],
+      };
+      return updated;
+    });
   }
 
-  async function savePerson(endpoint, person) {
-    const fd = new FormData();
-    fd.append("name", person.name || "");
-    fd.append("department", person.department || "");
-    fd.append("email", person.email || "");
-    if (person._photoFile) fd.append("photo", person._photoFile);
+  function handlePersonPhoto(index, file) {
+    setPeople((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], _photoFile: file };
+      return updated;
+    });
+  }
 
-    const url = person.id
-      ? `/api/${endpoint}/${person.id}/`
-      : `/api/${endpoint}/`;
+  async function savePerson(person) {
+    const send = async (url, method, body) => {
+      const res = await fetchWithAuth(url, { method, body });
+      const text = await res.text();
+      if (!res.ok) {
+        throw new Error(text || `Request failed with ${res.status}`);
+      }
+      return text ? JSON.parse(text) : person;
+    };
 
-    const method = person.id ? "PATCH" : "POST";
+    // The JSON body always carries an explicit `roles` array: an empty
+    // list clears the person's roles, which multipart FormData cannot
+    // express (a missing key means "leave unchanged" on the backend).
+    let saved = await send(
+      person.id ? `/api/people/${person.id}/` : "/api/people/",
+      person.id ? "PATCH" : "POST",
+      JSON.stringify({
+        name: person.name || "",
+        affiliation: person.affiliation || "",
+        email: person.email || "",
+        roles: person.roles || [],
+      })
+    );
 
-    const res = await fetchWithAuth(url, { method, body: fd });
-
-    const text = await res.text();
-
-    if (!res.ok) {
-      throw new Error(text || `Request failed with ${res.status}`);
+    // Photos need multipart; a follow-up PATCH swaps only the photo so
+    // the explicit roles above survive (saved.id also covers new rows).
+    if (person._photoFile && saved.id) {
+      const fd = new FormData();
+      fd.append("photo", person._photoFile);
+      saved = await send(`/api/people/${saved.id}/`, "PATCH", fd);
     }
 
-    return text ? JSON.parse(text) : person;
+    return saved;
   }
 
-  async function deletePerson(endpoint, id, list, setList) {
+  async function deletePerson(id) {
     //if (!window.confirm('Delete this person?')) return;
     if (id) {
-      await fetchWithAuth(`/api/${endpoint}/${id}/`, { method: "DELETE" });
+      await fetchWithAuth(`/api/people/${id}/`, { method: "DELETE" });
     }
-    setList(list.filter((p) => p.id !== id));
+    setPeople((prev) => prev.filter((p) => p.id !== id));
   }
 
-  function addPerson(list, setList) {
-    setList([...list, { name: "", department: "", email: "", photo: null }]);
+  function addPerson() {
+    setPeople((prev) => [
+      ...prev,
+      { name: "", affiliation: "", email: "", photo: null, roles: [] },
+    ]);
   }
 
-  async function saveAllPersons(endpoint, list, setList) {
+  async function saveAllPeople() {
     setSaving(true);
     setPersonError("");
-    setPersonSaved("");
+    setPersonSaved(false);
 
     try {
-      const updated = await Promise.all(
-        list.map((p) => savePerson(endpoint, p))
-      );
-      //const updated = await Promise.all(results.map(r => r.json()));
-      setList(updated);
-      setPersonSaved(endpoint);
+      const updated = await Promise.all(people.map((p) => savePerson(p)));
+      setPeople(updated);
+      setPersonSaved(true);
     } catch {
       setPersonError("Failed to save. Please try again.");
     } finally {
@@ -325,52 +352,19 @@ export default function EditWebInfoHome() {
             </div>
           </form>
 
-          {/* Organising Committee */}
+          {/* People (organisers and organising committee, one record each) */}
           <PersonSection
-            title="Organising Committee"
-            list={committee}
+            title="People"
+            list={people}
             saving={saving}
-            savedMsg={
-              personSaved === "committees" ? "✓ Saved successfully" : ""
-            }
+            savedMsg={personSaved ? "✓ Saved successfully" : ""}
             errorMsg={personError}
-            onSaveAll={() =>
-              saveAllPersons("committees", committee, setCommittee)
-            }
-            onDelete={(id) =>
-              deletePerson("committees", id, committee, setCommittee)
-            }
-            onChange={(i, field, val) =>
-              handlePersonChange(committee, setCommittee, i, field, val)
-            }
-            onPhoto={(i, file) =>
-              handlePersonPhoto(committee, setCommittee, i, file)
-            }
-            onAdd={() => addPerson(committee, setCommittee)}
-          />
-
-          {/* Organisers  */}
-          <PersonSection
-            title="Organisers"
-            list={organizers}
-            saving={saving}
-            savedMsg={
-              personSaved === "organizers" ? "✓ Saved successfully" : ""
-            }
-            errorMsg={personError}
-            onSaveAll={() =>
-              saveAllPersons("organizers", organizers, setOrganizers)
-            }
-            onDelete={(id) =>
-              deletePerson("organizers", id, organizers, setOrganizers)
-            }
-            onChange={(i, field, val) =>
-              handlePersonChange(organizers, setOrganizers, i, field, val)
-            }
-            onPhoto={(i, file) =>
-              handlePersonPhoto(organizers, setOrganizers, i, file)
-            }
-            onAdd={() => addPerson(organizers, setOrganizers)}
+            onSaveAll={saveAllPeople}
+            onDelete={deletePerson}
+            onChange={handlePersonChange}
+            onToggleRole={handlePersonRole}
+            onPhoto={handlePersonPhoto}
+            onAdd={addPerson}
           />
         </div>
       )}
@@ -384,6 +378,7 @@ function PersonSection({
   onSaveAll,
   onDelete,
   onChange,
+  onToggleRole,
   onPhoto,
   onAdd,
   saving,
@@ -409,7 +404,7 @@ function PersonSection({
               />
             ) : person.photo ? (
               <img
-                src={person.photo}
+                src={buildMediaUrl(person.photo)}
                 alt={person.name}
                 className={styles.personPhoto}
               />
@@ -436,10 +431,10 @@ function PersonSection({
               />
             </div>
             <div className={styles.field}>
-              <label>Department / Affiliation</label>
+              <label>Affiliation</label>
               <input
-                value={person.department || ""}
-                onChange={(e) => onChange(i, "department", e.target.value)}
+                value={person.affiliation || ""}
+                onChange={(e) => onChange(i, "affiliation", e.target.value)}
               />
             </div>
             <div className={styles.field}>
@@ -449,6 +444,27 @@ function PersonSection({
                 value={person.email || ""}
                 onChange={(e) => onChange(i, "email", e.target.value)}
               />
+            </div>
+            <div className={styles.rolesField}>
+              <span className={styles.rolesLegend}>Roles</span>
+              <div className={styles.roleCheckboxes}>
+                <label className={styles.roleCheckbox}>
+                  <input
+                    type="checkbox"
+                    checked={(person.roles || []).includes("organizer")}
+                    onChange={() => onToggleRole(i, "organizer")}
+                  />
+                  Organiser
+                </label>
+                <label className={styles.roleCheckbox}>
+                  <input
+                    type="checkbox"
+                    checked={(person.roles || []).includes("committee")}
+                    onChange={() => onToggleRole(i, "committee")}
+                  />
+                  Organising Committee
+                </label>
+              </div>
             </div>
           </div>
 

@@ -216,6 +216,46 @@
   min-width: 180px;
 }
 
+.rolesField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 180px;
+}
+
+.rolesLegend {
+  font-family: var(--font-main);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.roleCheckboxes {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 8px 0;
+}
+
+.roleCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-main);
+  font-size: 15px;
+  color: var(--text-color);
+  cursor: pointer;
+}
+
+.roleCheckbox input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--secondary-color);
+  cursor: pointer;
+}
+
 .deleteButton {
   background: none;
   border: none;
