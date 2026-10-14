@@ -408,9 +408,11 @@ The conference title, dates, location, badge title, and card and hero photos are
 
 ![Home subsection](./assets/edithome.png)
 
-### Organizing Committee and Organizers Cards
+### People Card
 
-These cards allow you to manage person records and photos.
+The **People** card allows you to manage the people shown on the public website as organisers and as members of the organising committee. Each conference keeps its own list of people, and every person is stored as a single record with one or more roles. The roles are chosen with the **Organiser** and **Organising Committee** checkboxes, so the same person can hold both roles without being entered twice.
+
+If a person has a public email address, it is shown on the website as a `mailto:` link.
 
 Available actions:
 
@@ -418,9 +420,11 @@ Available actions:
 - Add a new person using **Add Person** at the bottom of the card.
 - Delete a person using the cross icon on the right side of the required record.
 
-After making changes, select **Save** at the bottom of the corresponding card. The changes are not applied until the card is saved.
+After making changes, select **Save** at the bottom of the card. The changes are not applied until the card is saved.
 
-![Organizers section](./assets/editorganizers.png)
+A person record can optionally be linked to an existing user account. This link is set in the Django administration, not in this editor; it is reference-only, and the person's name and email stay editable in the **People** card.
+
+![People section](./assets/editorganizers.png)
 
 ### Registration Subsection
 
