@@ -3,6 +3,7 @@ import io
 import os
 import traceback
 
+from django.db.models.functions import Lower
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils.functional import cached_property
@@ -656,8 +657,8 @@ class SubmissionListView(ConferenceScopedMixin, generics.ListAPIView):
         qs = super().get_queryset()
         status_filter = self.request.query_params.get("status", None)
         if status_filter:
-            return qs.filter(status=status_filter)
-        return qs
+            qs = qs.filter(status=status_filter)
+        return qs.order_by(Lower("name"))
 
 
 class SubmissionDetailView(

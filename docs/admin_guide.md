@@ -141,6 +141,8 @@ Each item displays:
 - Arrival and departure dates.
 - Optional comments for administrators.
 
+The list is ordered alphabetically by participant name.
+
 ### Important Note
 
 This page is not interactive. It is intended only for reading information. To modify participant data, use the **Edit Participants and Abstracts** section.
@@ -151,7 +153,7 @@ This page is not interactive. It is intended only for reading information. To mo
 
 ### Purpose
 
-The **Edit Participants and Abstracts** section contains the complete information about participant submissions and their abstracts. This section is used for reviewing, editing, publishing, filtering, and deleting submissions.
+The **Edit Participants and Abstracts** section contains the complete information about participant submissions and their abstracts. This section is used for reviewing, editing, publishing, filtering, and deleting submissions. Submissions are listed alphabetically by participant name.
 
 ![Participant submissions](./assets/participantssubmissions.png)
 
