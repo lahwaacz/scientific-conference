@@ -9,7 +9,8 @@
 #        bash scripts/capture-screenshots.sh --help
 #
 # Reproducibility contract:
-#   - backend: freshly migrated + loaddata the demo fixtures
+#   - backend: throwaway SQLite DB (mktemp), freshly migrated + loaddata the
+#     demo fixtures -- never the local dev db.sqlite3
 #   - frontend: production build against that backend, served statically
 #   - built with VITE_BASE_PATH=/ so asset URLs are absolute at the root
 #     and resolve at any page depth under python3 -m http.server
@@ -19,9 +20,10 @@
 #   - browser: system chromium via @playwright/cli, 1440x900, reduced motion
 #   - same tree + same fixture == comparable pixels
 #
-# URL anatomy: the landing capture is the root path "/"; every conference
-# capture runs under /wsc2026/#<hash-route> (slug-scoped app), and the
-# backend readiness check uses the scoped API /api/wsc2026/conference-info/.
+# URL anatomy: the landing capture is the root path "/"; conference captures
+# run under /<slug>/#<hash-route> (slug-scoped app; default wsc2026, except
+# registration which uses an upcoming slug), and the backend readiness check
+# uses the scoped API /api/wsc2026/conference-info/.
 #
 # Known nondeterminism: venue.png embeds an external Google Maps iframe
 # whose tiles vary run-to-run; every other capture is byte-stable.
@@ -42,6 +44,10 @@ die() {
 
 BACKEND_PORT=8000
 FRONTEND_PORT=3741
+# registration.png must show the open form: the demo conference wsc2026 has
+# ended (its page renders the "closed" notice), so capture an upcoming
+# conference whose registration window is open.
+REGISTRATION_SLUG=sscp2027
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --backend-port)
@@ -65,6 +71,13 @@ port_open() { (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; }
 port_open "$BACKEND_PORT" && die "port $BACKEND_PORT is already in use (pass --backend-port to override)"
 port_open "$FRONTEND_PORT" && die "port $FRONTEND_PORT is already in use (pass --frontend-port to override)"
 
+# --- throwaway database: never touch the local dev db.sqlite3. A stale dev
+# DB seeded before the Organizer/OrganizingCommittee -> Person refactor made
+# migrate fold those old rows into Person and loaddata append a second copy,
+# doubling every person. A fresh temp DB per run keeps captures reproducible.
+DB_FILE="$(mktemp "${TMPDIR:-/tmp}/conference-screens-XXXXXX.sqlite3")"
+export DJANGO_DB_PATH="$DB_FILE"
+
 # --- background servers get their own process groups so cleanup kills the
 # whole tree (uv spawns python; a bare `kill $PID` only hits the subshell).
 set -m
@@ -72,6 +85,7 @@ cleanup() {
   [[ -n "${BACKEND_PID:-}" ]] && kill -- "-$BACKEND_PID" 2>/dev/null || true
   [[ -n "${FRONTEND_PID:-}" ]] && kill -- "-$FRONTEND_PID" 2>/dev/null || true
   $PWCLI kill-all >/dev/null 2>&1 || true
+  [[ -n "${DB_FILE:-}" ]] && rm -f "$DB_FILE" || true
 }
 trap cleanup EXIT
 
@@ -100,10 +114,12 @@ BACKEND_PID=$!
   VITE_BACKEND_API_BASE_URL="http://localhost:$BACKEND_PORT" \
   VITE_BASE_PATH=/ \
   npm run build >/dev/null)
-# python http.server has no SPA fallback; the shim serves the app at
-# /wsc2026/ (assets resolve because base is /).
-mkdir -p "$FRONTEND/build/wsc2026"
-cp "$FRONTEND/build/index.html" "$FRONTEND/build/wsc2026/index.html"
+# python http.server has no SPA fallback; shim every slug the script visits
+# (assets resolve because base is /).
+for slug in wsc2026 "$REGISTRATION_SLUG"; do
+  mkdir -p "$FRONTEND/build/$slug"
+  cp "$FRONTEND/build/index.html" "$FRONTEND/build/$slug/index.html"
+done
 python3 -m http.server "$FRONTEND_PORT" -d "$FRONTEND/build" \
   >/dev/null 2>&1 &
 FRONTEND_PID=$!
@@ -141,8 +157,9 @@ $PWCLI open "http://localhost:$FRONTEND_PORT/" >/dev/null
 $PWCLI resize 1440 900 >/dev/null
 $PWCLI set-reduced-motion reduce >/dev/null
 
-capture() { # $1 = label, $2 = hash route
-  $PWCLI goto "http://localhost:$FRONTEND_PORT/wsc2026/#$2" >/dev/null
+capture() { # $1 = label, $2 = hash route, $3 = slug (default wsc2026)
+  local slug="${3:-wsc2026}"
+  $PWCLI goto "http://localhost:$FRONTEND_PORT/$slug/#$2" >/dev/null
   sleep 2 # let data fetches settle
   $PWCLI screenshot --full-page --filename "$OUT/$1.png" >/dev/null
   echo "captured $1"
@@ -158,7 +175,7 @@ capture home      /
 capture program   /program
 capture abstracts /abstracts
 capture participants /participants
-capture registration /registration
+capture registration /registration "$REGISTRATION_SLUG"
 capture venue     /venue
 capture accommodation /accommodation
 capture hiking    /hiking
