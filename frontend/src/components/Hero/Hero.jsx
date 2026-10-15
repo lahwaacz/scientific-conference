@@ -14,22 +14,19 @@ export default function Hero() {
   const title = conferenceTitle(info);
   const description = info?.description?.trim() ?? "";
   const heroPhoto = info?.hero_photo ?? null;
-  const hasBand = Boolean(title) || Boolean(dateStr);
 
   return (
     <section className={styles.hero}>
-      {hasBand && (
-        <div className={styles.band}>
-          {title && <h1 className={styles.mainTitle}>{title}</h1>}
-          {dateStr && <h2 className={styles.date}>{dateStr}</h2>}
-        </div>
-      )}
+      <div className={styles.band}>
+        <h1 className={styles.mainTitle}>{title}</h1>
+        <h2 className={styles.date}>{dateStr}</h2>
+      </div>
 
       {heroPhoto && description ? (
         <div className={styles.media}>
           <img
             src={buildMediaUrl(heroPhoto)}
-            alt=""
+            alt={title}
             className={styles.heroPhoto}
           />
           <div className={styles.scrim} aria-hidden="true" />
@@ -40,7 +37,7 @@ export default function Hero() {
       ) : heroPhoto ? (
         <img
           src={buildMediaUrl(heroPhoto)}
-          alt=""
+          alt={title}
           className={styles.photoOnly}
         />
       ) : description ? (
