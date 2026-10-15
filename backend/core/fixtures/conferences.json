@@ -44,10 +44,10 @@
       "date_end": "2025-05-30",
       "location": "Děčín",
       "card_photo": "",
-      "hero_photo": "",
+      "hero_photo": "conferences/hero-prague.jpg",
       "short_description": "Annual workshop on scientific computing at FNSPE CTU.",
       "badge_title": "WSC 2025",
-      "description": "",
+      "description": "The Workshop on Scientific Computing brings together researchers and students working at the intersection of numerical mathematics, high-performance computing, and applied science. Over two days of talks and posters, participants discuss advanced discretisation methods, parallel solvers, and software tools for large-scale simulation, alongside the practical challenges of running modern codes on current hardware.",
       "registration_instructions": "",
       "registration_deadline": null,
       "registration_fee_note": "Conference fee is free of charge",
@@ -73,7 +73,9 @@
       "date_end": "2026-10-06",
       "location": "Praha",
       "short_description": "Colloquium on numerical analysis and its applications.",
-      "badge_title": "PNAW 2026"
+      "badge_title": "PNAW 2026",
+      "hero_photo": "conferences/hero-prague.jpg",
+      "description": ""
     }
   },
   {
@@ -86,7 +88,9 @@
       "date_end": "2027-06-18",
       "location": "Praha",
       "short_description": "A week-long summer school on computational physics for students.",
-      "badge_title": "SSCP 2027"
+      "badge_title": "SSCP 2027",
+      "hero_photo": "",
+      "description": "The Summer School on Computational Physics offers a week of lectures and hands-on sessions for students who want to apply numerical methods to physical problems. Topics range from finite element and finite volume discretisations to molecular dynamics and data-driven modelling, and participants implement and test the methods themselves in guided exercises."
     }
   },
   {
@@ -99,7 +103,9 @@
       "date_end": "2027-11-05",
       "location": "Plzeň",
       "short_description": "Mathematical modelling in engineering and the environment.",
-      "badge_title": "WMM 2027"
+      "badge_title": "WMM 2027",
+      "hero_photo": "",
+      "description": ""
     }
   },
   {
@@ -112,7 +118,9 @@
       "date_end": "2024-05-24",
       "location": "Děčín",
       "short_description": "A symposium on scientific computing in Děčín.",
-      "badge_title": "DSS 2024"
+      "badge_title": "DSS 2024",
+      "hero_photo": "conferences/hero-prague.jpg",
+      "description": "The Děčín Symposium on Scientific Computing is a small, discussion-oriented meeting on numerical methods and their software. It brings together researchers from the Czech Republic and abroad to present recent results, exchange ideas, and build collaborations in a relaxed setting by the river."
     }
   }
 ]
