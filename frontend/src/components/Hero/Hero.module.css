@@ -1,92 +1,146 @@
 .hero {
-  background-color: var(--primary-color);
-  width: 100%;
-  max-width: 100%;
-  overflow-x: hidden;
-}
-
-.container {
   display: flex;
   flex-direction: column;
-  padding: clamp(24px, 6vw, 50px) clamp(16px, 8vw, 80px);
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  box-sizing: border-box;
+  background-color: var(--primary-color);
 }
 
-.rightSide {
-  width: 100%;
+/* Solid blue band: the title + date sit on true brand blue, never over the
+   photo. */
+.band {
+  background-color: var(--primary-color);
+  padding: clamp(24px, 4vw, 44px) clamp(16px, 4vw, 64px);
+}
+
+/* Image band below the title; the description overlays its upper-right as a
+   right-hand column, top-aligned with the image. */
+.media {
+  position: relative;
+  isolation: isolate;
   display: flex;
-  justify-content: right;
-  flex: 1;
-  min-width: 0;
-}
-
-.leftSide {
-  width: 100%;
-}
-
-.mediaRow {
-  display: flex;
-  align-items: center;
-  gap: clamp(16px, 3vw, 40px);
-  width: 100%;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-height: clamp(420px, 44vw, 640px);
+  overflow: hidden;
 }
 
 .heroPhoto {
-  flex: 0 0 auto;
-  width: clamp(280px, 40vw, 500px);
-  height: auto;
-  max-height: 340px;
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
+  object-position: center;
+}
+
+/* Scrim running from the right edge leftwards as far as the gap between the
+   photo and the description column, so the whole description — including its
+   left edge — sits on a darkened ground. The left third of the photo stays
+   bright. */
+.scrim {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to left,
+    rgba(7, 67, 145, 0.95) 0%,
+    rgba(7, 67, 145, 0.88) 28%,
+    rgba(7, 67, 145, 0.66) 46%,
+    rgba(7, 67, 145, 0.18) 60%,
+    rgba(7, 67, 145, 0) 66%
+  );
+}
+
+/* Right-hand description column, left-aligned, top-aligned with the image. */
+.descCol {
+  position: relative;
+  z-index: 2;
+  margin-left: auto;
+  width: 100%;
+  max-width: 640px;
+  padding: clamp(32px, 6vh, 64px) clamp(16px, 4vw, 64px) clamp(24px, 4vh, 44px);
+}
+
+/* No description: the photo stands alone as a plain full-width band. */
+.photoOnly {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+/* No photo: with nothing to the left, a right-hand column would just leave a
+   big empty blue void — so the copy becomes a normal left-aligned block under
+   the title, sharing the band's left gutter. */
+.descPlain {
+  width: 100%;
+  max-width: 760px;
+  padding: 0 clamp(16px, 4vw, 64px) clamp(28px, 5vw, 48px);
 }
 
 .mainTitle {
   font-family: var(--font-title);
   font-size: clamp(22px, 5vw, 46px);
   font-weight: 200;
-  width: 100%;
-  max-width: 600px;
   text-transform: uppercase;
   color: var(--accent-color);
+  line-height: 1.1;
   word-wrap: break-word;
 }
 
 .date {
+  margin-top: 14px;
   font-family: var(--font-main);
-  font-size: clamp(14px, 2.2vw, 24px);
-  color: var(--accent-color);
+  font-size: clamp(14px, 2.2vw, 20px);
   font-weight: 300;
+  color: var(--accent-color);
 }
 
 .text {
   font-family: var(--font-main);
   font-size: clamp(14px, 1.8vw, 20px);
-  color: var(--accent-color);
   font-weight: 300;
-  text-align: right;
-  width: 100%;
-  max-width: 500px;
+  color: var(--accent-color);
+  line-height: 1.6;
+  text-align: left;
 }
 
+/* The copy only needs a shadow where it sits over the photo. */
+.media .text {
+  text-shadow: 0 1px 4px rgba(3, 22, 48, 0.55);
+}
+
+/* Mobile: stack — blue band, full-width 16:9 photo, description on blue with
+   an even top/bottom margin around it. */
 @media (max-width: 768px) {
-  .mediaRow {
-    flex-direction: column;
-    align-items: stretch;
+  .band {
+    padding: 28px 20px 20px;
+  }
+
+  .media {
+    min-height: 0;
   }
 
   .heroPhoto {
+    position: static;
     width: 100%;
-    max-height: none;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
   }
 
-  .rightSide {
-    justify-content: flex-start;
-    margin-top: 16px;
+  .scrim {
+    display: none;
   }
 
-  .text {
-    text-align: left;
+  .descCol {
+    max-width: none;
+    padding: 28px 20px;
+  }
+
+  .descPlain {
+    max-width: none;
+    padding: 0 20px 20px;
   }
 }

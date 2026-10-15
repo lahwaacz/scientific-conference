@@ -1,6 +1,6 @@
-import { useConferenceInfo } from "./../hooks/useConferenceInfo";
 import { buildMediaUrl } from "../../utils/api";
 import { conferenceTitle } from "../../utils/conferenceTitle";
+import { useConferenceInfo } from "./../hooks/useConferenceInfo";
 import styles from "./Hero.module.css";
 
 export default function Hero() {
@@ -12,27 +12,42 @@ export default function Hero() {
       : "";
 
   const title = conferenceTitle(info);
+  const description = info?.description?.trim() ?? "";
+  const heroPhoto = info?.hero_photo ?? null;
+  const hasBand = Boolean(title) || Boolean(dateStr);
 
   return (
     <section className={styles.hero}>
-      <div className={styles.container}>
-        <div className={styles.leftSide}>
-          <h1 className={styles.mainTitle}>{title}</h1>
-          <h2 className={styles.date}>{dateStr}</h2>
+      {hasBand && (
+        <div className={styles.band}>
+          {title && <h1 className={styles.mainTitle}>{title}</h1>}
+          {dateStr && <h2 className={styles.date}>{dateStr}</h2>}
         </div>
-        <div className={styles.mediaRow}>
-          {info?.hero_photo && (
-            <img
-              src={buildMediaUrl(info.hero_photo)}
-              alt={title}
-              className={styles.heroPhoto}
-            />
-          )}
-          <div className={styles.rightSide}>
-            <p className={styles.text}>{info?.description}</p>
+      )}
+
+      {heroPhoto && description ? (
+        <div className={styles.media}>
+          <img
+            src={buildMediaUrl(heroPhoto)}
+            alt=""
+            className={styles.heroPhoto}
+          />
+          <div className={styles.scrim} aria-hidden="true" />
+          <div className={styles.descCol}>
+            <p className={styles.text}>{description}</p>
           </div>
         </div>
-      </div>
+      ) : heroPhoto ? (
+        <img
+          src={buildMediaUrl(heroPhoto)}
+          alt=""
+          className={styles.photoOnly}
+        />
+      ) : description ? (
+        <div className={styles.descPlain}>
+          <p className={styles.text}>{description}</p>
+        </div>
+      ) : null}
     </section>
   );
 }
