@@ -257,6 +257,39 @@ The copied address opens the participant's submission directly; no login is requ
 
 Each submission also carries a `linked_user` field, visible in the Django administration and in the API. It is an optional connection between a submission and a user account. It is not used by any current feature of the conference website; it exists as a reserved seam for possible future login-based access to submissions. It can be set only in the Django administration or through the API, never by participants themselves.
 
+### Import Pre-Registered Participants
+
+Participants who were collected before registration opened (for example an early-bird list kept by e-mail) can be added in bulk from a CSV file. The import creates a **pending** submission for each row, exactly as if the participant had filled in the registration form themselves; nothing is e-mailed to anybody.
+
+The import lives in the **Django administration**, not in the conference website: open **Participant submissions** and select **Import CSV** in the top-right corner.
+
+A CSV column is matched to a participant field automatically when its name matches the field name, ignoring capital letters and spaces. For example, a column called `Name` fills the participant name, `Email` the e-mail, `Abstract Title` (or `abstract_title`) the abstract title, and `Admin Notes` the internal admin notes. The available fields are the participant-submission fields: name, e-mail, affiliation, abstract title, abstract text, additional authors, additional affiliations, arrival and departure dates, admin notes, additional info, and the student flag. **Name** and **Email** are required; everything else is optional. The student flag accepts `yes`/`no` (also `true`/`false`, `y`/`n`, `1`/`0`, and `ano`/`ne`); an empty cell is treated as `no`, and any other value is an error. A `photo` column is ignored, because photos are added later.
+
+Columns that do not match a field name are shown on the preview screen, where each can be mapped to a field by hand — for example, mapping a column called `Topic / Title (Tentative, for all now)` to **Abstract title**. Several columns can be mapped to **Admin notes**; their values are merged, one per line (empty cells are dropped). Every other field accepts a single column.
+
+The file may be comma-, semicolon-, or tab-separated, and may be UTF-8 or Windows-1250 encoded (the encoding Excel commonly produces for Czech text). The file must be at most 2 MB and contain at most 10,000 data rows.
+
+To import:
+
+1. Open **Participant submissions** in the Django administration.
+2. Select **Import CSV**.
+3. Choose the conference for which the participants are being imported.
+4. Choose the CSV file and select **Preview**.
+5. Under **Map columns**, map any unmatched column to a field, then select **Update preview** to see the effect. Repeat until the mapping is right.
+6. Review the table. Each row is shown with its mapped values and a status:
+   - **ok** — the row will be imported.
+   - **warning** — the row is a duplicate and will be skipped.
+   - **error** — the row is missing a required value or is otherwise invalid, and will be skipped.
+7. Select **Confirm import**.
+
+Nothing is saved until **Confirm import** is pressed; **Preview** and **Update preview** only display what will happen.
+
+A row is treated as a duplicate, and skipped, when its e-mail address already appears earlier in the same file or already exists in the selected conference (as a submission or as a published participant). Because of this, the import can be run again safely: already-imported rows are skipped instead of duplicated.
+
+Arrival and departure dates default to the conference start and end dates. The conference start and end dates must therefore be set (in **Edit Website Information**) unless the file maps its own arrival-date and departure-date columns; otherwise the import is refused with an error. A mapped date column must use the `YYYY-MM-DD` format; an empty date cell falls back to the conference dates (or is an error if the conference has none).
+
+Imported submissions are **pending**, so they are not visible on the public website yet. Each one already carries its tracking link, so the personal links can be distributed to the participants right away (see **Participant Tracking Links and Self-Service Edits** above). When the time comes to show the participants and their tentative titles publicly, select the imported submissions in **Edit Participants and Abstracts** and use **Publish selected submissions**.
+
 ## Edit Program
 
 ### Overview
