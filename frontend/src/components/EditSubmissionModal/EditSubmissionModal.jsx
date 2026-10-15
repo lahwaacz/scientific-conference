@@ -36,6 +36,7 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
   function openModal(config) {
     setModal({
       isOpen: true,
+      onCancel: null,
       ...config,
     });
   }
@@ -446,7 +447,7 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
           message={modal.message}
           type={modal.type}
           onConfirm={modal.onConfirm}
-          onCancel={closeModal}
+          onCancel={modal.onCancel}
         />
       </div>
     </div>,

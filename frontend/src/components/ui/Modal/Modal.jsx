@@ -6,12 +6,15 @@ export default function Modal({
   isOpen,
   title,
   message,
-  confirmText = "Confirm",
+  confirmText,
   cancelText = "Cancel",
   onConfirm,
   onCancel,
   type = "default",
 }) {
+  const isNotification = !onCancel;
+  const confirmLabel = confirmText ?? (isNotification ? "OK" : "Confirm");
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -42,7 +45,7 @@ export default function Modal({
           )}
           {onConfirm && (
             <button onClick={onConfirm} className={styles.confirmBtn}>
-              {confirmText}
+              {confirmLabel}
             </button>
           )}
         </div>

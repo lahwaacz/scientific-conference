@@ -27,6 +27,7 @@ export default function EditWebInfoAccommodation() {
   function openModal(config) {
     setModal({
       isOpen: true,
+      onCancel: null,
       ...config,
     });
   }
@@ -159,6 +160,7 @@ export default function EditWebInfoAccommodation() {
       title: "Delete option",
       message: "Delete this option permanently?",
       type: "danger",
+      onCancel: closeModal,
       onConfirm: async () => {
         closeModal();
         await deleteOption(id, index);
@@ -393,7 +395,7 @@ export default function EditWebInfoAccommodation() {
               message={modal.message}
               type={modal.type}
               onConfirm={modal.onConfirm}
-              onCancel={closeModal}
+              onCancel={modal.onCancel}
             />
           </section>
         </div>

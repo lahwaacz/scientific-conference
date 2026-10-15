@@ -104,7 +104,7 @@ describe("EditSubmissionModal save paths", () => {
     fireEvent.submit(document.querySelector("form"));
 
     const confirmBtn = await screen.findByRole("button", {
-      name: /confirm/i,
+      name: /ok/i,
     });
     fireEvent.click(confirmBtn);
     expect(onSave).toHaveBeenCalledWith(updated);

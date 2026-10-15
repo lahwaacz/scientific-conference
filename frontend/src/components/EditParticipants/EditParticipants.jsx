@@ -35,7 +35,7 @@ export default function EditParticipants() {
   });
 
   function openModal(config) {
-    setModal({ isOpen: true, ...config });
+    setModal({ isOpen: true, onCancel: null, ...config });
   }
   function closeModal() {
     setModal((prev) => ({ ...prev, isOpen: false }));
@@ -124,6 +124,7 @@ export default function EditParticipants() {
       title: "Publish submission",
       message: "This will create a Participant and Abstract entry.",
       type: "default",
+      onCancel: closeModal,
       onConfirm: async () => {
         closeModal();
         await publishSubmission(id);
@@ -172,6 +173,7 @@ export default function EditParticipants() {
       message: isApproved
         ? "WARNING: This will also remove the published Participant and Abstract from the public site!"
         : "Delete this submission permanently? This cannot be undone.",
+      onCancel: closeModal,
       onConfirm: async () => {
         closeModal();
         await deleteSubmission(id, isApproved);
@@ -422,7 +424,7 @@ export default function EditParticipants() {
         title={modal.title}
         message={modal.message}
         onConfirm={modal.onConfirm}
-        onCancel={closeModal}
+        onCancel={modal.onCancel}
       />
     </div>
   );

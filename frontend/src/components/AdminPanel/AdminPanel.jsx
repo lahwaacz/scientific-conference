@@ -33,6 +33,7 @@ export default function AdminPanel() {
   function openModal(config) {
     setModal({
       isOpen: true,
+      onCancel: null,
       ...config,
     });
   }
@@ -257,7 +258,7 @@ export default function AdminPanel() {
         message={modal.message}
         type={modal.type}
         onConfirm={modal.onConfirm}
-        onCancel={closeModal}
+        onCancel={modal.onCancel}
       />
     </div>
   );

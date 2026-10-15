@@ -23,6 +23,7 @@ export default function EditWebInfoHiking() {
   function openModal(config) {
     setModal({
       isOpen: true,
+      onCancel: null,
       ...config,
     });
   }
@@ -97,6 +98,7 @@ export default function EditWebInfoHiking() {
       title: "Delete route",
       message: "Delete this route and all its stops?",
       type: "danger",
+      onCancel: closeModal,
       onConfirm: async () => {
         closeModal();
         await deleteRoute(routeIndex);
@@ -245,6 +247,7 @@ export default function EditWebInfoHiking() {
       title: "Delete stop",
       message: "Delete this stop?",
       type: "danger",
+      onCancel: closeModal,
       onConfirm: async () => {
         closeModal();
         await deleteStop(routeIndex, stopIndex);
@@ -557,7 +560,7 @@ export default function EditWebInfoHiking() {
         message={modal.message}
         type={modal.type}
         onConfirm={modal.onConfirm}
-        onCancel={closeModal}
+        onCancel={modal.onCancel}
       />
     </div>
   );
