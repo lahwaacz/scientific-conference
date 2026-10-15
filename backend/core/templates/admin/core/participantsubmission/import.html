@@ -1,0 +1,138 @@
+{% extends "admin/base_site.html" %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">Home</a>
+    &rsaquo; <a href="{% url 'admin:core_participantsubmission_changelist' %}">Participant submissions</a>
+    &rsaquo; Import
+  </div>
+{% endblock %}
+
+{% block content %}
+  {% if preview %}
+    <p>
+      File <strong>{{ preview.filename }}</strong> &rarr; conference
+      <strong>{{ preview.conference.slug }}</strong>.
+      Imported rows are created as <strong>pending</strong> submissions: they are
+      not visible on the public site until you publish them.
+    </p>
+
+    {% if preview.conflicts %}
+      <p class="errornote">
+        Some columns could not be mapped (unknown field, or the field is already
+        used by another column). Adjust them below.
+      </p>
+    {% endif %}
+    {% if preview.missing_required %}
+      <p class="errornote">Map a column to: {{ preview.missing_required|join:", " }}.</p>
+    {% endif %}
+    {% if preview.dates_error %}
+      <p class="errornote">{{ preview.dates_error }}</p>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+
+      {% if preview.recognized %}
+        <p>
+          Recognised columns:
+          {% for header, label in preview.recognized %}
+            <code>{{ header }}</code> &rarr; {{ label }}{% if not forloop.last %}; {% endif %}
+          {% endfor %}
+        </p>
+      {% endif %}
+
+      {% if preview.configurable %}
+        <h2>Map columns</h2>
+        <p>Columns that do not match a field name can be mapped by hand, then
+        select <strong>Update preview</strong>.</p>
+        <table>
+          <thead>
+            <tr><th>CSV column</th><th>Import to</th></tr>
+          </thead>
+          <tbody>
+            {% for index, header, choice in preview.configurable %}
+              <tr>
+                <td>{{ header }}</td>
+                <td>
+                  <select name="map_{{ index }}">
+                    <option value="">&mdash; ignore &mdash;</option>
+                    {% for name, label in preview.importable %}
+                      <option value="{{ name }}" {% if name == choice %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+
+      {% if preview.summary %}
+        <h2>Preview</h2>
+        <p>
+          <strong>{{ preview.summary.created }}</strong> to import,
+          <strong>{{ preview.summary.skipped }}</strong> duplicate(s) skipped,
+          <strong>{{ preview.summary.failed }}</strong> row(s) with errors.
+          Stay dates default to the conference start/end dates unless a date
+          column is mapped.
+        </p>
+        <table class="import-preview">
+          <thead>
+            <tr>
+              <th>Line</th>
+              {% for name, label in preview.columns %}<th>{{ label }}</th>{% endfor %}
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in preview.rows %}
+              <tr>
+                <td>{{ row.line }}</td>
+                {% for cell in row.cells %}<td>{{ cell }}</td>{% endfor %}
+                <td class="import-status-{{ row.status }}">
+                  {{ row.status }}
+                  {% for message in row.messages %}<div>{{ message }}</div>{% endfor %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% if preview.truncated %}
+          <p>Only the first rows are shown; all rows will be imported.</p>
+        {% endif %}
+      {% endif %}
+
+      <div class="submit-row">
+        <button type="submit" name="step" value="remap">Update preview</button>
+        {% if not preview.missing_required and not preview.dates_error %}
+          <button type="submit" name="step" value="confirm" class="default">Confirm import</button>
+        {% endif %}
+        <a href="{% url 'admin:core_participantsubmission_import' %}" class="button cancel-link">Cancel</a>
+      </div>
+    </form>
+  {% else %}
+    <p>
+      Upload a CSV export. Columns named after participant fields (for example
+      <code>name</code>, <code>email</code>, <code>abstract_title</code>) are
+      matched automatically, ignoring case and spaces; any other column can be
+      mapped on the next screen. Duplicate emails are skipped, and imported rows
+      are created as pending submissions.
+    </p>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="hidden" name="step" value="preview">
+      {{ form.as_p }}
+      <div class="submit-row">
+        <input type="submit" value="Preview">
+      </div>
+    </form>
+  {% endif %}
+
+  <style>
+    .import-preview td, .import-preview th { padding: 4px 8px; vertical-align: top; }
+    .import-status-ok { color: #1a7f37; }
+    .import-status-warning { color: #9a6700; }
+    .import-status-error { color: #b3261e; font-weight: bold; }
+  </style>
+{% endblock %}

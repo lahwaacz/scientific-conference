@@ -1,5 +1,26 @@
-from django.contrib import admin
+from django import forms
+from django.contrib import admin, messages
+from django.core.exceptions import PermissionDenied
+from django.db import transaction
+from django.http import HttpResponseRedirect
+from django.template.response import TemplateResponse
+from django.urls import path, reverse
 
+from .importing import (
+    IMPORTABLE_FIELDS,
+    REQUIRED_FIELDS,
+    ImportFileError,
+    create_submissions,
+    decode_csv_bytes,
+    field_label,
+    parse_csv,
+    parsed_from_session,
+    parsed_to_session,
+    resolve_date_defaults,
+    resolve_mapping,
+    summarise,
+    validate_rows,
+)
 from .models import (
     Abstract,
     AccommodationInfo,
@@ -114,8 +135,37 @@ class PersonAdmin(admin.ModelAdmin):
     list_select_related = ("user",)
 
 
+SESSION_KEY = "participantsubmission_import"
+MAX_UPLOAD_BYTES = 2 * 1024 * 1024
+PREVIEW_LIMIT = 200
+
+
+class ParticipantSubmissionImportForm(forms.Form):
+    conference = forms.ModelChoiceField(
+        queryset=Conference.objects.order_by("slug"),
+        help_text="Imported rows are attached to this conference.",
+    )
+    csv_file = forms.FileField(
+        label="CSV file",
+        help_text=(
+            "Columns named after participant fields (ignoring case and spaces) "
+            "are matched automatically; any other column can be mapped on the "
+            "next screen."
+        ),
+    )
+
+    def clean_csv_file(self):
+        upload = self.cleaned_data["csv_file"]
+        if upload.size > MAX_UPLOAD_BYTES:
+            raise forms.ValidationError(
+                f"The file is larger than {MAX_UPLOAD_BYTES // (1024 * 1024)} MB."
+            )
+        return upload
+
+
 @admin.register(ParticipantSubmission)
 class ParticipantSubmissionAdmin(admin.ModelAdmin):
+    change_list_template = "admin/core/participantsubmission/change_list.html"
     list_display = [
         "conference",
         "name",
@@ -144,6 +194,208 @@ class ParticipantSubmissionAdmin(admin.ModelAdmin):
         self.message_user(request, f"{queryset.count()} submissions published")
 
     publish_selected.short_description = "Publish selected submissions"
+
+    # CSV import wizard: upload -> preview -> confirm
+    def get_urls(self):
+        custom = [
+            path(
+                "import/",
+                self.admin_site.admin_view(self.import_csv_view),
+                name="core_participantsubmission_import",
+            ),
+        ]
+        return custom + super().get_urls()
+
+    def _render_import(self, request, context):
+        return TemplateResponse(
+            request, "admin/core/participantsubmission/import.html", context
+        )
+
+    def _import_context(self, request, **extra):
+        context = {
+            **self.admin_site.each_context(request),
+            "title": "Import pre-registered participants",
+            "opts": self.model._meta,
+            "form": None,
+            "preview": None,
+        }
+        context.update(extra)
+        return context
+
+    def import_csv_view(self, request):
+        if not self.has_add_permission(request):
+            raise PermissionDenied
+
+        if request.method != "POST":
+            request.session.pop(SESSION_KEY, None)
+            return self._render_import(
+                request,
+                self._import_context(request, form=ParticipantSubmissionImportForm()),
+            )
+
+        step = request.POST.get("step")
+        if step == "confirm":
+            return self._confirm_import(request)
+        if step == "remap":
+            return self._remap_import(request)
+        return self._preview_import(request)
+
+    def _preview_import(self, request):
+        form = ParticipantSubmissionImportForm(request.POST, request.FILES)
+        if not form.is_valid():
+            return self._render_import(
+                request, self._import_context(request, form=form)
+            )
+
+        conference = form.cleaned_data["conference"]
+        upload = form.cleaned_data["csv_file"]
+        try:
+            parsed = parse_csv(decode_csv_bytes(upload.read()))
+        except ImportFileError as exc:
+            form.add_error("csv_file", str(exc))
+            return self._render_import(
+                request, self._import_context(request, form=form)
+            )
+
+        request.session[SESSION_KEY] = {
+            "conference_id": conference.pk,
+            "filename": upload.name,
+            "parsed": parsed_to_session(parsed),
+            "manual": {},
+        }
+        return self._render_preview(request, conference, upload.name, parsed, {})
+
+    def _remap_import(self, request):
+        loaded = self._load_session(request)
+        if loaded is None:
+            return self._session_expired(request)
+        conference, filename, parsed, manual = loaded
+        manual.update(self._manual_from_post(request))
+        self._store_manual(request, manual)
+        return self._render_preview(request, conference, filename, parsed, manual)
+
+    def _confirm_import(self, request):
+        loaded = self._load_session(request)
+        if loaded is None:
+            return self._session_expired(request)
+        conference, filename, parsed, manual = loaded
+        manual.update(self._manual_from_post(request))
+
+        mapping = resolve_mapping(parsed.headers, manual)
+        if self._missing_required(mapping):
+            self._store_manual(request, manual)
+            return self._render_preview(request, conference, filename, parsed, manual)
+        try:
+            defaults = resolve_date_defaults(conference, mapping)
+        except ImportFileError:
+            self._store_manual(request, manual)
+            return self._render_preview(request, conference, filename, parsed, manual)
+
+        request.session.pop(SESSION_KEY, None)
+        with transaction.atomic():
+            results = validate_rows(parsed, mapping, conference, defaults)
+            summary = create_submissions(results, conference, defaults)
+
+        self.message_user(
+            request,
+            f'Imported {summary.created} participant(s) into "{conference.slug}". '
+            f"Skipped {summary.skipped} duplicate(s), {summary.failed} error row(s).",
+            level=messages.SUCCESS,
+        )
+        return HttpResponseRedirect(
+            reverse("admin:core_participantsubmission_changelist")
+        )
+
+    def _render_preview(self, request, conference, filename, parsed, manual):
+        mapping = resolve_mapping(parsed.headers, manual)
+        missing = self._missing_required(mapping)
+
+        dates_error = None
+        results = []
+        if not missing:
+            try:
+                defaults = resolve_date_defaults(conference, mapping)
+            except ImportFileError as exc:
+                dates_error = str(exc)
+            else:
+                results = validate_rows(parsed, mapping, conference, defaults)
+
+        columns = [
+            (name, field_label(name))
+            for name, _ in IMPORTABLE_FIELDS
+            if name in mapping.field_to_indices
+        ]
+        column_names = [name for name, _ in columns]
+        rows = [
+            {
+                "line": result.line,
+                "cells": [result.values.get(name, "") for name in column_names],
+                "status": result.status,
+                "messages": result.messages,
+            }
+            for result in results[:PREVIEW_LIMIT]
+        ]
+
+        preview = {
+            "conference": conference,
+            "filename": filename,
+            "configurable": mapping.configurable,
+            "recognized": mapping.recognized,
+            "conflicts": mapping.conflicts,
+            "importable": IMPORTABLE_FIELDS,
+            "columns": columns,
+            "missing_required": missing,
+            "dates_error": dates_error,
+            "rows": rows,
+            "truncated": len(results) > PREVIEW_LIMIT,
+            "summary": summarise(results) if results else None,
+        }
+        return self._render_import(
+            request, self._import_context(request, preview=preview)
+        )
+
+    def _load_session(self, request):
+        stored = request.session.get(SESSION_KEY)
+        if not stored:
+            return None
+        conference = Conference.objects.filter(pk=stored["conference_id"]).first()
+        if conference is None:
+            return None
+        parsed = parsed_from_session(stored["parsed"])
+        manual = {int(key): value for key, value in stored.get("manual", {}).items()}
+        return conference, stored["filename"], parsed, manual
+
+    def _store_manual(self, request, manual):
+        stored = request.session.get(SESSION_KEY, {})
+        stored["manual"] = {str(key): value for key, value in manual.items()}
+        request.session[SESSION_KEY] = stored
+
+    def _manual_from_post(self, request):
+        manual = {}
+        for key in request.POST:
+            if not key.startswith("map_"):
+                continue
+            try:
+                index = int(key[4:])
+            except ValueError:
+                continue
+            manual[index] = request.POST.get(key, "").strip()
+        return manual
+
+    def _missing_required(self, mapping):
+        return [
+            field_label(name)
+            for name in REQUIRED_FIELDS
+            if name not in mapping.field_to_indices
+        ]
+
+    def _session_expired(self, request):
+        self.message_user(
+            request,
+            "The import session expired. Please upload the file again.",
+            level=messages.ERROR,
+        )
+        return HttpResponseRedirect(reverse("admin:core_participantsubmission_import"))
 
 
 @admin.register(AccommodationInfo)
