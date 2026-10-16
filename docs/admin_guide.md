@@ -461,6 +461,14 @@ A person record can optionally be linked to an existing user account. This link 
 
 ![People section](./assets/editorganizers.png)
 
+### Optional Photo Cropping
+
+Wherever a photo is picked — in the registration form, in the tracking link's **Edit submission** form, in the admin **Edit submission** modal, and in the **People** card — the picked photo shows a preview and an optional **Crop…** button.
+
+Selecting **Crop…** opens a dialog with the photo. Drag the square over the photo to frame the part to keep, then select **Crop & Save** to upload the square crop, or **Keep Original** to keep the photo exactly as picked. Cropping is always optional; without it the photo is uploaded as picked.
+
+The crop is saved as a **JPEG up to 1024 px** on its longest side. Because the photo is re-encoded, embedded metadata such as EXIF and GPS data is removed. If the crop cannot be produced, the photo is uploaded exactly as picked — which is also what choosing **Keep Original** does.
+
 ### Registration Subsection
 
 Use the **Registration** subsection to update the registration page text and the registration window.
