@@ -5,6 +5,7 @@ import { registrationWindowStatus } from "../../utils/registrationWindow";
 import { countWords, validateSubmissionForm } from "../../utils/submissionForm";
 import { useConferenceInfo } from "../hooks/useConferenceInfo";
 import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard";
+import PhotoCropModal from "../PhotoCropModal/PhotoCropModal";
 import SubmissionFields from "../SubmissionFields/SubmissionFields";
 import Modal from "../ui/Modal/Modal";
 import Title from "../ui/Title/Title";
@@ -76,6 +77,7 @@ export default function RegistrationForm() {
   const [formData, setFormData] = useState(initialFormData);
   const [photo, setPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [cropFile, setCropFile] = useState(null);
   const [errors, setErrors] = useState({});
   const [wordCount, setWordCount] = useState(0);
   const [successData, setSuccessData] = useState(null);
@@ -231,6 +233,19 @@ export default function RegistrationForm() {
     if (fileInput) fileInput.value = "";
   };
 
+  const handleCropApply = (croppedFile) => {
+    setPhoto(croppedFile);
+    const reader = new FileReader();
+    reader.onloadend = () => setPhotoPreview(reader.result);
+    reader.readAsDataURL(croppedFile);
+    const newErrors = { ...errors };
+    delete newErrors.photo;
+    setErrors(newErrors);
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput) fileInput.value = "";
+    setCropFile(null);
+  };
+
   const deadlineStr = info?.registration_deadline
     ? new Date(info.registration_deadline).toLocaleDateString("en-GB", {
         day: "numeric",
@@ -284,6 +299,13 @@ export default function RegistrationForm() {
   return (
     <section className={styles.formSection}>
       <Modal {...modal} />
+      {cropFile && (
+        <PhotoCropModal
+          file={cropFile}
+          onApply={handleCropApply}
+          onCancel={() => setCropFile(null)}
+        />
+      )}
       <Title text="Registration Form" />
       <div className={styles.fadeIn}>
         {info?.registration_fee_note && (
@@ -342,6 +364,7 @@ export default function RegistrationForm() {
               onChange={handleChange}
               onPhotoChange={handlePhotoChange}
               onRemovePhoto={removePhoto}
+              onCropPhoto={photo ? () => setCropFile(photo) : undefined}
               wordCount={wordCount}
             />
 

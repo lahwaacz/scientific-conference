@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { mockNavigate } from "react-router-dom";
+import { cropToSquareFile } from "../../utils/imageCrop";
 import RegistrationForm from "./RegistrationForm";
 
 const { mockInfo, holder } = vi.hoisted(() => ({
@@ -25,6 +26,11 @@ vi.mock("../ui/Modal/Modal", () => ({
       </div>
     ) : null;
   },
+}));
+
+vi.mock("../../utils/imageCrop", async () => ({
+  ...(await vi.importActual("../../utils/imageCrop")),
+  cropToSquareFile: vi.fn(),
 }));
 
 const successResponse = {
@@ -73,6 +79,16 @@ describe("RegistrationForm", () => {
       registration_fee_note: "Conference fee is free of charge",
     });
     holder.info = mockInfo;
+    cropToSquareFile.mockReset();
+    // jsdom lacks URL.createObjectURL and ResizeObserver; the crop dialog
+    // needs both.
+    URL.createObjectURL = vi.fn(() => "blob:crop-preview");
+    URL.revokeObjectURL = vi.fn();
+    window.ResizeObserver = class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    };
   });
 
   afterEach(() => {
@@ -80,6 +96,7 @@ describe("RegistrationForm", () => {
     consoleErrorSpy.mockRestore();
     Reflect.deleteProperty(window.navigator, "clipboard");
     delete document.execCommand;
+    document.body.style.cssText = "";
   });
 
   test("renders main form fields", () => {
@@ -472,5 +489,103 @@ describe("RegistrationForm", () => {
     expect(
       screen.getByText(/Connection error. Please try again./i)
     ).toBeInTheDocument();
+  });
+
+  describe("photo cropping", () => {
+    function pickImageFile() {
+      const file = new File(["original-bytes"], "portrait.png", {
+        type: "image/png",
+      });
+      fireEvent.change(document.querySelector('input[type="file"]'), {
+        target: { files: [file] },
+      });
+      return file;
+    }
+
+    async function openCropDialog() {
+      fireEvent.click(await screen.findByRole("button", { name: "Crop…" }));
+      return screen.findByRole("dialog", { name: "Crop photo" });
+    }
+
+    async function waitForDialogClose() {
+      await waitFor(() => {
+        expect(
+          screen.queryByRole("dialog", { name: "Crop photo" })
+        ).not.toBeInTheDocument();
+      });
+    }
+
+    test("offers the Crop… button only after a local photo is picked", async () => {
+      render(<RegistrationForm />);
+
+      expect(
+        screen.queryByRole("button", { name: "Crop…" })
+      ).not.toBeInTheDocument();
+
+      pickImageFile();
+
+      expect(
+        await screen.findByRole("button", { name: "Crop…" })
+      ).toBeInTheDocument();
+    });
+
+    test("clicking Crop… opens the crop dialog", async () => {
+      render(<RegistrationForm />);
+      pickImageFile();
+
+      expect(await openCropDialog()).toBeInTheDocument();
+      expect(screen.getByRole("img", { name: "Crop preview" })).toHaveAttribute(
+        "src",
+        "blob:crop-preview"
+      );
+    });
+
+    test("applying the crop submits the cropped file as the photo", async () => {
+      const croppedFile = new File(["cropped-bytes"], "portrait.png", {
+        type: "image/png",
+      });
+      cropToSquareFile.mockResolvedValue(croppedFile);
+      globalThis.fetch.mockResolvedValueOnce(successResponse);
+
+      render(<RegistrationForm />);
+      pickImageFile();
+      await openCropDialog();
+      fireEvent.load(screen.getByRole("img", { name: "Crop preview" }));
+      fireEvent.click(screen.getByRole("button", { name: "Crop & Save" }));
+
+      await waitForDialogClose();
+      expect(cropToSquareFile).toHaveBeenCalledTimes(1);
+
+      submitValidForm();
+
+      await waitFor(() => {
+        expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+      });
+      expect(globalThis.fetch.mock.calls[0][1].body.get("photo")).toBe(
+        croppedFile
+      );
+    });
+
+    test("cancelling the crop dialog keeps the originally picked file", async () => {
+      render(<RegistrationForm />);
+      const original = pickImageFile();
+      await openCropDialog();
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Keep Original" })
+      );
+
+      await waitForDialogClose();
+      expect(cropToSquareFile).not.toHaveBeenCalled();
+
+      globalThis.fetch.mockResolvedValueOnce(successResponse);
+      submitValidForm();
+
+      await waitFor(() => {
+        expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+      });
+      expect(globalThis.fetch.mock.calls[0][1].body.get("photo")).toBe(
+        original
+      );
+    });
   });
 });

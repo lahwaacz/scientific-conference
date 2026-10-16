@@ -104,6 +104,26 @@
   background-color: var(--hover-color);
 }
 
+.cropButton {
+  background-color: white;
+  color: var(--secondary-color);
+  border: 2px solid var(--secondary-color);
+  padding: 10px 20px;
+  cursor: pointer;
+  font-family: var(--font-title);
+  text-transform: uppercase;
+  transition:
+    color 0.2s,
+    background-color 0.2s,
+    border-color 0.2s;
+}
+
+.cropButton:hover:not(:disabled) {
+  background-color: var(--hover-color);
+  color: white;
+  border-color: var(--hover-color);
+}
+
 .uploadButton {
   background-color: var(--secondary-color);
   color: white;

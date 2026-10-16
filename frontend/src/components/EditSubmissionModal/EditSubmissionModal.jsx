@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import avatar from "../../assets/avatar.png";
 import { buildMediaUrl, fetchWithAuth } from "../../utils/api.js";
 import Modal from "../ui/Modal/Modal";
+import PhotoCropModal from "../PhotoCropModal/PhotoCropModal";
 import Title from "../ui/Title/Title";
 import styles from "./EditSubmissionModal.module.css";
 
@@ -21,6 +22,7 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
   });
 
   const [photo, setPhoto] = useState(null);
+  const [cropFile, setCropFile] = useState(null);
 
   const [photoPreview, setPhotoPreview] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -132,6 +134,25 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  // Only a locally picked File may be cropped: a server photo rendered via
+  // buildMediaUrl is cross-origin and would taint the crop canvas.
+  const handleCropApply = (croppedFile) => {
+    setPhoto(croppedFile);
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhotoPreview(reader.result);
+    };
+    reader.readAsDataURL(croppedFile);
+
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput) {
+      fileInput.value = "";
+    }
+
+    setCropFile(null);
   };
 
   const removePhoto = async () => {
@@ -304,6 +325,17 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
                 Change Photo
               </label>
 
+              {photo && (
+                <button
+                  type="button"
+                  onClick={() => setCropFile(photo)}
+                  className={styles.cropButton}
+                  disabled={loading}
+                >
+                  Crop…
+                </button>
+              )}
+
               {photoPreview && (
                 <button
                   type="button"
@@ -449,6 +481,13 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
           onConfirm={modal.onConfirm}
           onCancel={modal.onCancel}
         />
+        {cropFile && (
+          <PhotoCropModal
+            file={cropFile}
+            onApply={handleCropApply}
+            onCancel={() => setCropFile(null)}
+          />
+        )}
       </div>
     </div>,
     document.body

@@ -7,6 +7,7 @@ export default function SubmissionFields({
   onChange,
   onPhotoChange,
   onRemovePhoto,
+  onCropPhoto,
   wordCount,
 }) {
   return (
@@ -80,6 +81,15 @@ export default function SubmissionFields({
           ) : (
             <div className={styles.photoPreview}>
               <img src={photoPreview} alt="Preview" />
+              {onCropPhoto && (
+                <button
+                  type="button"
+                  onClick={onCropPhoto}
+                  className={styles.cropPhoto}
+                >
+                  Crop…
+                </button>
+              )}
               <button
                 type="button"
                 onClick={onRemovePhoto}

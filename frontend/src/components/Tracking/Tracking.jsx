@@ -7,6 +7,7 @@ import {
 } from "../../utils/registrationWindow";
 import { countWords, validateSubmissionForm } from "../../utils/submissionForm";
 import { useConferenceInfo } from "../hooks/useConferenceInfo";
+import PhotoCropModal from "../PhotoCropModal/PhotoCropModal";
 import SubmissionFields from "../SubmissionFields/SubmissionFields";
 import Loader from "../ui/Loader/Loader";
 import Title from "../ui/Title/Title";
@@ -89,6 +90,7 @@ export default function Tracking() {
   const [formData, setFormData] = useState(null);
   const [photo, setPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [cropFile, setCropFile] = useState(null);
   const [errors, setErrors] = useState({});
   const [wordCount, setWordCount] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -185,6 +187,20 @@ export default function Tracking() {
   const clearFileInput = () => {
     const fileInput = document.querySelector('input[type="file"]');
     if (fileInput) fileInput.value = "";
+  };
+
+  // Only a locally picked File may be cropped: a server photo rendered via
+  // buildMediaUrl is cross-origin and would taint the crop canvas.
+  const handleCropApply = (croppedFile) => {
+    setPhoto(croppedFile);
+    const reader = new FileReader();
+    reader.onloadend = () => setPhotoPreview(reader.result);
+    reader.readAsDataURL(croppedFile);
+    const newErrors = { ...errors };
+    delete newErrors.photo;
+    setErrors(newErrors);
+    clearFileInput();
+    setCropFile(null);
   };
 
   // A freshly picked photo is discarded locally; a server-side photo is
@@ -332,6 +348,13 @@ export default function Tracking() {
   return (
     <section className={styles.section}>
       <Title text="Your Submission" />
+      {cropFile && (
+        <PhotoCropModal
+          file={cropFile}
+          onApply={handleCropApply}
+          onCancel={() => setCropFile(null)}
+        />
+      )}
       <div className={styles.fadeIn}>
         {savedMessage && <p className={styles.savedNotice}>{savedMessage}</p>}
 
@@ -375,6 +398,7 @@ export default function Tracking() {
                 onChange={handleChange}
                 onPhotoChange={handlePhotoChange}
                 onRemovePhoto={handleRemovePhoto}
+                onCropPhoto={photo ? () => setCropFile(photo) : undefined}
                 wordCount={wordCount}
               />
               <div className={styles.formActions}>

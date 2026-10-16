@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { setTestParams } from "react-router-dom";
 import { initConferenceSlug } from "../../utils/conferenceSlug";
+import { cropToSquareFile } from "../../utils/imageCrop";
 import Tracking from "./Tracking";
 
 const { openWindowInfo, holder } = vi.hoisted(() => ({
@@ -15,6 +16,11 @@ const { openWindowInfo, holder } = vi.hoisted(() => ({
 
 vi.mock("../hooks/useConferenceInfo", () => ({
   useConferenceInfo: () => holder.info,
+}));
+
+vi.mock("../../utils/imageCrop", async () => ({
+  ...(await vi.importActual("../../utils/imageCrop")),
+  cropToSquareFile: vi.fn(),
 }));
 
 const trackUrl = "http://localhost:8000/api/wsc2026/track/tok123/";
@@ -73,11 +79,22 @@ describe("Tracking", () => {
     globalThis.fetch = vi.fn();
     setTestParams({ trackingToken: "tok123" });
     holder.info = openWindowInfo;
+    cropToSquareFile.mockReset();
+    // jsdom lacks URL.createObjectURL and ResizeObserver; the crop dialog
+    // needs both.
+    URL.createObjectURL = vi.fn(() => "blob:crop-preview");
+    URL.revokeObjectURL = vi.fn();
+    window.ResizeObserver = class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    };
   });
 
   afterEach(() => {
     vi.clearAllMocks();
     setTestParams({});
+    document.body.style.cssText = "";
   });
 
   test("renders a pending submission with its fields and status badge", async () => {
@@ -356,5 +373,128 @@ describe("Tracking", () => {
     expect(
       screen.queryByRole("button", { name: /edit submission/i })
     ).not.toBeInTheDocument();
+  });
+
+  describe("photo cropping", () => {
+    async function openEditWithoutPhoto() {
+      // With no existing photo the field renders the upload input (with
+      // one, the preview + Remove render instead and a pick is impossible).
+      await renderWithSubmission({ ...pendingSubmission, photo: null });
+      await openEditForm();
+    }
+
+    function pickImageFile() {
+      const file = new File(["original-bytes"], "new.png", {
+        type: "image/png",
+      });
+      fireEvent.change(document.querySelector('input[type="file"]'), {
+        target: { files: [file] },
+      });
+      return file;
+    }
+
+    async function openCropDialog() {
+      fireEvent.click(await screen.findByRole("button", { name: "Crop…" }));
+      return screen.findByRole("dialog", { name: "Crop photo" });
+    }
+
+    async function waitForDialogClose() {
+      await waitFor(() => {
+        expect(
+          screen.queryByRole("dialog", { name: "Crop photo" })
+        ).not.toBeInTheDocument();
+      });
+    }
+
+    test("does not offer Crop… for the existing server-side photo", async () => {
+      await renderWithSubmission(pendingSubmission);
+      await openEditForm();
+
+      expect(screen.getByRole("img", { name: "Preview" })).toHaveAttribute(
+        "src",
+        "http://localhost:8000/media/photos/alice.jpg"
+      );
+      expect(
+        screen.queryByRole("button", { name: "Crop…" })
+      ).not.toBeInTheDocument();
+    });
+
+    test("offers the Crop… button only after a local photo is picked", async () => {
+      await openEditWithoutPhoto();
+
+      expect(
+        screen.queryByRole("button", { name: "Crop…" })
+      ).not.toBeInTheDocument();
+
+      pickImageFile();
+
+      expect(
+        await screen.findByRole("button", { name: "Crop…" })
+      ).toBeInTheDocument();
+    });
+
+    test("clicking Crop… opens the crop dialog", async () => {
+      await openEditWithoutPhoto();
+      pickImageFile();
+
+      expect(await openCropDialog()).toBeInTheDocument();
+      expect(screen.getByRole("img", { name: "Crop preview" })).toHaveAttribute(
+        "src",
+        "blob:crop-preview"
+      );
+    });
+
+    test("applying the crop PATCHes multipart with the cropped file as photo", async () => {
+      const croppedFile = new File(["cropped-bytes"], "new.png", {
+        type: "image/png",
+      });
+      cropToSquareFile.mockResolvedValue(croppedFile);
+
+      await openEditWithoutPhoto();
+      pickImageFile();
+      await openCropDialog();
+      fireEvent.load(screen.getByRole("img", { name: "Crop preview" }));
+      fireEvent.click(screen.getByRole("button", { name: "Crop & Save" }));
+      await waitForDialogClose();
+      expect(cropToSquareFile).toHaveBeenCalledTimes(1);
+
+      globalThis.fetch
+        .mockResolvedValueOnce(jsonResponse(200, pendingSubmission))
+        .mockResolvedValueOnce(jsonResponse(200, pendingSubmission));
+      fireEvent.submit(document.querySelector("form"));
+
+      expect(await screen.findByText(/Changes saved/i)).toBeInTheDocument();
+      await waitFor(() => {
+        expect(globalThis.fetch).toHaveBeenCalledTimes(3);
+      });
+      const [patchUrl, patchOptions] = globalThis.fetch.mock.calls[1];
+      expect(patchUrl).toBe(trackUrl);
+      expect(patchOptions.method).toBe("PATCH");
+      expect(patchOptions.body).toBeInstanceOf(FormData);
+      expect(patchOptions.body.get("photo")).toBe(croppedFile);
+    });
+
+    test("cancelling the crop dialog keeps the originally picked file", async () => {
+      await openEditWithoutPhoto();
+      const original = pickImageFile();
+      await openCropDialog();
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Keep Original" })
+      );
+      await waitForDialogClose();
+      expect(cropToSquareFile).not.toHaveBeenCalled();
+
+      globalThis.fetch
+        .mockResolvedValueOnce(jsonResponse(200, pendingSubmission))
+        .mockResolvedValueOnce(jsonResponse(200, pendingSubmission));
+      fireEvent.submit(document.querySelector("form"));
+
+      expect(await screen.findByText(/Changes saved/i)).toBeInTheDocument();
+      await waitFor(() => {
+        expect(globalThis.fetch).toHaveBeenCalledTimes(3);
+      });
+      const [, patchOptions] = globalThis.fetch.mock.calls[1];
+      expect(patchOptions.body.get("photo")).toBe(original);
+    });
   });
 });

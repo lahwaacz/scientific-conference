@@ -7,6 +7,28 @@ vi.mock("../../utils/api", async () => ({
   fetchWithAuth: vi.fn(),
 }));
 
+// The real dialog has its own suite; this stub exposes the props contract
+// ({ file, onApply, onCancel }) so the row wiring is tested without the
+// canvas/ResizeObserver gaps in jsdom.
+vi.mock("../PhotoCropModal/PhotoCropModal", () => ({
+  default: ({ file, onApply, onCancel }) => (
+    <div data-testid="crop-dialog">
+      <span>{file.name}</span>
+      <button
+        type="button"
+        onClick={() =>
+          onApply(new File(["cropped"], "cropped.png", { type: "image/png" }))
+        }
+      >
+        Apply crop
+      </button>
+      <button type="button" onClick={onCancel}>
+        Cancel crop
+      </button>
+    </div>
+  ),
+}));
+
 /**
  * The GET conference-info payload carries the merged logistics keys
  * (title/location/date_start/date_end plus short_description,
@@ -49,6 +71,17 @@ const peopleFixture = [
     user_username: null,
   },
 ];
+
+const johnFixture = {
+  id: 8,
+  name: "John Roe",
+  affiliation: "CTU",
+  email: "john@example.com",
+  photo: null,
+  roles: ["committee"],
+  user: null,
+  user_username: null,
+};
 
 function jsonOf(payload) {
   return { ok: true, json: async () => payload };
@@ -393,5 +426,179 @@ describe("EditWebInfoHome people management", () => {
     expect(fetchWithAuth).toHaveBeenCalledWith("/api/people/7/", {
       method: "DELETE",
     });
+  });
+});
+
+describe("EditWebInfoHome people photo crop", () => {
+  beforeEach(() => {
+    fetchWithAuth.mockReset();
+    // jsdom lacks URL.createObjectURL; the picked-photo preview needs it.
+    URL.createObjectURL = vi.fn(() => "blob:preview");
+  });
+
+  async function pickPersonPhoto(file) {
+    fireEvent.change(screen.getByLabelText("Change photo"), {
+      target: { files: [file] },
+    });
+  }
+
+  async function savePeopleAndGetPhotoFile() {
+    fetchWithAuth
+      .mockResolvedValueOnce(textOf(peopleFixture[0]))
+      .mockResolvedValueOnce(textOf(peopleFixture[0]));
+    fireEvent.click(screen.getByRole("button", { name: "SAVE PEOPLE" }));
+    expect(await screen.findByText("✓ Saved successfully")).toBeInTheDocument();
+
+    const photoCall = fetchWithAuth.mock.calls.find(
+      ([url, options]) =>
+        url === "/api/people/7/" && options?.body instanceof FormData
+    );
+    expect(photoCall).toBeDefined();
+    return photoCall[1].body.get("photo");
+  }
+
+  test("does not offer the crop button for a server-side photo", async () => {
+    await renderLoaded(peopleFixture);
+    await screen.findByDisplayValue("Jane Doe");
+
+    // Jane has photo from the server but no locally picked file. Cropping a
+    // server image would draw a cross-origin image to the canvas, taint it,
+    // and make toBlob throw — so the button must stay hidden.
+    expect(
+      screen.queryByRole("button", { name: "Crop…" })
+    ).not.toBeInTheDocument();
+  });
+
+  test("shows the crop button once a photo is picked", async () => {
+    await renderLoaded(peopleFixture);
+    await screen.findByDisplayValue("Jane Doe");
+
+    expect(
+      screen.queryByRole("button", { name: "Crop…" })
+    ).not.toBeInTheDocument();
+
+    await pickPersonPhoto(
+      new File(["fake"], "portrait.png", { type: "image/png" })
+    );
+
+    expect(screen.getByRole("button", { name: "Crop…" })).toBeInTheDocument();
+  });
+
+  test("Crop & Save replaces the picked file with the cropped one", async () => {
+    await renderLoaded(peopleFixture);
+    await screen.findByDisplayValue("Jane Doe");
+
+    const picked = new File(["original"], "portrait.png", {
+      type: "image/png",
+    });
+    await pickPersonPhoto(picked);
+
+    fireEvent.click(screen.getByRole("button", { name: "Crop…" }));
+    expect(screen.getByTestId("crop-dialog")).toHaveTextContent("portrait.png");
+
+    fireEvent.click(screen.getByRole("button", { name: "Apply crop" }));
+    expect(screen.queryByTestId("crop-dialog")).not.toBeInTheDocument();
+
+    const sent = await savePeopleAndGetPhotoFile();
+    expect(sent).toBeInstanceOf(File);
+    expect(sent.name).toBe("cropped.png");
+    expect(sent).not.toBe(picked);
+  });
+
+  test("Keep Original leaves the picked file untouched", async () => {
+    await renderLoaded(peopleFixture);
+    await screen.findByDisplayValue("Jane Doe");
+
+    const picked = new File(["original"], "portrait.png", {
+      type: "image/png",
+    });
+    await pickPersonPhoto(picked);
+
+    fireEvent.click(screen.getByRole("button", { name: "Crop…" }));
+    fireEvent.click(screen.getByRole("button", { name: "Cancel crop" }));
+    expect(screen.queryByTestId("crop-dialog")).not.toBeInTheDocument();
+
+    expect(await savePeopleAndGetPhotoFile()).toBe(picked);
+  });
+
+  test("applies the crop to the row that opened it even after an index shift", async () => {
+    await renderLoaded([...peopleFixture, johnFixture]);
+    await screen.findByDisplayValue("John Roe");
+
+    const picked = new File(["original"], "portrait-john.png", {
+      type: "image/png",
+    });
+    fireEvent.change(screen.getAllByLabelText("Change photo")[1], {
+      target: { files: [picked] },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Crop…" }));
+    expect(screen.getByTestId("crop-dialog")).toHaveTextContent(
+      "portrait-john.png"
+    );
+
+    // Focus is not trapped in the dialog, so an earlier row can be
+    // deleted behind it; that shifts John's row from index 1 to index 0.
+    fetchWithAuth.mockResolvedValueOnce({ ok: true, text: async () => "" });
+    fireEvent.click(screen.getAllByRole("button", { name: "✕" })[0]);
+    await waitFor(() =>
+      expect(screen.queryByDisplayValue("Jane Doe")).not.toBeInTheDocument()
+    );
+
+    expect(screen.getByTestId("crop-dialog")).toHaveTextContent(
+      "portrait-john.png"
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Apply crop" }));
+    expect(screen.queryByTestId("crop-dialog")).not.toBeInTheDocument();
+
+    // The crop lands on John (id 8) — never on the row that took his old
+    // index 1 (Jane's, now deleted, so no photo PATCH for id 7 at all).
+    fetchWithAuth
+      .mockResolvedValueOnce(textOf(johnFixture))
+      .mockResolvedValueOnce(textOf(johnFixture));
+    fireEvent.click(screen.getByRole("button", { name: "SAVE PEOPLE" }));
+    expect(await screen.findByText("✓ Saved successfully")).toBeInTheDocument();
+
+    const johnPhotoCall = fetchWithAuth.mock.calls.find(
+      ([url, options]) =>
+        url === "/api/people/8/" && options?.body instanceof FormData
+    );
+    expect(johnPhotoCall).toBeDefined();
+    expect(johnPhotoCall[1].body.get("photo")).toBeInstanceOf(File);
+    expect(johnPhotoCall[1].body.get("photo").name).toBe("cropped.png");
+    expect(
+      fetchWithAuth.mock.calls.find(
+        ([url, options]) =>
+          url === "/api/people/7/" && options?.body instanceof FormData
+      )
+    ).toBeUndefined();
+  });
+
+  test("deleting the row that opened the crop closes the dialog without applying", async () => {
+    await renderLoaded(peopleFixture);
+    await screen.findByDisplayValue("Jane Doe");
+
+    await pickPersonPhoto(
+      new File(["original"], "portrait.png", { type: "image/png" })
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Crop…" }));
+    expect(screen.getByTestId("crop-dialog")).toBeInTheDocument();
+
+    // Delete the very row the dialog is bound to: no correct target
+    // remains, so the dialog must close instead of applying anywhere.
+    fetchWithAuth.mockResolvedValueOnce({ ok: true, text: async () => "" });
+    fireEvent.click(screen.getByRole("button", { name: "✕" }));
+    await waitFor(() =>
+      expect(screen.queryByDisplayValue("Jane Doe")).not.toBeInTheDocument()
+    );
+    expect(screen.queryByTestId("crop-dialog")).not.toBeInTheDocument();
+
+    // Nothing remains to save; no multipart photo PATCH may go out.
+    fireEvent.click(screen.getByRole("button", { name: "SAVE PEOPLE" }));
+    expect(await screen.findByText("✓ Saved successfully")).toBeInTheDocument();
+    expect(
+      fetchWithAuth.mock.calls.some(
+        ([, options]) => options?.body instanceof FormData
+      )
+    ).toBe(false);
   });
 });

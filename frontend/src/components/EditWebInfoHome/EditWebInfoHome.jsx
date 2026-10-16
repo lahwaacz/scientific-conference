@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { buildMediaUrl, fetchWithAuth } from "../../utils/api";
+import PhotoCropModal from "../PhotoCropModal/PhotoCropModal";
 import Loader from "../ui/Loader/Loader";
 import Title from "../ui/Title/Title";
 import styles from "./EditWebInfoHome.module.css";
@@ -385,6 +386,15 @@ function PersonSection({
   savedMsg,
   errorMsg,
 }) {
+  // The dialog binds to the row OBJECT, not its index: focus is not
+  // trapped inside the overlay, so a keyboard user can delete another
+  // row behind it and shift the indices — an index binding would then
+  // crop the wrong person. The index is re-derived from the object at
+  // render/apply time; a stale target (its row deleted or replaced)
+  // closes the dialog instead of writing to whatever row took its slot.
+  const [cropTarget, setCropTarget] = useState(null);
+  const cropIndex = cropTarget ? list.indexOf(cropTarget) : -1;
+
   return (
     <section className={styles.section} style={{ marginTop: 40 }}>
       <h2 className={styles.sectionTitle}>{title}</h2>
@@ -420,6 +430,15 @@ function PersonSection({
                 className={styles.fileInputHidden}
               />
             </label>
+            {person._photoFile && (
+              <button
+                type="button"
+                className={styles.cropButton}
+                onClick={() => setCropTarget(person)}
+              >
+                Crop…
+              </button>
+            )}
           </div>
 
           <div className={styles.personFields}>
@@ -496,6 +515,17 @@ function PersonSection({
           </button>
         </div>
       </div>
+
+      {cropIndex !== -1 && cropTarget._photoFile && (
+        <PhotoCropModal
+          file={cropTarget._photoFile}
+          onApply={(cropped) => {
+            if (cropIndex !== -1) onPhoto(cropIndex, cropped);
+            setCropTarget(null);
+          }}
+          onCancel={() => setCropTarget(null)}
+        />
+      )}
     </section>
   );
 }
