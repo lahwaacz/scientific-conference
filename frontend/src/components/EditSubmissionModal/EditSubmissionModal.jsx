@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import avatar from "../../assets/avatar.png";
 import { buildMediaUrl, fetchWithAuth } from "../../utils/api.js";
-import Modal from "../ui/Modal/Modal";
 import PhotoCropModal from "../PhotoCropModal/PhotoCropModal";
+import Modal from "../ui/Modal/Modal";
 import Title from "../ui/Title/Title";
 import styles from "./EditSubmissionModal.module.css";
 
