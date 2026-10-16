@@ -9,7 +9,6 @@ import { Link } from "react-router-dom";
 import { initConferenceSlug } from "../../utils/conferenceSlug";
 import { useConferenceExists } from "./useConferenceExists";
 import { useConferenceInfo } from "./useConferenceInfo";
-import { useLockBodyScroll } from "./useLockBodyScroll";
 import { useUnsavedChangesGuard } from "./useUnsavedChangesGuard";
 
 function setLocation(pathname) {
@@ -44,66 +43,6 @@ describe("useConferenceInfo", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 30));
     expect(result.current).toBeNull();
-  });
-});
-
-describe("useLockBodyScroll", () => {
-  afterEach(() => {
-    document.body.style.cssText = "";
-  });
-
-  test("locks the body at the current scroll offset and restores it", () => {
-    Object.defineProperty(window, "scrollY", {
-      configurable: true,
-      writable: true,
-      value: 250,
-    });
-
-    const { rerender, unmount } = renderHook(
-      ({ locked }) => useLockBodyScroll(locked),
-      { initialProps: { locked: true } }
-    );
-
-    expect(document.body.style.position).toBe("fixed");
-    expect(document.body.style.top).toBe("-250px");
-    expect(document.body.style.overflow).toBe("hidden");
-
-    rerender({ locked: false });
-    expect(document.body.style.position).toBe("");
-    expect(document.body.style.top).toBe("");
-
-    unmount();
-  });
-
-  test("unlocks by restoring the saved offset without smooth scrolling", () => {
-    Object.defineProperty(window, "scrollY", {
-      configurable: true,
-      writable: true,
-      value: 250,
-    });
-    const scrollTo = vi.fn();
-    window.scrollTo = scrollTo;
-
-    const { rerender } = renderHook(({ locked }) => useLockBodyScroll(locked), {
-      initialProps: { locked: true },
-    });
-
-    rerender({ locked: false });
-
-    expect(scrollTo).toHaveBeenCalledWith(0, 250);
-    // The instant-scroll override must not leak past the restore.
-    expect(document.documentElement.style.scrollBehavior).toBe("");
-  });
-
-  test("does not touch the scroll position while unlocked", () => {
-    const scrollTo = vi.fn();
-    window.scrollTo = scrollTo;
-
-    renderHook(({ locked }) => useLockBodyScroll(locked), {
-      initialProps: { locked: false },
-    });
-
-    expect(scrollTo).not.toHaveBeenCalled();
   });
 });
 

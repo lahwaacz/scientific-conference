@@ -12,10 +12,6 @@ export default function Header() {
   useLockBodyScroll(menuOpen);
   const closeMenu = () => setMenuOpen(false);
 
-  useEffect(() => {
-    document.body.style.overflow = menuOpen ? "hidden" : "";
-  }, [menuOpen]);
-
   // biome-ignore-start lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: backdrop overlay and hover wrapper exist only as pointer shortcuts; the burger toggle and arrow buttons carry every interaction.
   return (
     <header className={styles.header}>

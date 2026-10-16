@@ -4,6 +4,17 @@ export function useLockBodyScroll(isLocked) {
   useEffect(() => {
     if (!isLocked) return undefined;
 
+    // Locks can nest (e.g. PhotoCropModal mounts on top of
+    // EditSubmissionModal's own `overflow: hidden`), so cleanup must
+    // restore the previous inline values instead of blanking them —
+    // blanking would silently destroy the outer lock.
+    const previous = {
+      position: document.body.style.position,
+      top: document.body.style.top,
+      width: document.body.style.width,
+      overflow: document.body.style.overflow,
+    };
+
     const scrollY = window.scrollY;
     document.body.style.position = "fixed";
     document.body.style.top = `-${scrollY}px`;
@@ -12,10 +23,10 @@ export function useLockBodyScroll(isLocked) {
 
     return () => {
       const top = parseInt(document.body.style.top || "0", 10);
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.width = "";
-      document.body.style.overflow = "";
+      document.body.style.position = previous.position;
+      document.body.style.top = previous.top;
+      document.body.style.width = previous.width;
+      document.body.style.overflow = previous.overflow;
       // Bootstrap sets `scroll-behavior: smooth` on :root; without
       // forcing instant scrolling this restore animates from the top
       // of the page after the position reset already snapped there.
