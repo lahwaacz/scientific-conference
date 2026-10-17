@@ -20,6 +20,12 @@
   max-width: 75ch;
 }
 
+/* The shared Markdown wrapper hardcodes line-height 1.5 on the same element;
+   scope through the parent so the description keeps its 1.7 deterministically. */
+.fadeIn .description {
+  line-height: 1.7;
+}
+
 .options {
   display: flex;
   flex-direction: column;
@@ -71,6 +77,16 @@
   font-size: clamp(14px, 1.8vw, 18px);
   letter-spacing: 0.5px;
   line-height: 1.6;
+}
+
+/* Markdown wrapper hardcodes line-height 1.5; keep the description's 1.6. */
+.optionInfo .optionDesc {
+  line-height: 1.6;
+}
+
+/* Keep the leading "— " marker on the first rendered paragraph. */
+.optionDesc > p:first-child::before {
+  content: "— ";
 }
 
 .fadeIn {

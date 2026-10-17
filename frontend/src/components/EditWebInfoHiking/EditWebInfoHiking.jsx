@@ -375,6 +375,9 @@ export default function EditWebInfoHiking() {
 
               <div className={styles.field}>
                 <label>Way Description</label>
+                <small className={styles.hint}>
+                  Markdown formatting is supported
+                </small>
                 <textarea
                   rows={4}
                   value={route.way_description || ""}
@@ -415,6 +418,9 @@ export default function EditWebInfoHiking() {
 
               <div className={styles.stopsBlock}>
                 <h3 className={styles.stopsTitle}>Stops</h3>
+                <small className={styles.hint}>
+                  Descriptions support Markdown formatting
+                </small>
 
                 {!route.id && (
                   <p className={styles.hint}>

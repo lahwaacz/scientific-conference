@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { buildApiUrl, buildMediaUrl } from "../../utils/api";
 import Loader from "../ui/Loader/Loader";
+import Markdown from "../ui/Markdown/Markdown";
 import Title from "../ui/Title/Title";
 import styles from "./Accommodation.module.css";
 
@@ -28,7 +29,10 @@ export default function Accommodation() {
         ) : (
           <div className={styles.fadeIn}>
             {data.description && (
-              <p className={styles.description}>{data.description}</p>
+              <Markdown
+                text={data.description}
+                className={styles.description}
+              />
             )}
             <div className={styles.options}>
               {data.options.map((option) => (
@@ -50,9 +54,10 @@ export default function Accommodation() {
                       {option.name}
                     </a>
                     {option.description && (
-                      <p className={styles.optionDesc}>
-                        — {option.description}
-                      </p>
+                      <Markdown
+                        text={option.description}
+                        className={styles.optionDesc}
+                      />
                     )}
                   </div>
                 </div>

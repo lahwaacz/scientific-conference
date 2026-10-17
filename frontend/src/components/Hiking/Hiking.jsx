@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { buildApiUrl } from "../../utils/api";
 import Loader from "../ui/Loader/Loader";
+import Markdown from "../ui/Markdown/Markdown";
 import Title from "../ui/Title/Title";
 import styles from "./Hiking.module.css";
 
@@ -35,10 +36,13 @@ export default function Hiking() {
               <h2 className={styles.routeName}>{route.name.toUpperCase()}</h2>
 
               {route.way_description && (
-                <p className={styles.routeWay}>
-                  <span className={styles.label}>Way:</span>{" "}
-                  {route.way_description}
-                </p>
+                <div className={styles.routeWay}>
+                  <span className={styles.label}>Way:</span>
+                  <Markdown
+                    text={route.way_description}
+                    className={styles.routeWayBody}
+                  />
+                </div>
               )}
 
               {route.map_url && (
@@ -68,9 +72,10 @@ export default function Hiking() {
                           {stop.name.toUpperCase()}
                         </h3>
                         {stop.description && (
-                          <p className={styles.stopDescription}>
-                            — {stop.description}
-                          </p>
+                          <Markdown
+                            text={stop.description}
+                            className={styles.stopDescription}
+                          />
                         )}
                       </div>
                     </div>

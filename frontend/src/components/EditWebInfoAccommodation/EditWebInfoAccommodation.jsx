@@ -247,6 +247,9 @@ export default function EditWebInfoAccommodation() {
               <h2 className={styles.sectionTitle}>General Description</h2>
               <div className={styles.field}>
                 <label>Text shown at the top of the Accommodation page</label>
+                <small className={styles.hint}>
+                  Markdown formatting is supported
+                </small>
                 <textarea
                   rows={5}
                   value={description}
@@ -275,6 +278,9 @@ export default function EditWebInfoAccommodation() {
           {/* ── Options ── */}
           <section className={styles.section} style={{ marginTop: 40 }}>
             <h2 className={styles.sectionTitle}>Accommodation Options</h2>
+            <small className={styles.hint}>
+              Descriptions support Markdown formatting
+            </small>
 
             {options.length === 0 && (
               <p className={styles.emptyMsg}>No options added yet.</p>
