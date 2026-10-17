@@ -19,7 +19,7 @@ from .models import AccommodationInfo, Conference, ConferenceInfo
 SLUG_A = "wsc2026-test"
 SLUG_B = "wsc2027-test"
 
-# id + 16 web fields + 8 logistics fields + derived year.
+# id + 17 web fields + 8 logistics fields + derived year.
 INFO_PAYLOAD_KEYS = frozenset(
     {
         "id",
@@ -31,6 +31,7 @@ INFO_PAYLOAD_KEYS = frozenset(
         "registration_fee_note",
         "grant_text",
         "venue_text",
+        "footer_venue_text",
         "venue_photo",
         "conference_office_text",
         "website_url",
@@ -108,7 +109,7 @@ class TestConferenceInfoSingleton(InfoTestCase):
             ConferenceInfo.objects.get(conference=self.conf_b).conference, self.conf_b
         )
 
-    def test_payload_has_exactly_the_26_payload_keys(self):
+    def test_payload_has_exactly_the_27_payload_keys(self):
         for slug in (SLUG_A, SLUG_B):
             with self.subTest(slug=slug):
                 response = self.client.get(api("conference-info/", slug=slug))
@@ -128,6 +129,31 @@ class TestConferenceInfoSingleton(InfoTestCase):
         self.assertEqual(payload_a["grant_text"], "Only A grant")
         payload_b = self.client.get(api("conference-info/", slug=SLUG_B)).json()
         self.assertNotEqual(payload_b["grant_text"], "Only A grant")
+
+    def test_footer_venue_text_is_independent_of_venue_text(self):
+        staff = self.staff_client()
+        response = staff.patch(
+            api("conference-info/edit/"),
+            {"footer_venue_text": "Footer-only venue blurb"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+
+        payload = self.client.get(api("conference-info/")).json()
+        self.assertEqual(payload["footer_venue_text"], "Footer-only venue blurb")
+        self.assertNotEqual(payload["footer_venue_text"], payload["venue_text"])
+
+        # Editing the venue page text must not touch the footer text.
+        response = staff.patch(
+            api("conference-info/edit/"),
+            {"venue_text": "Venue-page-only text"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+
+        payload = self.client.get(api("conference-info/")).json()
+        self.assertEqual(payload["venue_text"], "Venue-page-only text")
+        self.assertEqual(payload["footer_venue_text"], "Footer-only venue blurb")
 
     def test_write_serializer_persists_logistics_but_ignores_year_and_conference(self):
         staff = self.staff_client()

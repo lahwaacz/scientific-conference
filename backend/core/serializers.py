@@ -557,6 +557,7 @@ class ConferenceInfoWriteSerializer(serializers.ModelSerializer):
             "registration_fee_note",
             "grant_text",
             "venue_text",
+            "footer_venue_text",
             "venue_photo",
             "conference_office_text",
             "website_url",

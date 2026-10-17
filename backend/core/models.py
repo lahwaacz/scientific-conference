@@ -465,6 +465,10 @@ class ConferenceInfo(models.Model):
         blank=True,
         default="Faculty of Nuclear Sciences and Physical Engineering, Trojanova 13, 120 00, Prague",
     )
+    footer_venue_text = models.TextField(
+        blank=True,
+        default="Faculty of Nuclear Sciences and Physical Engineering, Trojanova 13, 120 00, Prague",
+    )
     conference_office_text = models.TextField(
         blank=True,
         default="D. Landovská, Department of Software Engineering, Faculty of Nuclear Sciences and Physical Engineering, Czech Technical University in Prague",
