@@ -98,41 +98,81 @@ describe("buildApiUrl", () => {
 });
 
 describe("buildMediaUrl", () => {
-  beforeEach(async () => loadApi());
-
-  test("returns an empty string for an empty path", () => {
-    expect(api.buildMediaUrl("")).toBe("");
-    expect(api.buildMediaUrl()).toBe("");
+  afterEach(() => {
+    delete window.__APP_CONFIG__;
   });
 
-  test("collapses leading slashes and joins the base", () => {
-    expect(api.buildMediaUrl("/media/photo.png")).toBe(
-      "http://localhost:8000/media/photo.png"
-    );
-    expect(api.buildMediaUrl("///media/photo.png")).toBe(
-      "http://localhost:8000/media/photo.png"
-    );
+  describe("without a deployed base path", () => {
+    beforeEach(async () => loadApi());
+
+    test("returns an empty string for an empty path", () => {
+      expect(api.buildMediaUrl("")).toBe("");
+      expect(api.buildMediaUrl()).toBe("");
+    });
+
+    test("collapses leading slashes and joins the base", () => {
+      expect(api.buildMediaUrl("/media/photo.png")).toBe(
+        "http://localhost:8000/media/photo.png"
+      );
+      expect(api.buildMediaUrl("///media/photo.png")).toBe(
+        "http://localhost:8000/media/photo.png"
+      );
+    });
+
+    test("keeps a deployment-looking prefix that is not the API base", () => {
+      expect(api.buildMediaUrl("conference-demo/media/x.png")).toBe(
+        `${BASE}/conference-demo/media/x.png`
+      );
+    });
+
+    test("trims surrounding whitespace before building", () => {
+      expect(api.buildMediaUrl("  media/x.png  ")).toBe(`${BASE}/media/x.png`);
+    });
+
+    test("passes absolute http(s) URLs through untouched", () => {
+      expect(api.buildMediaUrl("https://cdn.test/a.png")).toBe(
+        "https://cdn.test/a.png"
+      );
+    });
   });
 
-  test("strips a leading conference-demo/ segment", () => {
-    expect(api.buildMediaUrl("conference-demo/media/x.png")).toBe(
-      "http://localhost:8000/media/x.png"
-    );
-    expect(api.buildMediaUrl("/conference-demo/media/x.png")).toBe(
-      "http://localhost:8000/media/x.png"
-    );
-  });
+  describe("with a deployed base path", () => {
+    test("strips the configured base path from the backend media URL", async () => {
+      window.__APP_CONFIG__ = { apiBase: "/conference-demo" };
+      await loadApi();
 
-  test("trims surrounding whitespace before building", () => {
-    expect(api.buildMediaUrl("  media/x.png  ")).toBe(
-      "http://localhost:8000/media/x.png"
-    );
-  });
+      expect(api.buildMediaUrl("conference-demo/media/x.png")).toBe(
+        "/conference-demo/media/x.png"
+      );
+      expect(api.buildMediaUrl("/conference-demo/media/x.png")).toBe(
+        "/conference-demo/media/x.png"
+      );
+    });
 
-  test("passes absolute http(s) URLs through untouched", () => {
-    expect(api.buildMediaUrl("https://cdn.test/a.png")).toBe(
-      "https://cdn.test/a.png"
-    );
+    test("strips any configured prefix, not a hardcoded one", async () => {
+      window.__APP_CONFIG__ = { apiBase: "/conference" };
+      await loadApi();
+
+      expect(api.buildMediaUrl("conference/media/x.png")).toBe(
+        "/conference/media/x.png"
+      );
+    });
+
+    test("strips a multi-segment base path while keeping the origin", async () => {
+      window.__APP_CONFIG__ = { apiBase: "https://api.test/foo/bar" };
+      await loadApi();
+
+      expect(api.buildMediaUrl("foo/bar/media/x.png")).toBe(
+        "https://api.test/foo/bar/media/x.png"
+      );
+    });
+
+    test("does not strip when the media path carries no prefix", async () => {
+      window.__APP_CONFIG__ = { apiBase: "/conference" };
+      await loadApi();
+
+      expect(api.buildMediaUrl("media/x.png")).toBe("/conference/media/x.png");
+    });
   });
 });
 

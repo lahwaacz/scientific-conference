@@ -57,6 +57,16 @@ function buildHeaders(options, token) {
   };
 }
 
+// Path part of the API base without the origin or surrounding slashes
+// ("conference" for "/conference", "api/conference" for
+// "https://host/api/conference"). Media URLs from the backend already carry
+// RELATIVE_URL_ROOT ("<root>/media/x.png"), so this prefix must be stripped
+// before joining onto the same base instead of hardcoding a deployment name.
+const API_BASE_PATH = API_BASE_URL.replace(
+  /^[a-z][a-z0-9+.-]*:\/\/[^/]+/i,
+  ""
+).replace(/^\/+|\/+$/g, "");
+
 export function buildMediaUrl(path) {
   if (!path) return "";
   if (/^https?:\/\//i.test(path)) return path;
@@ -64,8 +74,8 @@ export function buildMediaUrl(path) {
   const base = API_BASE_URL.replace(/\/$/, "");
   let cleanPath = path.trim().replace(/^\/+/, "");
 
-  if (cleanPath.startsWith("conference-demo/")) {
-    cleanPath = cleanPath.replace(/^conference-demo\//, "");
+  if (API_BASE_PATH && cleanPath.startsWith(`${API_BASE_PATH}/`)) {
+    cleanPath = cleanPath.slice(API_BASE_PATH.length + 1);
   }
 
   return `${base}/${cleanPath}`;
