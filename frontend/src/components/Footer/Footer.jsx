@@ -38,7 +38,7 @@ export default function Footer() {
 
         <div className={styles.column}>
           <h4>Venue</h4>
-          <p>{info?.venue_text || ""}</p>
+          <p>{info?.footer_venue_text || ""}</p>
         </div>
 
         <div className={styles.column}>

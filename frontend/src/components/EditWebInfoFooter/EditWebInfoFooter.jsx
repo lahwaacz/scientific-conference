@@ -35,7 +35,7 @@ export default function EditWebInfoFooter() {
         method: "PATCH",
         body: JSON.stringify({
           grant_text: form.grant_text,
-          venue_text: form.venue_text,
+          footer_venue_text: form.footer_venue_text,
           conference_office_text: form.conference_office_text,
           website_url: form.website_url,
           poster_url: form.poster_url,
@@ -86,9 +86,9 @@ export default function EditWebInfoFooter() {
             <div className={styles.field}>
               <label>Venue Text</label>
               <textarea
-                name="venue_text"
+                name="footer_venue_text"
                 rows={3}
-                value={form.venue_text || ""}
+                value={form.footer_venue_text || ""}
                 onChange={handleChange}
               />
             </div>
