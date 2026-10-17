@@ -192,7 +192,7 @@ class AccommodationOption(models.Model):
         AccommodationInfo, on_delete=models.CASCADE, related_name="options"
     )
     name = models.CharField(max_length=200)
-    description = models.CharField(max_length=500, blank=True)
+    description = models.TextField(blank=True)
     url = models.URLField(blank=True)
     photo = models.ImageField(upload_to="accommodation/", blank=True, null=True)
     order = models.PositiveIntegerField(default=0)
