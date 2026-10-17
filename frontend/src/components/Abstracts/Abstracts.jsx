@@ -9,6 +9,10 @@ import styles from "./Abstracts.module.css";
 export default function Abstracts() {
   const [abstracts, setAbstracts] = useState([]);
   const [loading, setLoading] = useState(true);
+  // null = not yet known; false hides the card's program button. Fetch
+  // failures and non-list payloads fail open so a backend hiccup never
+  // hides the button.
+  const [programReady, setProgramReady] = useState(null);
   const location = useLocation();
 
   useEffect(() => {
@@ -19,6 +23,10 @@ export default function Abstracts() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+    fetch(buildApiUrl("/api/program/"))
+      .then((res) => (res.ok ? res.json() : null))
+      .then((days) => setProgramReady(!Array.isArray(days) || days.length > 0))
+      .catch(() => setProgramReady(true));
   }, []);
 
   useEffect(() => {
@@ -50,6 +58,7 @@ export default function Abstracts() {
               department={abstract.department}
               abstractText={abstract.text}
               talkId={abstract.talk_id}
+              programReady={programReady}
             />
           ))}
         </div>

@@ -8,6 +8,7 @@ export default function AbstractCard({
   department,
   abstractText,
   talkId,
+  programReady,
 }) {
   const navigate = useNavigate();
 
@@ -22,9 +23,13 @@ export default function AbstractCard({
       <p className={styles.department}>{department}</p>
       <hr className={styles.separator} />
       <p className={styles.abstractText}>{abstractText}</p>
-      <button className={styles.button} onClick={goToProgram}>
-        TO THE PROGRAM
-      </button>
+      {/* Hidden only once the program is known to be not ready; unknown
+          (null) and fetch-failure (true, fail open) keep the button. */}
+      {programReady !== false && (
+        <button className={styles.button} onClick={goToProgram}>
+          TO THE PROGRAM
+        </button>
+      )}
     </div>
   );
 }
