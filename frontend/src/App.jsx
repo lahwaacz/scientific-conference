@@ -1,4 +1,3 @@
-import "bootstrap/dist/css/bootstrap.min.css";
 import { Route, HashRouter as Router, Routes } from "react-router-dom";
 import Accommodation from "./components/Accommodation/Accommodation";
 import AdminPanel from "./components/AdminPanel/AdminPanel";

@@ -34,17 +34,11 @@
   font-size: clamp(14px, 1.8vw, 17px);
   color: var(--text-color);
   margin-bottom: 8px;
-  line-height: 1.6;
   max-width: 75ch;
 }
 
 .label {
   font-weight: 600;
-}
-
-/* Markdown wrapper defaults to line-height 1.5; keep the old body rhythm. */
-.routeWay .routeWayBody {
-  line-height: 1.6;
 }
 
 .mapLink {
@@ -104,12 +98,6 @@
   font-family: var(--font-main);
   font-size: clamp(14px, 1.8vw, 17px);
   color: var(--text-color);
-  line-height: 1.6;
-}
-
-/* Markdown wrapper hardcodes line-height 1.5; keep the description's 1.6. */
-.stopInfo .stopDescription {
-  line-height: 1.6;
 }
 
 /* Keep the leading "— " marker on the first rendered paragraph. */

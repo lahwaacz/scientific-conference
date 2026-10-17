@@ -159,7 +159,6 @@
   font-size: clamp(14px, 1.8vw, 18px);
   color: var(--text-color);
   letter-spacing: 0.5px;
-  line-height: 1.7;
 }
 
 .mapPreview {

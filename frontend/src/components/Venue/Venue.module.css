@@ -24,7 +24,6 @@
   margin-bottom: clamp(20px, 4vw, 35px);
   font-weight: 400;
   letter-spacing: 0.5px;
-  line-height: 1.7;
 }
 
 .venuePhoto {
@@ -60,10 +59,6 @@
 }
 
 @media (max-width: 600px) {
-  .description {
-    line-height: 1.6;
-  }
-
   .mapWrapper iframe {
     height: 260px;
   }

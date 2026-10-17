@@ -43,7 +43,6 @@
   font-size: clamp(13px, 1.5vw, 16px);
   color: #fff;
   text-decoration: none;
-  line-height: 1.6;
   word-break: break-word;
 }
 
