@@ -41,15 +41,15 @@ backend/
 | Add a scoped endpoint | `core/views.py` | new class views use `ConferenceScopedMixin`; new function views call `get_conference_or_404()` |
 | Auth config | `backend/settings.py` | SIMPLE_JWT: 1h access / 7d refresh |
 | Conference model / admin policies | `core/models.py`, `core/admin.py` | slug reserved words in `clean()`; deletion gated by `Conference.is_referenced()` |
-| PDF generation | `core/views.py` | `generate_program_pdf` (line 130), `generate_badges_pdf` (line 370); per-conference, reportlab + `core/fonts/*.ttf` |
-| Publish workflow | `core/models.py` | `ParticipantSubmission.publish()` (line 420), `.delete()`; dedup scoped to `conference` |
+| PDF generation | `core/views.py` | `generate_program_pdf`, `generate_badges_pdf`; per-conference, reportlab + `core/fonts/*.ttf` |
+| Publish workflow | `core/models.py` | `ParticipantSubmission.publish()`, `.delete()`; dedup scoped to `conference` |
 | Email on publish | `core/signals.py` | fires via `CoreConfig.ready()` |
 | Env config | `backend/settings.py` | DJANGO_SECRET_KEY / DJANGO_DEBUG / DJANGO_ALLOWED_HOSTS / DJANGO_DB_PATH / DJANGO_STATIC_URL / DJANGO_STATIC_ROOT / DJANGO_MEDIA_ROOT / DJANGO_USE_HTTPS / DJANGO_CSRF_TRUSTED_ORIGINS, plus unprefixed RELATIVE_URL_ROOT |
 
 ## CONVENTIONS
 
 - Views: `generics.APIView`/generic classes mixed with `@api_view` functions (`generate_*`, `publish_submission`, `update_session`, `delete_session`); named `<Noun><Action>View`.
-- Conference scoping: every view in `core/urls.py` is served under `/api/<slug>/…` and must resolve its conference. Class views inherit `ConferenceScopedMixin` (views.py:66: eager 404 on unknown slug in `initial()`, queryset filter, `perform_create` assignment, serializer context); function views call `get_conference_or_404(conference_slug)`. The only unscoped views are auth + `ConferenceListView`, registered globally in `backend/urls.py` BEFORE the slug include.
+- Conference scoping: every view in `core/urls.py` is served under `/api/<slug>/…` and must resolve its conference. Class views inherit `ConferenceScopedMixin` (views.py: eager 404 on unknown slug in `initial()`, queryset filter, `perform_create` assignment, serializer context); function views call `get_conference_or_404(conference_slug)`. The only unscoped views are auth + `ConferenceListView`, registered globally in `backend/urls.py` BEFORE the slug include.
 - Serializers: `<Model>Serializer` for read, `...WriteSerializer` split for writes. Serializer field lists are explicit and exclude `conference`; the write path gets the conference via the view's `save(conference=…)`. `TalkSerializer` narrows `session`/`day` querysets via the context conference (cross-conference FK ⇒ 400).
 - URL paths kebab-case with trailing slash; API mounted under `/{RELATIVE_URL_ROOT}api/`, admin tails under the slug prefix (e.g. `/api/<slug>/admin/...`).
 - `Conference` is the single config row: it owns the logistics (title, dates, location, card/hero/venue photos, short description, badge title), the web texts and the accommodation description; `year` and `status` are derived read-only properties. `GET conference-info/` returns the plain `ConferenceInfoSerializer` payload; `PATCH conference-info/edit/` (multipart-capable, `BlankAsNoneDateField` maps empty date strings to null) writes logistics + web fields. Read endpoints must stay side-effect free — no lazy row creation.
@@ -66,7 +66,7 @@ backend/
 
 - NEVER add an endpoint outside the `/api/<slug>/` include without conference scoping — `test_conference_isolation.py` builds its route matrix from `core/urls.py` and fails the suite for any unscoped route.
 - NEVER allow deleting a Conference while any row references it: all domain models cascade from `Conference`, so `ConferenceAdmin` hides the delete action when `Conference.is_referenced()` is true, re-checks in `delete_model`/`delete_queryset`, and keeps `actions = None`. `is_referenced()` walks `_meta.get_fields(include_hidden=True)`, so a new conference FK (even a hidden one) is covered automatically; do not filter relations out of that check.
-- `AccommodationOptionListView` (views.py:322) is dead code — defined but never routed. Deliberate minimal diff; do not wire it up or delete it casually.
+- `AccommodationOptionListView` (views.py) is dead code — defined but never routed. Deliberate minimal diff; do not wire it up or delete it casually.
 - `ConferenceDayDeleteView.destroy` calls bare `day.delete()` with no guard; `UnscheduledTalkDeleteView` 400s on scheduled talks. Both deliberate — cascade rules and rationale live in root AGENTS.md; keep guards as they are. Beware: Talk→Abstract FK direction means day/talk deletes orphan the Abstract row.
 - `AccommodationOptionEditView` and `HikingStopEditView` call `objects.get(pk, conference=…)` unguarded in patch/delete: unknown or cross-conference pks surface as 500, never 404. Deliberate security choice — keep; tests pin the 500.
 - `ParticipantListView` and `AbstractListView` are `ListCreateAPIView` under the global `AllowAny`: POST creates rows for ANYONE. Deliberate public surface (admin decision 2026-10-03, may be revisited for security); do not add permission_classes without a fresh decision.

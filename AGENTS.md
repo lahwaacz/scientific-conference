@@ -51,10 +51,10 @@ Codegraph covers Python only (JS unindexed); refs via pyright LSP.
 
 | Symbol | Type | Location | Refs | Role |
 |--------|------|----------|------|------|
-| `Conference` | model | backend/core/models.py:12 | all domain models FK to it | single row owns the slug plus all logistics and web config; reserved slugs + deadline ordering in `clean()`; `__str__` = slug |
-| `ConferenceScopedMixin` | mixin | backend/core/views.py:66 | most scoped views | resolves `conference_slug` URL kwarg → eager 404, queryset filter, `perform_create`, serializer context |
-| `get_conference_or_404` | function | backend/core/views.py:61 | function views + mixin | shared slug→Conference resolution |
-| `ConferenceListView` | view | backend/core/views.py:97 | the ONLY unscoped API view | public card list, server-ordered running→future asc→past desc |
+| `Conference` | model | backend/core/models.py | all domain models FK to it | single row owns the slug plus all logistics and web config; reserved slugs + deadline ordering in `clean()`; `__str__` = slug |
+| `ConferenceScopedMixin` | mixin | backend/core/views.py | most scoped views | resolves `conference_slug` URL kwarg → eager 404, queryset filter, `perform_create`, serializer context |
+| `get_conference_or_404` | function | backend/core/views.py | function views + mixin | shared slug→Conference resolution |
+| `ConferenceListView` | view | backend/core/views.py | the ONLY unscoped API view | public card list, server-ordered running→future asc→past desc |
 | `Conference.is_referenced()` | method | backend/core/models.py | `ConferenceAdmin` + tests | any reverse relation row exists → the admin refuses deletion |
 | `ParticipantSubmission.publish()` | method | backend/core/models.py | core workflow | creates Participant + Abstract + unscheduled Talk, dedup scoped to `conference` |
 | `generate_program_pdf` / `generate_badges_pdf` | function | backend/core/views.py | PDF endpoints | per-conference reportlab PDFs; badges header = `badge_title or title`, footer = `location`; need `core/fonts/*.ttf` |
@@ -87,9 +87,9 @@ Codegraph covers Python only (JS unindexed); refs via pyright LSP.
 - The frontend conference-slug singleton (`utils/conferenceSlug.js`) must NOT use react-router hooks — `useLocation` is hash-based and never sees the `/<slug>/` path prefix. It parses `window.location.pathname` once at startup; keep it that way.
 - NEVER commit `.venv/`, `db.sqlite3`, `media/`, `staticfiles/` (a venv was once committed: 4c321da).
 - `.github/workflows/quality.yml` runs ruff/pyright/pytest + biome/vitest on push to `main` and PRs. The Docker publish workflow does NOT depend on it — a red quality run does not block image pushes.
-- Do not treat cascade deletes as accidental: deleting a ConferenceDay deletes its Sessions+Talks; deleting an Abstract deletes its Talk (the FK sits on Talk); deleting a HikingRoute deletes its Stops; deleting a Conference deletes everything (UI path disabled, see above). NOTE: deleting a day or an unscheduled talk ORPHANS the linked abstract — deliberate admin choice (2026-10-03); do not add cascades unilaterally. The admin guide warns about deleting days (`docs/admin_guide.md:353`), and `UnscheduledTalkDeleteView` 400s on scheduled talks; keep both guards.
+- Do not treat cascade deletes as accidental: deleting a ConferenceDay deletes its Sessions+Talks; deleting an Abstract deletes its Talk (the FK sits on Talk); deleting a HikingRoute deletes its Stops; deleting a Conference deletes everything (UI path disabled, see above). NOTE: deleting a day or an unscheduled talk ORPHANS the linked abstract — deliberate admin choice (2026-10-03); do not add cascades unilaterally. The admin guide warns about deleting days (see its Edit Program chapter), and `UnscheduledTalkDeleteView` 400s on scheduled talks; keep both guards.
 - The dormant lines in `backend/Dockerfile` (RUN-time collectstatic, VOLUME declarations) are disabled on purpose — startup collectstatic lives in the active CMD; gunicorn has been the active server since 2026-10-06 (the old `manage.py runserver` prod note is obsolete). (The `frontend/Dockerfile` nginx.conf COPY used to be dormant too; it is active again since the universal-image rework — `frontend/nginx.conf` is the universal, deployment-value-free server config.)
-- If the app is extended, update `docs/admin_guide.md` (guide rule, line 667); deployment changes go to `docs/deployment.md`.
+- If the app is extended, update `docs/admin_guide.md` (see its closing note); deployment changes go to `docs/deployment.md`.
 
 ## COMMANDS
 
