@@ -9,6 +9,7 @@ export default function SubmissionFields({
   onRemovePhoto,
   onCropPhoto,
   wordCount,
+  arrivalDepartureTentative = false,
 }) {
   return (
     <>
@@ -165,7 +166,8 @@ export default function SubmissionFields({
       <div className={styles.fieldRow}>
         <div>
           <label className={styles.date}>
-            Arrival Date <span className={styles.required}>*</span>
+            {`Arrival Date${arrivalDepartureTentative ? " (tentative)" : ""}`}{" "}
+            <span className={styles.required}>*</span>
           </label>
           <input
             type="date"
@@ -180,7 +182,8 @@ export default function SubmissionFields({
         </div>
         <div>
           <label className={styles.date}>
-            Departure Date <span className={styles.required}>*</span>
+            {`Departure Date${arrivalDepartureTentative ? " (tentative)" : ""}`}{" "}
+            <span className={styles.required}>*</span>
           </label>
           <input
             type="date"

@@ -1,7 +1,10 @@
 import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { buildApiUrl } from "../../utils/api";
-import { registrationWindowStatus } from "../../utils/registrationWindow";
+import {
+  isArrivalDepartureTentative,
+  registrationWindowStatus,
+} from "../../utils/registrationWindow";
 import { countWords, validateSubmissionForm } from "../../utils/submissionForm";
 import { useConferenceInfo } from "../hooks/useConferenceInfo";
 import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard";
@@ -270,6 +273,7 @@ export default function RegistrationForm() {
   }
 
   const windowStatus = registrationWindowStatus(info);
+  const arrivalDepartureTentative = isArrivalDepartureTentative(info);
 
   if (windowStatus === "not-open") {
     return (
@@ -366,6 +370,7 @@ export default function RegistrationForm() {
               onRemovePhoto={removePhoto}
               onCropPhoto={photo ? () => setCropFile(photo) : undefined}
               wordCount={wordCount}
+              arrivalDepartureTentative={arrivalDepartureTentative}
             />
 
             <button type="submit" className={styles.button}>

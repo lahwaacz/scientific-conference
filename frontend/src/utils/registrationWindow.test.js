@@ -1,4 +1,5 @@
 import {
+  isArrivalDepartureTentative,
   registrationWindowStatus,
   submissionEditEffectiveDeadline,
   submissionEditWindowStatus,
@@ -165,5 +166,72 @@ describe("submissionEditEffectiveDeadline", () => {
   test("returns null when neither is set", () => {
     expect(submissionEditEffectiveDeadline(info())).toBeNull();
     expect(submissionEditEffectiveDeadline(null)).toBeNull();
+  });
+});
+
+describe("isArrivalDepartureTentative", () => {
+  test("not tentative without a deadline or date_start", () => {
+    expect(isArrivalDepartureTentative(info(), day("2020-05-15"))).toBe(false);
+  });
+
+  test("no info yet means not tentative", () => {
+    expect(isArrivalDepartureTentative(null, day("2026-05-15"))).toBe(false);
+  });
+
+  test("tentative strictly more than one month before the deadline", () => {
+    const conf = info({ submission_edit_deadline: "2026-09-15" });
+    expect(isArrivalDepartureTentative(conf, day("2026-05-15"))).toBe(true);
+    expect(isArrivalDepartureTentative(conf, day("2026-08-14"))).toBe(true);
+  });
+
+  test("not tentative within one month of the deadline", () => {
+    const conf = info({ submission_edit_deadline: "2026-09-15" });
+    expect(isArrivalDepartureTentative(conf, day("2026-08-16"))).toBe(false);
+    expect(isArrivalDepartureTentative(conf, day("2026-09-15"))).toBe(false);
+  });
+
+  test("exactly one month before the deadline is not tentative", () => {
+    const conf = info({ submission_edit_deadline: "2026-09-15" });
+    expect(isArrivalDepartureTentative(conf, day("2026-08-15"))).toBe(false);
+  });
+
+  test("an explicit deadline wins over date_start", () => {
+    const conf = info({
+      date_start: "2026-09-20",
+      submission_edit_deadline: "2026-08-31",
+    });
+    expect(isArrivalDepartureTentative(conf, day("2026-07-30"))).toBe(true);
+    expect(isArrivalDepartureTentative(conf, day("2026-07-31"))).toBe(false);
+  });
+
+  test("falls back to date_start when the deadline is missing or empty", () => {
+    const missing = info({ date_start: "2026-09-20" });
+    expect(isArrivalDepartureTentative(missing, day("2026-08-19"))).toBe(true);
+    expect(isArrivalDepartureTentative(missing, day("2026-08-20"))).toBe(false);
+    const empty = info({
+      date_start: "2026-09-20",
+      submission_edit_deadline: "",
+    });
+    expect(isArrivalDepartureTentative(empty, day("2026-08-19"))).toBe(true);
+    expect(isArrivalDepartureTentative(empty, day("2026-08-20"))).toBe(false);
+  });
+
+  test("the one-month boundary crosses the year turn", () => {
+    const conf = info({ date_start: "2027-01-15" });
+    expect(isArrivalDepartureTentative(conf, day("2026-12-14"))).toBe(true);
+    expect(isArrivalDepartureTentative(conf, day("2026-12-15"))).toBe(false);
+  });
+
+  test("a month-end cutoff clamps instead of overflowing (31 March -> 28 February)", () => {
+    const conf = info({ date_start: "2026-03-31" });
+    expect(isArrivalDepartureTentative(conf, day("2026-02-27"))).toBe(true);
+    expect(isArrivalDepartureTentative(conf, day("2026-02-28"))).toBe(false);
+    expect(isArrivalDepartureTentative(conf, day("2026-03-01"))).toBe(false);
+  });
+
+  test("a month-end cutoff clamps in a leap year (31 March -> 29 February)", () => {
+    const conf = info({ date_start: "2028-03-31" });
+    expect(isArrivalDepartureTentative(conf, day("2028-02-28"))).toBe(true);
+    expect(isArrivalDepartureTentative(conf, day("2028-02-29"))).toBe(false);
   });
 });

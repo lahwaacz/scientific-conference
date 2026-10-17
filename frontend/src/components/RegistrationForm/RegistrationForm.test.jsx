@@ -7,6 +7,8 @@ const { mockInfo, holder } = vi.hoisted(() => ({
   mockInfo: {
     registration_opening: null,
     registration_deadline: "2099-12-31",
+    submission_edit_deadline: null,
+    date_start: null,
     date_end: null,
     registration_fee_note: "Conference fee is free of charge",
   },
@@ -75,6 +77,8 @@ describe("RegistrationForm", () => {
     Object.assign(mockInfo, {
       registration_opening: null,
       registration_deadline: "2099-12-31",
+      submission_edit_deadline: null,
+      date_start: null,
       date_end: null,
       registration_fee_note: "Conference fee is free of charge",
     });
@@ -116,6 +120,23 @@ describe("RegistrationForm", () => {
       screen.getByPlaceholderText(/Brief description of your contribution/i)
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /submit/i })).toBeInTheDocument();
+  });
+
+  test("keeps the plain arrival and departure labels by default", () => {
+    render(<RegistrationForm />);
+
+    expect(screen.getByText("Arrival Date")).toBeInTheDocument();
+    expect(screen.getByText("Departure Date")).toBeInTheDocument();
+    expect(screen.queryByText(/tentative/i)).not.toBeInTheDocument();
+  });
+
+  test("marks the arrival and departure labels tentative well before the edit deadline", () => {
+    mockInfo.submission_edit_deadline = "2099-12-31";
+
+    render(<RegistrationForm />);
+
+    expect(screen.getByText("Arrival Date (tentative)")).toBeInTheDocument();
+    expect(screen.getByText("Departure Date (tentative)")).toBeInTheDocument();
   });
 
   test("renders no form or notice until the conference info arrives", () => {

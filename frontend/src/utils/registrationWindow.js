@@ -30,6 +30,21 @@ function dayBefore(dateStr) {
   ].join("-");
 }
 
+// One calendar month before a "YYYY-MM-DD" string, in the same format;
+// UTC-only arithmetic so no timezone can drift the calendar date. The
+// day is clamped to the previous month's length so a month-end cutoff
+// does not overflow into the same month (e.g. 31 March -> 28 February).
+function oneMonthBefore(dateStr) {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const lastDay = new Date(Date.UTC(y, m - 1, 0)).getUTCDate();
+  const date = new Date(Date.UTC(y, m - 2, Math.min(d, lastDay)));
+  return [
+    date.getUTCFullYear(),
+    String(date.getUTCMonth() + 1).padStart(2, "0"),
+    String(date.getUTCDate()).padStart(2, "0"),
+  ].join("-");
+}
+
 export function registrationWindowStatus(info, today = new Date()) {
   const todayStr = localDateStr(today);
 
@@ -76,4 +91,18 @@ export function submissionEditWindowStatus(info, today = new Date()) {
   const deadline = submissionEditEffectiveDeadline(info);
   if (deadline && localDateStr(today) > deadline) return "closed";
   return "open";
+}
+
+/**
+ * Whether the arrival/departure dates collected on the registration form
+ * are still tentative: today is strictly more than one calendar month
+ * before the effective cutoff — the explicit `submission_edit_deadline`
+ * when set, otherwise `date_start`. At exactly one month before the
+ * cutoff the dates already count as final. With neither set there is no
+ * cutoff, so the dates are never tentative.
+ */
+export function isArrivalDepartureTentative(info, today = new Date()) {
+  const cutoff = info?.submission_edit_deadline || info?.date_start;
+  if (!cutoff) return false;
+  return localDateStr(today) < oneMonthBefore(cutoff);
 }
