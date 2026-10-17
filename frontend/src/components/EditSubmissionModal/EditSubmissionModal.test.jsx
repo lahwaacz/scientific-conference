@@ -99,6 +99,53 @@ describe("EditSubmissionModal save paths", () => {
     expect(opts.body.get("name")).toBe("Jane Doe");
   });
 
+  test("prefills and saves additional info and the student flag over JSON", async () => {
+    fetchWithAuth.mockResolvedValueOnce({
+      ok: true,
+      json: async () => submission,
+    });
+    renderModal({ info: "Vegetarian", is_student: true });
+
+    const info = document.querySelector('textarea[name="info"]');
+    const student = document.querySelector('input[name="is_student"]');
+    expect(info).toHaveValue("Vegetarian");
+    expect(student).toBeChecked();
+
+    fireEvent.change(info, { target: { value: "Wheelchair access" } });
+    fireEvent.click(student);
+    fireEvent.submit(document.querySelector("form"));
+
+    await waitFor(() => expect(fetchWithAuth).toHaveBeenCalledTimes(1));
+    const [, opts] = fetchWithAuth.mock.calls[0];
+    expect(opts.method).toBe("PATCH");
+    expect(JSON.parse(opts.body)).toMatchObject({
+      info: "Wheelchair access",
+      is_student: false,
+    });
+  });
+
+  test("sends additional info and the student flag in the multipart body", async () => {
+    fetchWithAuth.mockResolvedValueOnce({
+      ok: true,
+      json: async () => submission,
+    });
+    renderModal({ info: "Vegetarian", is_student: true });
+
+    const file = new File(["fake"], "participant.png", {
+      type: "image/png",
+    });
+    fireEvent.change(document.querySelector('input[type="file"]'), {
+      target: { files: [file] },
+    });
+    fireEvent.submit(document.querySelector("form"));
+
+    await waitFor(() => expect(fetchWithAuth).toHaveBeenCalledTimes(1));
+    const [, opts] = fetchWithAuth.mock.calls[0];
+    expect(opts.method).toBe("PUT");
+    expect(opts.body.get("info")).toBe("Vegetarian");
+    expect(opts.body.get("is_student")).toBe("true");
+  });
+
   test("a failed save shows the error modal and never calls onSave", async () => {
     fetchWithAuth.mockResolvedValueOnce({
       ok: false,

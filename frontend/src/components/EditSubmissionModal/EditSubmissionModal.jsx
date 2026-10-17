@@ -18,6 +18,8 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
     additional_affiliations: "",
     arrival_date: "",
     departure_date: "",
+    is_student: false,
+    info: "",
     admin_notes: "",
   });
 
@@ -64,6 +66,8 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
         additional_affiliations: submission.additional_affiliations || "",
         arrival_date: submission.arrival_date || "",
         departure_date: submission.departure_date || "",
+        is_student: Boolean(submission.is_student),
+        info: submission.info || "",
         admin_notes: submission.admin_notes || "",
       });
 
@@ -87,10 +91,10 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
   }, [submission]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: type === "checkbox" ? checked : value,
     }));
 
     if (name === "abstract_text") {
@@ -445,6 +449,30 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
                 value={formData.departure_date}
                 onChange={handleChange}
                 required
+              />
+            </div>
+
+            <div className={styles.checkboxField}>
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  name="is_student"
+                  checked={formData.is_student}
+                  onChange={handleChange}
+                />
+                I am a student
+              </label>
+            </div>
+
+            <div className={styles.fieldFull}>
+              <label>Additional Information</label>
+              <textarea
+                name="info"
+                value={formData.info}
+                onChange={handleChange}
+                rows="4"
+                maxLength={1000}
+                placeholder="Dietary restrictions, accessibility needs, etc."
               />
             </div>
 

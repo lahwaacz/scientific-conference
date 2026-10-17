@@ -141,7 +141,7 @@ Each item displays:
 
 - Participant information.
 - Arrival and departure dates.
-- Optional comments for administrators.
+- Additional information provided by the participant (dietary restrictions, accessibility needs, etc.).
 
 The list is ordered alphabetically by participant name.
 
@@ -164,7 +164,7 @@ The **Edit Participants and Abstracts** section contains the complete informatio
 1. Open **Edit Participants and Abstracts**.
 2. Find the participant card.
 3. Select **Edit** on the participant card.
-4. Review or update the participant and abstract data.
+4. Review or update the participant and abstract data, including the student flag and the participant's additional information.
 5. Confirm the action in the modal window if prompted.
 
 
