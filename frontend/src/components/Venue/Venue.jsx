@@ -1,6 +1,7 @@
 import { buildMediaUrl } from "../../utils/api";
 import { useConferenceInfo } from "./../hooks/useConferenceInfo";
 import Loader from "../ui/Loader/Loader";
+import Markdown from "../ui/Markdown/Markdown";
 import Title from "../ui/Title/Title";
 import styles from "./Venue.module.css";
 
@@ -17,7 +18,10 @@ export default function Venue() {
         <div className={styles.fadeIn}>
           <div className={styles.container}>
             <div className={styles.content}>
-              <p className={styles.description}>{info?.venue_text || ""}</p>
+              <Markdown
+                text={info?.venue_text}
+                className={styles.description}
+              />
               {info?.venue_photo && (
                 <img
                   src={buildMediaUrl(info.venue_photo)}

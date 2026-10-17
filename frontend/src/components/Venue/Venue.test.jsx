@@ -62,4 +62,40 @@ describe("Venue", () => {
     const map = screen.getByTitle("Venue map");
     expectBefore(text, map);
   });
+
+  test("renders venue_text markdown as elements, not literal syntax", async () => {
+    globalThis.fetch.mockResolvedValue(
+      jsonOf({
+        venue_text:
+          "The winter school takes place in **Děčín**. See the [venue website](https://example.com).",
+        venue_photo: null,
+        venue_map_embed_url: null,
+      })
+    );
+
+    render(<Venue />);
+
+    const bold = await screen.findByText("Děčín");
+    expect(bold.tagName).toBe("STRONG");
+
+    const link = screen.getByRole("link", { name: "venue website" });
+    expect(link).toHaveAttribute("href", "https://example.com");
+
+    // Raw markdown syntax must not show up as literal characters.
+    expect(screen.queryByText(/\*\*/)).not.toBeInTheDocument();
+  });
+
+  test("renders nothing for an empty venue_text", async () => {
+    globalThis.fetch.mockResolvedValue(
+      jsonOf({ ...venuePayload, venue_text: "", venue_photo: null })
+    );
+
+    render(<Venue />);
+
+    const map = await screen.findByTitle("Venue map");
+    expect(map).toBeInTheDocument();
+    expect(
+      screen.queryByText("The winter school takes place in Děčín.")
+    ).not.toBeInTheDocument();
+  });
 });

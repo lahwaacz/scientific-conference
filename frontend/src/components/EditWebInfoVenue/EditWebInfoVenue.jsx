@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { buildMediaUrl, fetchWithAuth } from "../../utils/api";
 import Loader from "../ui/Loader/Loader";
+import Markdown from "../ui/Markdown/Markdown";
 import Title from "../ui/Title/Title";
 import styles from "./EditWebInfoVenue.module.css";
 
@@ -78,6 +79,9 @@ export default function EditWebInfoVenue() {
 
               <div className={styles.field}>
                 <label>Venue</label>
+                <small className={styles.hint}>
+                  Markdown formatting is supported
+                </small>
                 <textarea
                   name="venue_text"
                   rows={5}
@@ -151,9 +155,7 @@ export default function EditWebInfoVenue() {
             <section className={styles.section} style={{ marginTop: 40 }}>
               <h2 className={styles.sectionTitle}>Preview</h2>
 
-              {form.venue_text && (
-                <p className={styles.previewText}>{form.venue_text}</p>
-              )}
+              <Markdown text={form.venue_text} className={styles.previewText} />
 
               {venuePhotoFile ? (
                 <img
