@@ -9,7 +9,7 @@
 
 Web app for organizing scientific conferences (CTU FNSPE, Dept. of Software Engineering).
 Django 6.1 + DRF + SimpleJWT backend, React 19 (Vite 6) frontend, SQLite DB.
-Two independent deployables, coupled only via REST API. Deployed as Docker images under subpath `/conference-demo/`.
+Two independent deployables, coupled only via REST API. Deployed as Docker images under subpath `/conference/`.
 Multi-conference: a `Conference` model owns every domain row; a landing page at the root lists all conferences, each conference SPA lives at `/<slug>/`, and the API is scoped under `/api/<slug>/`.
 
 ## STRUCTURE
@@ -69,7 +69,7 @@ Codegraph covers Python only (JS unindexed); refs via pyright LSP.
 - Scoped API contract: only `/api/auth/login|refresh/` and `/api/conferences/` are global (registered in `backend/backend/urls.py` BEFORE the slug include); EVERYTHING else is served under `/api/<slug>/…` via `include("core.urls")` and must filter/assign by conference. New class views use `ConferenceScopedMixin`; new function views use `get_conference_or_404()`. Unknown slug → 404 for every scoped route (enforced in `initial()`).
 - `Conference` is the single config row: logistics, web texts and the accommodation description live on it. Read endpoints (`/api/conferences/`, `conference-info/`, `accommodation/`) must stay side-effect free — never reintroduce lazy `get_or_create` rows in views.
 - JWT is global across conferences: one staff account administers every conference. Intended; do not scope tokens per conference.
-- Subpath deployment is first-class on BOTH sides. Backend: `RELATIVE_URL_ROOT` env feeds URL prefixes, STATIC_URL, MEDIA_URL, cookie paths. Frontend: `HashRouter` + Vite `base` from `VITE_BASE_PATH` (default `./` in dev; `frontend/Dockerfile` ARG defaults to `/conference-demo/`, making built asset URLs absolute and depth-independent). The outer proxy must serve the SPA index.html for any non-file path under the root (esp. `/<root>/<slug>/`) that is not routed to the backend. Any new route/URL must honor all of this.
+- Subpath deployment is first-class on BOTH sides. Backend: `RELATIVE_URL_ROOT` env feeds URL prefixes, STATIC_URL, MEDIA_URL, cookie paths. Frontend: `HashRouter` + Vite `base` from `VITE_BASE_PATH` (default `./`, also the `frontend/Dockerfile` ARG default, so built asset URLs stay relative and depth-independent; the actual prefix comes from `BASE_PATH` at runtime). The outer proxy must serve the SPA index.html for any non-file path under the root (esp. `/<root>/<slug>/`) that is not routed to the backend. Any new route/URL must honor all of this.
 - Env-driven config only: backend `os.getenv(..., dev_default)`; no settings split, no django-environ.
 - Commits: Conventional Commits — `<type>(<optional scope>): <imperative subject>`; types: feat / fix / docs / style / refactor / test / chore / build / ci. One logical change per commit.
 - Commit message lines are ≤ 72 characters (subject and body, kernel-style); wrap body prose instead of emitting one long line.
@@ -79,7 +79,7 @@ Codegraph covers Python only (JS unindexed); refs via pyright LSP.
 
 ## ANTI-PATTERNS (THIS PROJECT)
 
-- NEVER switch `HashRouter` back to `BrowserRouter` or navigate with `window.location.href` — breaks `/conference-demo/` deployment (deliberate fix in ec29448). Use `useNavigate()` / `window.location.hash`.
+- NEVER switch `HashRouter` back to `BrowserRouter` or navigate with `window.location.href` — breaks the `/conference/` subpath deployment (deliberate fix in ec29448). Use `useNavigate()` / `window.location.hash`.
 - NEVER hardcode backend URLs in components — always `buildApiUrl`/`buildMediaUrl`/`fetchWithAuth` (fix 7209ddc swept many files for this).
 - NEVER "fix" the dual fetch-prefixing (`configuredFetch.js` global patch + `buildApiUrl`): they coexist only via `startsWith('http')` guards; touching one side risks double-prefixed URLs.
 - NEVER add an API endpoint outside the `/api/<slug>/` include without conference scoping — the route-table lock in `backend/core/test_conference_isolation.py` fails the suite for any unscoped route.
@@ -125,6 +125,6 @@ docker build frontend/                # -> ghcr.io/<repo>-frontend (universal im
 - `.env.production` is deliberately absent: the frontend image is universal and carries no deployment values. The Vite ARGs (`VITE_BACKEND_API_BASE_URL`, `VITE_BASE_PATH`, both defaulting to empty/relative) are only build-time fallbacks; deployments configure the running container with `BASE_PATH` (and optionally `API_BASE`), which the image entrypoint writes into `app-config.js` — the app reads that file before the Vite values (see `frontend/src/utils/appConfig.js`).
 - Backend prod image runs gunicorn (WSGI) behind the frontend nginx; it never serves static/media itself (the frontend nginx serves the shared volumes).
 - JWT: 1h access / 7d refresh — lifetimes were a deliberate fix (f064a9e); shortening logs admins out mid-edit. Tokens are global across conferences (no per-conference scoping).
-- The prod reverse proxy (mmg-webapps) must map any non-file path under `/conference-demo/` (especially `/conference-demo/<slug>/`) to the SPA index.html; `api/`, `admin/`, `media/` keep routing to the backend. Documented in README.md and docs/deployment.md.
-- Old bookmarks like `/conference-demo/#/program` now land on the landing page (path, not hash, selects the conference) — deliberate "always render landing"; users click through. An unknown slug (`/typo-in-the-slug/`) also renders the landing, with a static banner naming the slug (`useConferenceExists` tri-state: unknown/exists/absent; fetch failures fail open to the conference shell so a backend hiccup cannot blank the site).
-- Demo: `https://mmg-webapps.fjfi.cvut.cz/conference-demo/` (root = landing; `wsc2026` = seeded conference)
+- The prod reverse proxy (mmg-webapps) must map any non-file path under `/conference/` (especially `/conference/<slug>/`) to the SPA index.html; `api/`, `admin/`, `media/` keep routing to the backend. The legacy `/conference-demo/` prefix permanently redirects to `/conference/`. Documented in README.md and docs/deployment.md.
+- Old bookmarks like `/conference/#/program` (or the legacy `/conference-demo/#/program`) now land on the landing page (path, not hash, selects the conference) — deliberate "always render landing"; users click through. An unknown slug (`/typo-in-the-slug/`) also renders the landing, with a static banner naming the slug (`useConferenceExists` tri-state: unknown/exists/absent; fetch failures fail open to the conference shell so a backend hiccup cannot blank the site).
+- Deployed at `https://mmg-webapps.fjfi.cvut.cz/conference/` (root = landing; `wsc2026` = seeded conference)

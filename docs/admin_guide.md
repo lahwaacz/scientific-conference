@@ -53,7 +53,7 @@ Each conference website lives at its own address:
 <root>/<slug>/
 ```
 
-For example, with the demo root `https://mmg-webapps.fjfi.cvut.cz/conference-demo/`, the conference with the slug `wsc2026` is available at `https://mmg-webapps.fjfi.cvut.cz/conference-demo/wsc2026/`.
+For example, with the deployment root `https://mmg-webapps.fjfi.cvut.cz/conference/`, the conference with the slug `wsc2026` is available at `https://mmg-webapps.fjfi.cvut.cz/conference/wsc2026/`.
 
 Select a card on the landing page to open the corresponding conference website.
 
@@ -65,7 +65,7 @@ Administrator accounts are shared across conferences. A single staff account can
 
 Conferences are created in the Django administration. This is a separate interface from the admin panel described in this guide, and it requires a superuser account.
 
-1. Open the Django administration at `<root>admin/` (for the demo, `https://mmg-webapps.fjfi.cvut.cz/conference-demo/admin/`).
+1. Open the Django administration at `<root>admin/` (for example, `https://mmg-webapps.fjfi.cvut.cz/conference/admin/`).
 2. Log in with a superuser account.
 3. Select **Conferences**.
 4. Select **Add Conference**.

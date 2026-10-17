@@ -28,7 +28,7 @@ frontend/
 ├── .env.development         # VITE_BACKEND_API_BASE_URL=http://localhost:8000
 ├── nginx.conf               # NOT installed in image (Dockerfile COPY commented out)
 └── Dockerfile               # build ARGs for backend URL + base path, exported via ENV;
-                             # override with --build-arg (VITE_BASE_PATH defaults to /conference-demo/)
+                             # override with --build-arg (VITE_BASE_PATH defaults to ./)
 ```
 
 ## WHERE TO LOOK
@@ -73,6 +73,6 @@ Root AGENTS.md already bans BrowserRouter/`window.location.href`, hardcoded URLs
 - Landing cards must stay plain anchors (see conventions); a `<Link>` would produce `/#/wsc2026/`-style URLs that the slug parser ignores.
 - `reloadAppAtHomePage` (api.js) pokes `window.location.hash` precisely because of HashRouter — do not "modernize" it.
 - Symptom of a broken prefix guard: `http://hosthttp://host/api/...` — check `startsWith('http')` guards in configuredFetch.js/api.js first.
-- `buildMediaUrl` strips a leading `conference-demo/` from media paths (api.js). Deployment-specific hack; do not remove.
+- `buildMediaUrl` strips the configured API base path (derived from `API_BASE_URL`, e.g. `conference/`) from backend media paths before joining (api.js) — the backend builds them from `MEDIA_URL`, so they already carry `RELATIVE_URL_ROOT` and would otherwise double the prefix. Never hardcode a deployment name there; the prefix changes with `BASE_PATH`/`API_BASE`.
 - `isRefreshing`/`failedQueue` module-level singletons in api.js are a deliberate 401 refresh queue; naive cleanup breaks admin sessions mid-edit.
 - Tests run via `CI=true npm test` (Vitest) across the Vitest suites, including `conferenceSlug.test.js`, `api.test.js` (allowlist scoping), `programRefresh.test.js` (slug key), `Landing.test.jsx` (grouping + not-found banner), `Header.test.jsx` (nav emptiness gating), `AdminPanel.test.jsx` (conference cue), `EditWebInfoHome.test.jsx` (logistics + FormData PATCH, year never sent, photos only when selected, People role-checkboxes → repeated `roles` FormData), `OrganisingCommittee.test.jsx` (role-filter fetch + payload tolerance), `HomeCard.test.jsx` (mailto link presence/absence), and `Venue.test.jsx` / `EditWebInfoVenue.test.jsx` (venue photo render + multipart upload). Mocking pattern: vi.mock on `utils/api` (fetchWithAuth) + globalThis.fetch; localStorage/location mocked inline; jsdom environment + jest-dom matchers wired in vite.config.mjs test.setupFiles. Tests keep using `src/testUtils/reactRouterDomStub.jsx` via the vitest `react-router-dom` test alias (not real router rendering) — extend the stub when a test needs more router surface. When a test needs a form submit on an uncontrolled form, dispatch `fireEvent.submit`, not a button click — jsdom blocks native HTML5 validation before React's custom validators run. Tests that depend on the slug re-init the module (`initConferenceSlug()`) after setting `window.location.pathname`.

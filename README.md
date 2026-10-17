@@ -55,15 +55,15 @@ The REST API follows the same split:
 - `/api/auth/login/` and `/api/auth/refresh/` — global JWT authentication (one staff account administers every conference).
 - `/api/<slug>/...` — everything else, scoped to one conference. An unknown slug returns 404.
 
-In the demo deployment, all of these sit under the `/conference-demo/` prefix (for example `/conference-demo/wsc2026/`).
+In the deployment, all of these sit under the `/conference/` prefix (for example `/conference/wsc2026/`). The legacy `/conference-demo/` prefix permanently redirects there.
 
-## Demo
+## Deployment
 
-Demo URL: `https://mmg-webapps.fjfi.cvut.cz/conference-demo/`
+Deployment URL: `https://mmg-webapps.fjfi.cvut.cz/conference/`
 
-The demo root shows the landing page. Each conference is available at its own address under the root, for example `https://mmg-webapps.fjfi.cvut.cz/conference-demo/wsc2026/`.
+The deployment root shows the landing page. Each conference is available at its own address under the root, for example `https://mmg-webapps.fjfi.cvut.cz/conference/wsc2026/`.
 
-The frontend production image is universal: it contains no deployment-specific values and is configured at startup with the `BASE_PATH` environment variable (the URL prefix it is served under, for example `/conference-demo`). The reverse proxy in front of the deployment must serve the frontend entry page for every path under the root that is not a real file and not routed to the backend (`api/`, `admin/`, `media/`), so that direct links like `/conference-demo/<slug>/` work. See [docs/deployment.md](docs/deployment.md) for details.
+The frontend production image is universal: it contains no deployment-specific values and is configured at startup with the `BASE_PATH` environment variable (the URL prefix it is served under, for example `/conference`). The reverse proxy in front of the deployment must serve the frontend entry page for every path under the root that is not a real file and not routed to the backend (`api/`, `admin/`, `media/`), so that direct links like `/conference/<slug>/` work. See [docs/deployment.md](docs/deployment.md) for details.
 
 
 ## Local Setup
