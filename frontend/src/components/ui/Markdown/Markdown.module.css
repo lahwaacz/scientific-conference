@@ -28,6 +28,8 @@
 
 .markdown a {
   color: var(--hover-color);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
 }
 
 .markdown > :first-child {
