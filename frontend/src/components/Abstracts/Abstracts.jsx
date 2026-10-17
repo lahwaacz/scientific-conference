@@ -30,7 +30,9 @@ export default function Abstracts() {
   }, []);
 
   useEffect(() => {
-    if (loading) return;
+    // Also wait for programReady: the card shrinks when the program is
+    // confirmed empty, so scrolling earlier would land off-target.
+    if (loading || programReady === null) return;
     const params = new URLSearchParams(location.search);
     const abstractId = params.get("abstract");
 
@@ -40,7 +42,7 @@ export default function Abstracts() {
         if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
       }, 300);
     }
-  }, [location, abstracts]);
+  }, [location, abstracts, loading, programReady]);
 
   return (
     <section className={styles.abstractsSection}>
