@@ -183,6 +183,9 @@ class AccommodationInfo(models.Model):
     class Meta:
         verbose_name = "Accommodation Info"
 
+    def __str__(self):
+        return self.conference.slug
+
 
 class AccommodationOption(models.Model):
     conference = models.ForeignKey(
@@ -199,6 +202,9 @@ class AccommodationOption(models.Model):
 
     class Meta:
         ordering = ["order"]
+
+    def __str__(self):
+        return self.name
 
 
 def generate_tracking_token():
@@ -416,6 +422,9 @@ class HikingRoute(models.Model):
         ordering = ["name"]
         verbose_name = "Hiking Route"
 
+    def __str__(self):
+        return self.name
+
 
 class HikingStop(models.Model):
     conference = models.ForeignKey(
@@ -432,6 +441,9 @@ class HikingStop(models.Model):
     class Meta:
         ordering = ["order"]
         verbose_name = "Hiking Stop"
+
+    def __str__(self):
+        return self.name
 
 
 class ConferenceInfo(models.Model):
@@ -488,6 +500,11 @@ class ConferenceInfo(models.Model):
 
     class Meta:
         verbose_name = "Conference Info"
+
+    def __str__(self):
+        if self.title:
+            return f"{self.conference.slug} | {self.title}"
+        return self.conference.slug
 
     def clean(self):
         super().clean()

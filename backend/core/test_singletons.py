@@ -272,6 +272,25 @@ class TestAccommodationInfoSingleton(InfoTestCase):
         self.assertEqual(payload_b["description"], "")
 
 
+class TestInfoAdminRepr(InfoTestCase):
+    def test_conference_info_without_title_renders_slug(self):
+        info = ConferenceInfo.objects.create(conference=self.conf_a)
+
+        self.assertEqual(str(info), SLUG_A)
+
+    def test_conference_info_with_title_renders_slug_and_title(self):
+        info = ConferenceInfo.objects.create(
+            conference=self.conf_a, title="Winter School 2026"
+        )
+
+        self.assertEqual(str(info), f"{SLUG_A} | Winter School 2026")
+
+    def test_accommodation_info_renders_conference_slug(self):
+        info = AccommodationInfo.objects.create(conference=self.conf_b)
+
+        self.assertEqual(str(info), SLUG_B)
+
+
 class TestGlobalEndpoints(TestCase):
     def setUp(self):
         self.client = APIClient()

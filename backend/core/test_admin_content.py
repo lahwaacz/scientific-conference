@@ -172,6 +172,30 @@ class TestHikingAdmin(AdminTestCase):
         self.assertEqual(response.status_code, 500)
 
 
+class TestContentModelRepr(TestCase):
+    def test_accommodation_option_renders_name(self):
+        info = AccommodationInfo.objects.create(conference=wsc_conference())
+        option = AccommodationOption.objects.create(
+            conference=info.conference, info=info, name="Hotel A"
+        )
+
+        self.assertEqual(str(option), "Hotel A")
+
+    def test_hiking_route_renders_name(self):
+        route = HikingRoute.objects.create(conference=wsc_conference(), name="Alpenweg")
+
+        self.assertEqual(str(route), "Alpenweg")
+
+    def test_hiking_stop_renders_name(self):
+        conference = wsc_conference()
+        route = HikingRoute.objects.create(conference=conference, name="Alpenweg")
+        stop = HikingStop.objects.create(
+            conference=conference, route=route, name="Stop 1"
+        )
+
+        self.assertEqual(str(stop), "Stop 1")
+
+
 class TestPeoplePermissions(AdminTestCase):
     def setUp(self):
         super().setUp()

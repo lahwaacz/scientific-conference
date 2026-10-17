@@ -408,6 +408,7 @@ class AccommodationInfoAdmin(admin.ModelAdmin):
 class AccommodationOptionAdmin(admin.ModelAdmin):
     list_display = ("conference", "name", "info", "order")
     list_filter = ("conference",)
+    list_select_related = ("conference", "info__conference")
 
 
 class HikingStopInline(admin.TabularInline):
