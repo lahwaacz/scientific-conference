@@ -181,6 +181,38 @@ class TestConferenceAdminPolicy(TestCase):
     def test_bulk_actions_are_disabled(self):
         self.assertIsNone(self.model_admin().actions)
 
+    def test_change_form_exposes_the_merged_conference_config(self):
+        conference = Conference.objects.create(slug="config-form")
+        self.client.force_login(self.superuser)
+
+        response = self.client.get(
+            reverse("admin:core_conference_change", args=[conference.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        for field in (
+            "title",
+            "date_start",
+            "registration_deadline",
+            "program_text",
+            "accommodation_description",
+        ):
+            self.assertContains(response, f'name="{field}"')
+
+    def test_admin_fieldsets_cover_every_editable_conference_field(self):
+        fieldsets = self.model_admin().fieldsets or ()
+        fields = [
+            field for _section, options in fieldsets for field in options["fields"]
+        ]
+        editable = [
+            field.name
+            for field in Conference._meta.fields
+            if field.editable and not field.auto_created
+        ]
+
+        self.assertEqual(set(fields), set(editable))
+        self.assertEqual(len(fields), len(set(fields)))
+
     def test_delete_view_deletes_an_unreferenced_conference(self):
         conference = Conference.objects.create(slug="deletable-conference")
         self.client.force_login(self.superuser)

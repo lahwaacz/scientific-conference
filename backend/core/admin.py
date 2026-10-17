@@ -54,11 +54,66 @@ class SessionInline(admin.TabularInline):
 
 @admin.register(Conference)
 class ConferenceAdmin(admin.ModelAdmin):
-    # Conferences are managed ONLY here. Deleting one cascades to every
-    # domain row, so it is offered only while nothing references it; only
-    # the slug is editable here (logistics and web content are edited via
-    # the conference's SPA admin).
-    fields = ("slug",)
+    # Conferences are created here and their configuration lives on this
+    # row; the SPA admin edits the same fields. Deleting one cascades to
+    # every domain row, so it is offered only while nothing references it.
+    fieldsets = (
+        (None, {"fields": ("slug",)}),
+        (
+            "Logistics",
+            {
+                "fields": (
+                    "title",
+                    "date_start",
+                    "date_end",
+                    "location",
+                    "card_photo",
+                    "hero_photo",
+                    "venue_photo",
+                    "short_description",
+                    "badge_title",
+                )
+            },
+        ),
+        (
+            "Web content",
+            {
+                "fields": (
+                    "description",
+                    "website_url",
+                    "poster_url",
+                    "info_desk_email",
+                    "copyright_text",
+                    "grant_text",
+                )
+            },
+        ),
+        (
+            "Registration",
+            {
+                "fields": (
+                    "registration_instructions",
+                    "registration_opening",
+                    "registration_deadline",
+                    "submission_edit_deadline",
+                    "registration_fee_note",
+                )
+            },
+        ),
+        (
+            "Venue",
+            {
+                "fields": (
+                    "venue_text",
+                    "footer_venue_text",
+                    "conference_office_text",
+                    "venue_map_embed_url",
+                )
+            },
+        ),
+        ("Program", {"fields": ("program_text",)}),
+        ("Accommodation", {"fields": ("accommodation_description",)}),
+    )
     list_display = ("slug",)
     search_fields = ("slug",)
     actions = None
