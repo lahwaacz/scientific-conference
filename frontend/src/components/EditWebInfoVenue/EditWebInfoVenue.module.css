@@ -156,9 +156,10 @@
 
 .previewText {
   font-family: var(--font-main);
-  font-size: 16px;
+  font-size: clamp(14px, 1.8vw, 18px);
   color: var(--text-color);
-  line-height: 1.6;
+  letter-spacing: 0.5px;
+  line-height: 1.7;
 }
 
 .mapPreview {
