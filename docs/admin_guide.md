@@ -199,6 +199,8 @@ After publication:
 
 After publication, the presentation time is still not set. To assign the time, continue to **Edit Program**.
 
+Each abstract shown on the public abstracts page carries a **TO THE PROGRAM** button that jumps to the corresponding talk in the program. This button is hidden while the program is not ready (the conference has no scheduled days yet) and appears once at least one conference day has been created.
+
 ### Edit an Already Published Submission
 
 Published submissions can still be edited.
@@ -483,9 +485,11 @@ The registration window has two optional dates. The **Registration Opening Date*
 
 The **Submission Editing Deadline** is an independent optional date that controls how long participants can edit their own submission through the personal tracking link (see **Participant Tracking Links and Self-Service Edits** in **Edit Participants and Abstracts**). Participants can keep editing until this date even after registration has closed. The deadline must fall on or after the registration deadline and on or before the conference end date (when those dates are set), because the conference end date always ends editing — even a later deadline cannot keep editing open past the end of the conference. When the field is empty, editing closes the day before the conference starts, based on the conference start date; if no start date is set either, editing stays open.
 
+While the current date is more than one month before the **Submission Editing Deadline** — or, when no deadline is set, more than one month before the conference start date — the public registration form labels the arrival and departure date fields as **Arrival Date (tentative)** and **Departure Date (tentative)**. Within the final month before that reference date the labels drop the "(tentative)" suffix.
+
 ### Venue Subsection
 
-Use the **Venue** subsection to update the venue description, the optional venue photo, and the embedded map. The venue photo is shown on the public Venue page between the description and the map.
+Use the **Venue** subsection to update the venue description, the optional venue photo, and the embedded map. The venue description supports Markdown formatting (headings, lists, emphasis, links); it is rendered as formatted text on the public Venue page and in the editor's live preview. This description is independent of the footer's **Venue Text** (see **Footer Subsection**), which is a separate plain-text field. The venue photo is shown on the public Venue page between the description and the map.
 
 1. Open the **Venue** subsection.
 2. Modify the relevant input fields.
@@ -507,6 +511,8 @@ Use the **Accommodation** subsection to update the description shown at the top 
 
 #### Change the Accommodation Description
 
+The description supports Markdown formatting (headings, lists, emphasis, links) and is rendered as formatted text at the top of the public accommodation page.
+
 1. Edit the input field in the accommodation subsection.
 2. Select **Save**.
 
@@ -519,7 +525,7 @@ Each accommodation option card allows you to:
 - Change the display order using the **Order** input.
 - Delete the option using the cross icon.
 
-The option with the lowest order number is shown first on the public website.
+The option with the lowest order number is shown first on the public website. Option descriptions support Markdown formatting (headings, lists, emphasis, links).
 
 #### Add a New Accommodation Option
 
@@ -536,6 +542,8 @@ After all changes, select **Save** at the end of the card.
 The **Hiking** subsection is organized into routes, and each route contains several stops.
 
 #### Edit a Route
+
+The route's **Way Description** supports Markdown formatting (headings, lists, emphasis, links).
 
 1. Open the required route card.
 2. Change the corresponding input fields.
@@ -566,7 +574,7 @@ Available actions:
 - Delete the stop using the cross icon.
 - Add a new stop using **Add Stop**.
 
-The stop with the lowest order number is shown first.
+The stop with the lowest order number is shown first. Stop descriptions support Markdown formatting (headings, lists, emphasis, links).
 
 After making changes to stops, select **Save** at the end of the card.
 
@@ -582,7 +590,7 @@ Use the **Footer** subsection to update the information shown in the footer of t
 2. Modify the required input fields.
 3. Select **Save** at the end of the card.
 
-The footer is displayed at the bottom of every public page.
+The footer is displayed at the bottom of every public page. The footer's **Venue Text** is a separate field from the Venue page description and is shown as plain text (no Markdown); the two fields can hold different content.
 
 ### Generate Documents
 
