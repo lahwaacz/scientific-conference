@@ -17,7 +17,7 @@
 }
 
 .description {
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-size: clamp(14px, 1.8vw, 18px);
   color: var(--text-color);
   width: 100%;

@@ -23,9 +23,9 @@
 }
 
 .summary {
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-size: 17px;
-  color: var(--font--main);
+  color: var(--text-color);
   margin-bottom: 20px;
   font-weight: 400;
 }
@@ -37,7 +37,7 @@
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-size: 14px;
 }
 

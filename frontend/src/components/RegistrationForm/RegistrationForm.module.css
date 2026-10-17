@@ -18,7 +18,7 @@
 }
 
 .instructions {
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-size: clamp(14px, 1.8vw, 18px);
   font-weight: 400;
   margin-bottom: 15px;
@@ -26,7 +26,7 @@
 }
 
 .deadline {
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-size: clamp(14px, 1.8vw, 18px);
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -34,7 +34,7 @@
 }
 
 .closedNotice {
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-size: clamp(14px, 1.8vw, 18px);
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -84,21 +84,21 @@
 }
 
 .successTitle {
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-size: clamp(20px, 3vw, 28px);
   font-weight: 600;
   letter-spacing: 0.5px;
 }
 
 .successLabel {
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-size: clamp(14px, 1.8vw, 18px);
   font-weight: 400;
   letter-spacing: 0.5px;
 }
 
 .successReference {
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-size: clamp(24px, 4vw, 36px);
   font-weight: 700;
   letter-spacing: 1px;
@@ -140,7 +140,7 @@
 }
 
 .warning {
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-size: clamp(14px, 1.8vw, 18px);
   font-weight: 600;
   letter-spacing: 0.5px;

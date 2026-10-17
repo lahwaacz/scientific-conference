@@ -39,14 +39,14 @@
 .description {
   color: #666;
   margin-bottom: 20px;
-  font-family: var(--font--main);
+  font-family: var(--font-main);
 }
 
 .noData {
   text-align: center;
   color: #999;
   padding: 40px;
-  font-family: var(--font--main);
+  font-family: var(--font-main);
 }
 
 .talksGrid {
@@ -75,7 +75,7 @@
 .talkHeader h3 {
   margin: 0;
   font-size: 18px;
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   flex: 1;
 }
 
@@ -87,7 +87,7 @@
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
-  font-family: var(--font--main);
+  font-family: var(--font-main);
 }
 
 .talkBody {
@@ -96,7 +96,7 @@
 
 .talkBody p {
   margin: 8px 0;
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-size: 14px;
 }
 
@@ -116,7 +116,7 @@
   color: white;
   border: none;
   cursor: pointer;
-  font-family: var(--font--title);
+  font-family: var(--font-title);
   font-weight: 400;
   text-transform: uppercase;
   transition: background 0.2s;
@@ -136,7 +136,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-size: 14px;
   font-weight: 600;
   color: #555;
@@ -147,7 +147,7 @@
   padding: 10px;
   border: 1px solid #e0e0e0;
   border-radius: 6px;
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-size: 14px;
 }
 
@@ -170,7 +170,7 @@
   color: white;
   border: none;
   cursor: pointer;
-  font-family: var(--font--title);
+  font-family: var(--font-title);
   font-weight: 400;
   text-transform: uppercase;
 }
@@ -216,7 +216,7 @@
 
 .daySchedule h3 {
   margin: 0 0 16px 0;
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   color: #333;
 }
 
@@ -236,7 +236,7 @@
 }
 
 .time {
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-size: 14px;
   font-weight: 600;
   color: #666;
@@ -244,7 +244,7 @@
 }
 
 .itemTitle {
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-size: 14px;
   color: #333;
 }
@@ -253,7 +253,7 @@
   text-align: center;
   color: #999;
   padding: 20px;
-  font-family: var(--font--main);
+  font-family: var(--font-main);
 }
 
 @media (max-width: 768px) {
@@ -322,7 +322,7 @@
   color: white;
   border: none;
   cursor: pointer;
-  font-family: var(--font--title);
+  font-family: var(--font-title);
   font-weight: 400;
   text-transform: uppercase;
 }
@@ -345,14 +345,14 @@
   padding: 10px;
   border: 1px solid #e0e0e0;
   border-radius: 6px;
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-size: 14px;
 }
 .breakForm label {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-size: 14px;
   font-weight: 600;
   color: #555;
@@ -428,7 +428,7 @@
 }
 
 .speakerName {
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-size: 14px;
   color: #333;
   font-weight: 500;
@@ -450,7 +450,7 @@
   color: white;
   border: none;
   cursor: pointer;
-  font-family: var(--font--title);
+  font-family: var(--font-title);
   text-transform: uppercase;
   transition: background 0.2s;
   margin-bottom: 20px;
@@ -474,7 +474,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-size: 14px;
   font-weight: 600;
   color: #555;
@@ -483,7 +483,7 @@
 .dayForm input[type="date"] {
   padding: 10px;
   border: 1px solid #e0e0e0;
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-size: 14px;
 }
 
@@ -510,7 +510,7 @@
 }
 
 .editLabel {
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-size: 14px;
   color: #555;
   margin-bottom: 4px;

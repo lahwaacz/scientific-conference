@@ -17,7 +17,7 @@
 
 .authors {
   font-size: clamp(15px, 1.8vw, 18px);
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-weight: 600;
   margin-bottom: 10px;
 }
@@ -30,7 +30,7 @@
 }
 
 .abstractText {
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-size: clamp(13px, 1.5vw, 15px);
   color: #333;
   text-align: left;

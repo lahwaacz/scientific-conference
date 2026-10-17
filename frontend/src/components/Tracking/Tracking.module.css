@@ -26,7 +26,7 @@
 }
 
 .reference {
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-size: clamp(24px, 4vw, 36px);
   font-weight: 700;
   letter-spacing: 1px;
@@ -51,7 +51,7 @@
 }
 
 .timestamp {
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-size: clamp(13px, 1.6vw, 16px);
   font-weight: 400;
   letter-spacing: 0.5px;
@@ -70,14 +70,14 @@
 }
 
 .fieldLabel {
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-size: clamp(13px, 1.6vw, 16px);
   font-weight: 600;
   letter-spacing: 0.5px;
 }
 
 .fieldValue {
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-size: clamp(14px, 1.8vw, 18px);
   font-weight: 400;
   letter-spacing: 0.5px;
@@ -160,7 +160,7 @@
 }
 
 .approvedNotice {
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-size: clamp(14px, 1.8vw, 17px);
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -170,7 +170,7 @@
 }
 
 .lockedNotice {
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-size: clamp(14px, 1.8vw, 18px);
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -178,7 +178,7 @@
 }
 
 .savedNotice {
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-size: clamp(14px, 1.8vw, 18px);
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -189,7 +189,7 @@
 }
 
 .errorText {
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-size: clamp(13px, 1.6vw, 16px);
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -197,7 +197,7 @@
 }
 
 .notFoundText {
-  font-family: var(--font--main);
+  font-family: var(--font-main);
   font-size: clamp(14px, 1.8vw, 18px);
   font-weight: 600;
   letter-spacing: 0.5px;
