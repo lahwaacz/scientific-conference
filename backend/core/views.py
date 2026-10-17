@@ -24,11 +24,9 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from .models import (
     Abstract,
-    AccommodationInfo,
     AccommodationOption,
     Conference,
     ConferenceDay,
-    ConferenceInfo,
     HikingRoute,
     HikingStop,
     Participant,
@@ -103,34 +101,26 @@ class ConferenceListView(generics.ListAPIView):
     (date_start asc) -> future (date_start asc, None dates last) ->
     past (date_end desc). Each card carries `status`; the frontend
     groups by it. No pagination (project convention).
-
-    Cards are serialized from the per-conference ConferenceInfo row
-    (auto-created here), which owns the logistics fields.
     """
 
     serializer_class = ConferenceCardSerializer
     queryset = Conference.objects.all()
 
     def list(self, request, *args, **kwargs):
-        # Not self.get_queryset(): that is typed off the ConferenceInfo
-        # serializer while the loop needs bare Conference rows.
-        infos = [
-            ConferenceInfo.objects.get_or_create(conference=c)[0]
-            for c in Conference.objects.all()
-        ]
+        conferences = list(Conference.objects.all())
         # None-guarded sort keys: a bare date key would TypeError on
-        # undated rows ("past" always has both dates, per ConferenceInfo.status).
+        # undated rows ("past" always has both dates, per Conference.status).
         running = sorted(
-            [i for i in infos if i.status == "running"],
-            key=lambda i: (i.date_start is None, i.date_start),
+            [c for c in conferences if c.status == "running"],
+            key=lambda c: (c.date_start is None, c.date_start),
         )
         future = sorted(
-            [i for i in infos if i.status == "future"],
-            key=lambda i: (i.date_start is None, i.date_start),
+            [c for c in conferences if c.status == "future"],
+            key=lambda c: (c.date_start is None, c.date_start),
         )
         past = sorted(
-            [i for i in infos if i.status == "past"],
-            key=lambda i: i.date_end,
+            [c for c in conferences if c.status == "past"],
+            key=lambda c: c.date_end,
             reverse=True,
         )
         serializer = self.get_serializer(running + future + past, many=True)
@@ -325,8 +315,7 @@ def generate_program_pdf(request, conference_slug):
 
 class AccommodationInfoView(ConferenceScopedMixin, APIView):
     def get(self, request, *args, **kwargs):
-        obj, _ = AccommodationInfo.objects.get_or_create(conference=self.conference)
-        serializer = AccommodationInfoSerializer(obj)
+        serializer = AccommodationInfoSerializer(self.conference)
         return Response(serializer.data)
 
 
@@ -340,8 +329,9 @@ class AccommodationInfoEditView(ConferenceScopedMixin, APIView):
     parser_classes = [JSONParser]
 
     def patch(self, request, *args, **kwargs):
-        obj, _ = AccommodationInfo.objects.get_or_create(conference=self.conference)
-        serializer = AccommodationInfoSerializer(obj, data=request.data, partial=True)
+        serializer = AccommodationInfoSerializer(
+            self.conference, data=request.data, partial=True
+        )
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
@@ -353,10 +343,9 @@ class AccommodationOptionEditView(ConferenceScopedMixin, APIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def post(self, request, *args, **kwargs):
-        info, _ = AccommodationInfo.objects.get_or_create(conference=self.conference)
         serializer = AccommodationOptionWriteSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(info=info, conference=self.conference)
+            serializer.save(conference=self.conference)
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
 
@@ -388,7 +377,6 @@ def generate_badges_pdf(request, conference_slug):
         return HttpResponse(status=403)
 
     conference = get_conference_or_404(conference_slug)
-    info, _ = ConferenceInfo.objects.get_or_create(conference=conference)
 
     font_path = os.path.join(os.path.dirname(__file__), "fonts", "DejaVuSans.ttf")
     font_bold_path = os.path.join(
@@ -460,7 +448,7 @@ def generate_badges_pdf(request, conference_slug):
                 c.drawCentredString(
                     x + badge_w / 2,
                     y + badge_h - 6 * mm,
-                    info.badge_title or info.title,
+                    conference.badge_title or conference.title,
                 )
 
                 # ── Name ──
@@ -493,9 +481,11 @@ def generate_badges_pdf(request, conference_slug):
                     dep = sub.departure_date
                     arrival_str = f"{arr.day} {MONTHS[arr.month - 1]}"
                     departure_str = f"{dep.day} {MONTHS[dep.month - 1]} {dep.year}"
-                    footer_text = f"{arrival_str} – {departure_str}  |  {info.location}"
+                    footer_text = (
+                        f"{arrival_str} – {departure_str}  |  {conference.location}"
+                    )
                 else:
-                    footer_text = info.location
+                    footer_text = conference.location
                 c.drawCentredString(x + badge_w / 2, y + 2.8 * mm, footer_text)
 
                 c.setStrokeColor(colors.HexColor("#aaaaaa"))
@@ -610,8 +600,7 @@ class SubmissionCreateView(ConferenceScopedMixin, generics.CreateAPIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def perform_create(self, serializer):
-        info, _ = ConferenceInfo.objects.get_or_create(conference=self.conference)
-        if not info.is_registration_open():
+        if not self.conference.is_registration_open():
             raise ValidationError(
                 {"detail": "Registration is not open for this conference."}
             )
@@ -639,8 +628,7 @@ class SubmissionTrackingView(ConferenceScopedMixin, generics.RetrieveUpdateAPIVi
         return ParticipantTrackingSerializer
 
     def patch(self, request, *args, **kwargs):
-        info, _ = ConferenceInfo.objects.get_or_create(conference=self.conference)
-        if not info.is_submission_edit_open():
+        if not self.conference.is_submission_edit_open():
             raise ValidationError(
                 {"detail": "Editing submissions is not open for this conference."}
             )
@@ -994,8 +982,7 @@ class HikingStopEditView(ConferenceScopedMixin, APIView):
 
 class ConferenceInfoView(ConferenceScopedMixin, APIView):
     def get(self, request, *args, **kwargs):
-        obj, _ = ConferenceInfo.objects.get_or_create(conference=self.conference)
-        return Response(ConferenceInfoSerializer(obj).data)
+        return Response(ConferenceInfoSerializer(self.conference).data)
 
 
 class ConferenceInfoEditView(ConferenceScopedMixin, APIView):
@@ -1006,11 +993,12 @@ class ConferenceInfoEditView(ConferenceScopedMixin, APIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def patch(self, request, *args, **kwargs):
-        obj, _ = ConferenceInfo.objects.get_or_create(conference=self.conference)
-        serializer = ConferenceInfoWriteSerializer(obj, data=request.data, partial=True)
+        serializer = ConferenceInfoWriteSerializer(
+            self.conference, data=request.data, partial=True
+        )
         if serializer.is_valid():
             serializer.save()
-            return Response(ConferenceInfoSerializer(obj).data)
+            return Response(ConferenceInfoSerializer(self.conference).data)
         return Response(serializer.errors, status=400)
 
 

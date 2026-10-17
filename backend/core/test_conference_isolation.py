@@ -20,11 +20,9 @@ from . import urls as core_urls
 from .conftest import api
 from .models import (
     Abstract,
-    AccommodationInfo,
     AccommodationOption,
     Conference,
     ConferenceDay,
-    ConferenceInfo,
     HikingRoute,
     HikingStop,
     Participant,
@@ -43,31 +41,27 @@ UNKNOWN = "zz-no-such-conference"
 
 
 def alpha_conference():
-    conference = Conference.objects.get_or_create(slug=SLUG_A)[0]
-    ConferenceInfo.objects.get_or_create(
-        conference=conference,
+    return Conference.objects.get_or_create(
+        slug=SLUG_A,
         defaults={
             "title": f"Alpha {MARK_A} Conference",
             "date_start": date(2026, 9, 1),
             "date_end": date(2026, 9, 3),
             "location": f"City {MARK_A}",
         },
-    )
-    return conference
+    )[0]
 
 
 def beta_conference():
-    conference = Conference.objects.get_or_create(slug=SLUG_B)[0]
-    ConferenceInfo.objects.get_or_create(
-        conference=conference,
+    return Conference.objects.get_or_create(
+        slug=SLUG_B,
         defaults={
             "title": f"Beta {MARK_B} Conference",
             "date_start": date(2027, 3, 1),
             "date_end": date(2027, 3, 3),
             "location": f"City {MARK_B}",
         },
-    )
-    return conference
+    )[0]
 
 
 def make_conference_data(conference, mark):
@@ -118,11 +112,10 @@ def make_conference_data(conference, mark):
     )
     person = Person.objects.create(conference=conference, name=f"People {mark}")
     person.roles.add(organizer_role, committee_role)
-    acco_info = AccommodationInfo.objects.create(
-        conference=conference, description=f"Stay {mark}"
-    )
+    conference.accommodation_description = f"Stay {mark}"
+    conference.save(update_fields=["accommodation_description"])
     acco_option = AccommodationOption.objects.create(
-        conference=conference, info=acco_info, name=f"Hotel {mark}", order=1
+        conference=conference, name=f"Hotel {mark}", order=1
     )
     route = HikingRoute.objects.create(conference=conference, name=f"Route {mark}")
     stop = HikingStop.objects.create(
@@ -148,7 +141,6 @@ def make_conference_data(conference, mark):
         talk=talk,
         unscheduled_talk=unscheduled_talk,
         person=person,
-        acco_info=acco_info,
         acco_option=acco_option,
         route=route,
         stop=stop,

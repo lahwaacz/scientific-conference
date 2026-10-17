@@ -1,9 +1,8 @@
-"""Per-conference singleton rows and the global (unscoped) endpoints.
+"""Conference config endpoints and the global (unscoped) routes.
 
-Pins the get_or_create-per-conference contract for ConferenceInfo and
-AccommodationInfo, the conference-info read payload (web + logistics +
-derived year), the pinned write serializer, and the slug-independent
-global routes (auth, list).
+Pins the conference-info read payload (web + logistics + derived year),
+the write serializer, the accommodation projection, the no-writes-on-GET
+contract, and the slug-independent global routes (auth, list).
 """
 
 from datetime import date
@@ -14,7 +13,7 @@ from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .conftest import api
-from .models import AccommodationInfo, Conference, ConferenceInfo
+from .models import AccommodationOption, Conference
 
 SLUG_A = "wsc2026-test"
 SLUG_B = "wsc2027-test"
@@ -77,37 +76,18 @@ class InfoTestCase(TestCase):
         return client
 
 
-class TestConferenceInfoSingleton(InfoTestCase):
-    def test_get_autocreates_exactly_one_row_for_that_conference(self):
-        self.assertFalse(ConferenceInfo.objects.filter(conference=self.conf_a).exists())
+class TestConferenceInfoEndpoint(InfoTestCase):
+    def test_get_does_not_create_rows(self):
+        before = Conference.objects.count()
 
         response = self.client.get(api("conference-info/"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            ConferenceInfo.objects.filter(conference=self.conf_a).count(), 1
-        )
-        self.assertEqual(
-            ConferenceInfo.objects.get(conference=self.conf_a).conference, self.conf_a
-        )
+        self.assertEqual(Conference.objects.count(), before)
+        self.assertEqual(response.json()["id"], self.conf_a.pk)
 
-        # Repeat GET reuses the row instead of growing the table.
-        response = self.client.get(api("conference-info/"))
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            ConferenceInfo.objects.filter(conference=self.conf_a).count(), 1
-        )
-
-    def test_other_conference_has_no_row_until_its_own_get(self):
-        self.client.get(api("conference-info/"))
-        self.assertFalse(ConferenceInfo.objects.filter(conference=self.conf_b).exists())
-
-        response = self.client.get(api("conference-info/", slug=SLUG_B))
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            ConferenceInfo.objects.get(conference=self.conf_b).conference, self.conf_b
-        )
+        self.client.get(api("conference-info/", slug=SLUG_B))
+        self.assertEqual(Conference.objects.count(), before)
 
     def test_payload_has_exactly_the_27_payload_keys(self):
         for slug in (SLUG_A, SLUG_B):
@@ -155,7 +135,7 @@ class TestConferenceInfoSingleton(InfoTestCase):
         self.assertEqual(payload["venue_text"], "Venue-page-only text")
         self.assertEqual(payload["footer_venue_text"], "Footer-only venue blurb")
 
-    def test_write_serializer_persists_logistics_but_ignores_year_and_conference(self):
+    def test_write_serializer_persists_logistics_but_ignores_year(self):
         staff = self.staff_client()
         response = staff.patch(
             api("conference-info/edit/"),
@@ -163,20 +143,18 @@ class TestConferenceInfoSingleton(InfoTestCase):
                 "title": "Renamed Alpha",
                 "year": 9999,
                 "date_start": "2030-01-01",
-                "conference": self.conf_b.pk,
             },
             format="json",
         )
 
         self.assertEqual(response.status_code, 200)
-        info = ConferenceInfo.objects.get(conference=self.conf_a)
-        self.assertEqual(info.title, "Renamed Alpha")
-        self.assertEqual(info.date_start, date(2030, 1, 1))
+        self.conf_a.refresh_from_db()
+        self.assertEqual(self.conf_a.title, "Renamed Alpha")
+        self.assertEqual(self.conf_a.date_start, date(2030, 1, 1))
         # year is derived (never stored): the sent 9999 must not stick.
-        self.assertEqual(info.year, 2030)
-        # The conference FK is not reassignable via this endpoint.
-        self.assertEqual(info.conference, self.conf_a)
+        self.assertEqual(self.conf_a.year, 2030)
         payload = response.json()
+        self.assertEqual(payload["id"], self.conf_a.pk)
         self.assertEqual(payload["title"], "Renamed Alpha")
         self.assertEqual(payload["date_start"], "2030-01-01")
         self.assertEqual(payload["year"], 2030)
@@ -221,15 +199,13 @@ class TestConferenceInfoEditValidation(InfoTestCase):
             format="json",
         )
         self.assertEqual(response.status_code, 200)
-        info = ConferenceInfo.objects.get(conference=self.conf_a)
-        self.assertEqual(info.submission_edit_deadline, date(2026, 6, 15))
+        self.conf_a.refresh_from_db()
+        self.assertEqual(self.conf_a.submission_edit_deadline, date(2026, 6, 15))
 
     def test_unpatched_registration_deadline_still_bounds_the_deadline(self):
         # Partial PATCH: the instance supplies the unpatched bound.
-        ConferenceInfo.objects.create(
-            conference=self.conf_a,
-            registration_deadline=date(2026, 6, 30),
-        )
+        self.conf_a.registration_deadline = date(2026, 6, 30)
+        self.conf_a.save()
         staff = self.staff_client()
         response = staff.patch(
             api("conference-info/edit/"),
@@ -240,22 +216,27 @@ class TestConferenceInfoEditValidation(InfoTestCase):
         self.assertIn("submission_edit_deadline", response.json())
 
 
-class TestAccommodationInfoSingleton(InfoTestCase):
-    def test_get_autocreates_per_conference(self):
-        self.assertEqual(AccommodationInfo.objects.count(), 0)
+class TestAccommodationEndpoint(InfoTestCase):
+    def test_get_reads_the_conference_without_creating_rows(self):
+        before = Conference.objects.count()
 
-        self.assertEqual(self.client.get(api("accommodation/")).status_code, 200)
-        self.assertEqual(AccommodationInfo.objects.count(), 1)
-        self.assertEqual(AccommodationInfo.objects.get().conference, self.conf_a)
+        response = self.client.get(api("accommodation/"))
 
-        self.assertEqual(
-            self.client.get(api("accommodation/", slug=SLUG_B)).status_code, 200
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Conference.objects.count(), before)
+        self.assertEqual(response.json()["id"], self.conf_a.pk)
+
+    def test_options_are_nested_under_their_conference(self):
+        AccommodationOption.objects.create(
+            conference=self.conf_a, name="Hotel A", order=1
         )
-        self.assertEqual(AccommodationInfo.objects.count(), 2)
-        self.assertEqual(
-            AccommodationInfo.objects.get(conference=self.conf_b).conference,
-            self.conf_b,
+        AccommodationOption.objects.create(
+            conference=self.conf_b, name="Hotel B", order=1
         )
+
+        payload = self.client.get(api("accommodation/")).json()
+
+        self.assertEqual([option["name"] for option in payload["options"]], ["Hotel A"])
 
     def test_patch_description_on_a_does_not_leak_to_b(self):
         staff = self.staff_client()
@@ -270,25 +251,6 @@ class TestAccommodationInfoSingleton(InfoTestCase):
         self.assertEqual(payload_a["description"], "Only A hotels")
         payload_b = self.client.get(api("accommodation/", slug=SLUG_B)).json()
         self.assertEqual(payload_b["description"], "")
-
-
-class TestInfoAdminRepr(InfoTestCase):
-    def test_conference_info_without_title_renders_slug(self):
-        info = ConferenceInfo.objects.create(conference=self.conf_a)
-
-        self.assertEqual(str(info), SLUG_A)
-
-    def test_conference_info_with_title_renders_slug_and_title(self):
-        info = ConferenceInfo.objects.create(
-            conference=self.conf_a, title="Winter School 2026"
-        )
-
-        self.assertEqual(str(info), f"{SLUG_A} | Winter School 2026")
-
-    def test_accommodation_info_renders_conference_slug(self):
-        info = AccommodationInfo.objects.create(conference=self.conf_b)
-
-        self.assertEqual(str(info), SLUG_B)
 
 
 class TestGlobalEndpoints(TestCase):

@@ -7,10 +7,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from .conftest import api
 from .models import (
-    AccommodationInfo,
     AccommodationOption,
     Conference,
-    ConferenceInfo,
     HikingRoute,
     HikingStop,
     Person,
@@ -42,8 +40,8 @@ class TestConferenceInfoAdmin(AdminTestCase):
             format="json",
         )
         self.assertEqual(response.status_code, 200)
-        info = ConferenceInfo.objects.get(conference=self.conference)
-        self.assertEqual(info.grant_text, "New grant text")
+        self.conference.refresh_from_db()
+        self.assertEqual(self.conference.grant_text, "New grant text")
 
     def test_patch_rejects_anonymous(self):
         self.client.credentials()
@@ -67,8 +65,8 @@ class TestAccommodationAdmin(AdminTestCase):
             format="json",
         )
         self.assertEqual(response.status_code, 200)
-        info = AccommodationInfo.objects.get(conference=self.conference)
-        self.assertEqual(info.description, "Book early")
+        self.conference.refresh_from_db()
+        self.assertEqual(self.conference.accommodation_description, "Book early")
 
     def test_option_create_patch_delete_cycle(self):
         response = self.client.post(
@@ -78,9 +76,7 @@ class TestAccommodationAdmin(AdminTestCase):
         )
         self.assertEqual(response.status_code, 201)
         option = AccommodationOption.objects.get(name="Hotel A")
-        self.assertEqual(
-            option.info, AccommodationInfo.objects.get(conference=self.conference)
-        )
+        self.assertEqual(option.conference, self.conference)
 
         response = self.client.patch(
             api(f"admin/accommodation/options/{option.id}/"),
@@ -174,9 +170,8 @@ class TestHikingAdmin(AdminTestCase):
 
 class TestContentModelRepr(TestCase):
     def test_accommodation_option_renders_name(self):
-        info = AccommodationInfo.objects.create(conference=wsc_conference())
         option = AccommodationOption.objects.create(
-            conference=info.conference, info=info, name="Hotel A"
+            conference=wsc_conference(), name="Hotel A"
         )
 
         self.assertEqual(str(option), "Hotel A")

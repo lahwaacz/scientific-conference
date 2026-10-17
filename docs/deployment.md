@@ -14,6 +14,12 @@ The backend container runs as a non-root user (uid and gid 1000). Every volume i
 
 The backend also requires `DJANGO_SECRET_KEY` — the key that signs sessions and JWTs — in its environment, for example from a Kubernetes Secret. The image contains no default value: if the variable is missing, the container exits at startup instead of signing tokens with a publicly known key. `DJANGO_DEBUG` defaults to `False` and should only be enabled for debugging.
 
+## Upgrades and Backups
+
+The backend entrypoint applies `manage.py migrate` every time the container starts. A new image therefore upgrades the database automatically, and an older image started against an already-upgraded database can fail: migrations may remove tables or columns that the old code still queries.
+
+Always back up the SQLite database before deploying an image that contains new migrations. With the container stopped, copy the file at `DJANGO_DB_PATH`; a consistent copy can also be taken while it runs with `sqlite3 <db> ".backup <copy>"`. Migration `0031` merges the conference configuration into the `Conference` row and is irreversible — its reverse migration raises an error by design. Rolling back to an older image therefore means restoring the backup, not reversing the migration.
+
 ## Reverse Proxy Requirements
 
 For the per-conference addresses to work, the reverse proxy in front of the deployment must serve the frontend entry page for every path under the application root that is not a real file. Requests to `api/`, `admin/`, and `media/` under the root must keep being routed to the backend as they are today. Every other path, especially `<root>/<slug>/`, must return the frontend `index.html`, which then opens the conference named in the address.

@@ -9,7 +9,6 @@ from .conftest import api
 from .models import (
     Abstract,
     Conference,
-    ConferenceInfo,
     Participant,
     ParticipantSubmission,
     Talk,
@@ -17,8 +16,13 @@ from .models import (
 from .serializers import ParticipantSubmissionSerializer
 
 
-def wsc_conference():
-    return Conference.objects.get_or_create(slug="wsc2026-test")[0]
+def wsc_conference(**fields):
+    conference, _ = Conference.objects.get_or_create(slug="wsc2026-test")
+    if fields:
+        for name, value in fields.items():
+            setattr(conference, name, value)
+        conference.save()
+    return conference
 
 
 class TestParticipantSubmissionModel(TestCase):
@@ -106,7 +110,7 @@ class TestParticipantSubmissionSerializer(TestCase):
 
 class TestRegistrationWindow(TestCase):
     def info_with(self, **kwargs):
-        return ConferenceInfo.objects.create(conference=wsc_conference(), **kwargs)
+        return wsc_conference(**kwargs)
 
     def test_open_when_no_bounds(self):
         info = self.info_with()
@@ -150,7 +154,7 @@ class TestRegistrationWindow(TestCase):
 
 class TestSubmissionEditWindow(TestCase):
     def info_with(self, **kwargs):
-        return ConferenceInfo.objects.create(conference=wsc_conference(), **kwargs)
+        return wsc_conference(**kwargs)
 
     def test_open_when_no_deadline_and_no_start_date(self):
         info = self.info_with()
@@ -292,10 +296,7 @@ class TestSubmissionAPI(APITestCase):
         self.assertEqual(response.data["admin_notes"], "")
 
     def test_submission_rejected_before_registration_opens(self):
-        ConferenceInfo.objects.create(
-            conference=wsc_conference(),
-            registration_opening=date(2030, 1, 1),
-        )
+        wsc_conference(registration_opening=date(2030, 1, 1))
 
         response = self.post_submission()
 
@@ -303,10 +304,7 @@ class TestSubmissionAPI(APITestCase):
         self.assertEqual(ParticipantSubmission.objects.count(), 0)
 
     def test_submission_rejected_after_deadline(self):
-        ConferenceInfo.objects.create(
-            conference=wsc_conference(),
-            registration_deadline=date(2020, 1, 1),
-        )
+        wsc_conference(registration_deadline=date(2020, 1, 1))
 
         response = self.post_submission()
 
@@ -314,8 +312,7 @@ class TestSubmissionAPI(APITestCase):
         self.assertEqual(ParticipantSubmission.objects.count(), 0)
 
     def test_submission_allowed_inside_window(self):
-        ConferenceInfo.objects.create(
-            conference=wsc_conference(),
+        wsc_conference(
             registration_opening=date(2020, 1, 1),
             registration_deadline=date(2030, 1, 1),
         )

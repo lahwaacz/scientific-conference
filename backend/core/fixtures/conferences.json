@@ -3,42 +3,7 @@
     "model": "core.conference",
     "pk": 1,
     "fields": {
-      "slug": "wsc2026"
-    }
-  },
-  {
-    "model": "core.conference",
-    "pk": 2,
-    "fields": {
-      "slug": "pnaw2026"
-    }
-  },
-  {
-    "model": "core.conference",
-    "pk": 3,
-    "fields": {
-      "slug": "sscp2027"
-    }
-  },
-  {
-    "model": "core.conference",
-    "pk": 4,
-    "fields": {
-      "slug": "wmm2027"
-    }
-  },
-  {
-    "model": "core.conference",
-    "pk": 5,
-    "fields": {
-      "slug": "dss2024"
-    }
-  },
-  {
-    "model": "core.conferenceinfo",
-    "pk": 1,
-    "fields": {
-      "conference": 1,
+      "slug": "wsc2026",
       "title": "Workshop on Scientific Computing",
       "date_start": "2025-05-29",
       "date_end": "2025-05-30",
@@ -65,10 +30,10 @@
     }
   },
   {
-    "model": "core.conferenceinfo",
+    "model": "core.conference",
     "pk": 2,
     "fields": {
-      "conference": 2,
+      "slug": "pnaw2026",
       "title": "Prague Numerical Analysis Workshop",
       "date_start": "2026-10-04",
       "date_end": "2026-10-06",
@@ -80,10 +45,10 @@
     }
   },
   {
-    "model": "core.conferenceinfo",
+    "model": "core.conference",
     "pk": 3,
     "fields": {
-      "conference": 3,
+      "slug": "sscp2027",
       "title": "Summer School on Computational Physics",
       "date_start": "2027-06-14",
       "date_end": "2027-06-18",
@@ -95,10 +60,10 @@
     }
   },
   {
-    "model": "core.conferenceinfo",
+    "model": "core.conference",
     "pk": 4,
     "fields": {
-      "conference": 4,
+      "slug": "wmm2027",
       "title": "Workshop on Mathematical Modelling",
       "date_start": "2027-11-04",
       "date_end": "2027-11-05",
@@ -110,10 +75,10 @@
     }
   },
   {
-    "model": "core.conferenceinfo",
+    "model": "core.conference",
     "pk": 5,
     "fields": {
-      "conference": 5,
+      "slug": "dss2024",
       "title": "Děčín Symposium on Scientific Computing",
       "date_start": "2024-05-23",
       "date_end": "2024-05-24",

@@ -1,4 +1,4 @@
-"""Tests for the Conference/ConferenceInfo models and the 0014 seed."""
+"""Tests for the Conference model and the 0014 seed."""
 
 import importlib
 from datetime import date
@@ -6,9 +6,23 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from django.core.exceptions import ValidationError
-from django.test import TestCase
+from django.db import IntegrityError, connection, transaction
+from django.db.models.fields.reverse_related import ForeignObjectRel
+from django.test import TestCase, TransactionTestCase
 
-from .models import Conference, ConferenceInfo
+from .models import (
+    Abstract,
+    AccommodationOption,
+    Conference,
+    ConferenceDay,
+    HikingRoute,
+    HikingStop,
+    Participant,
+    ParticipantSubmission,
+    Person,
+    Session,
+    Talk,
+)
 
 
 def make_conference(slug="wsc2026"):
@@ -23,7 +37,7 @@ def make_info(**overrides):
         "location": "Děčín",
     }
     fields.update(overrides)
-    return ConferenceInfo(**fields)
+    return Conference(slug="wsc2026", **fields)
 
 
 class TestReservedSlugs(TestCase):
@@ -50,6 +64,21 @@ class TestReservedSlugs(TestCase):
         # The 0014 migration seed already created "wsc2026" in the test
         # DB, so exercise full_clean with a slug that cannot collide.
         make_conference(slug="wsc2027").full_clean()
+
+
+class TestCleanValidation(TestCase):
+    def test_reports_slug_and_deadline_errors_together(self):
+        conference = Conference(
+            slug="admin",
+            registration_deadline=date(2026, 6, 30),
+            submission_edit_deadline=date(2026, 6, 1),
+        )
+
+        with self.assertRaises(ValidationError) as ctx:
+            conference.full_clean()
+
+        self.assertIn("slug", ctx.exception.message_dict)
+        self.assertIn("submission_edit_deadline", ctx.exception.message_dict)
 
 
 class TestYearProperty(TestCase):
@@ -120,6 +149,81 @@ class TestStatusProperty(TestCase):
 class TestStr(TestCase):
     def test_str_returns_slug(self):
         self.assertEqual(str(make_conference(slug="wsc2026")), "wsc2026")
+
+
+class TestIsReferenced(TestCase):
+    def factories(self):
+        return {
+            "AccommodationOption": lambda c: AccommodationOption.objects.create(
+                conference=c, name="Hotel"
+            ),
+            "ConferenceDay": lambda c: ConferenceDay.objects.create(
+                conference=c, date=date(2026, 5, 1)
+            ),
+            "Session": lambda c: Session.objects.create(
+                conference=c,
+                day=ConferenceDay.objects.create(conference=c, date=date(2026, 5, 1)),
+            ),
+            "Talk": lambda c: Talk.objects.create(conference=c, title="Talk"),
+            "Participant": lambda c: Participant.objects.create(
+                conference=c, name="Participant"
+            ),
+            "Abstract": lambda c: Abstract.objects.create(
+                conference=c, title="Abstract"
+            ),
+            "Person": lambda c: Person.objects.create(conference=c, name="Person"),
+            "ParticipantSubmission": lambda c: ParticipantSubmission.objects.create(
+                conference=c,
+                name="Submitter",
+                email="submitter@example.com",
+                affiliation="CTU",
+                arrival_date=date(2026, 5, 1),
+                departure_date=date(2026, 5, 2),
+            ),
+            "HikingRoute": lambda c: HikingRoute.objects.create(
+                conference=c, name="Route"
+            ),
+            "HikingStop": lambda c: HikingStop.objects.create(
+                conference=c,
+                route=HikingRoute.objects.create(conference=c, name="Route"),
+                name="Stop",
+            ),
+        }
+
+    def test_factories_cover_every_reverse_relation(self):
+        relations = {
+            relation.related_model.__name__
+            for relation in Conference._meta.get_fields(include_hidden=True)
+            if isinstance(relation, ForeignObjectRel)
+        }
+
+        self.assertEqual(set(self.factories()), relations)
+
+    def test_conference_without_rows_is_not_referenced(self):
+        conference = Conference.objects.create(slug="unreferenced-conference")
+
+        self.assertFalse(conference.is_referenced())
+
+    def test_each_related_model_marks_the_conference_referenced(self):
+        for index, (model_name, create_row) in enumerate(self.factories().items()):
+            with self.subTest(model=model_name):
+                conference = Conference.objects.create(slug=f"referenced-{index}")
+                create_row(conference)
+
+                self.assertTrue(conference.is_referenced())
+
+
+class TestReferenceForeignKeyBackstop(TransactionTestCase):
+    def test_raw_delete_of_a_referenced_conference_fails_at_commit(self):
+        conference = Conference.objects.create(slug="fk-backstop")
+        Participant.objects.create(conference=conference, name="Participant")
+
+        with (
+            self.assertRaises(IntegrityError),
+            transaction.atomic(),
+            connection.cursor() as cursor,
+        ):
+            cursor.execute("DELETE FROM core_conference WHERE id = %s", [conference.pk])
 
 
 class _FakeConferenceTable:

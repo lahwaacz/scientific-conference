@@ -15,7 +15,7 @@ Design notes
   a ``tracking_token`` (the registration link distributed later) but stays
   invisible until an admin publishes it.
 * ``arrival_date`` / ``departure_date`` default to the conference's
-  ``ConferenceInfo.date_start`` / ``date_end`` unless the CSV maps its own date
+  ``Conference.date_start`` / ``date_end`` unless the CSV maps its own date
   column.
 * Duplicate emails -- within the file or already present in the conference --
   are warned about and skipped, never created. Re-running the import is
@@ -33,7 +33,7 @@ from datetime import date
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 
-from .models import Conference, ConferenceInfo, Participant, ParticipantSubmission
+from .models import Conference, Participant, ParticipantSubmission
 
 STATUS_OK = "ok"
 STATUS_WARNING = "warning"
@@ -243,9 +243,8 @@ def resolve_date_defaults(
     conference: Conference, mapping: ColumnMapping
 ) -> DateDefaults:
     """Conference dates back default arrival/departure when the CSV lacks them."""
-    info = ConferenceInfo.objects.filter(conference=conference).first()
-    start = info.date_start if info else None
-    end = info.date_end if info else None
+    start = conference.date_start
+    end = conference.date_end
     if "arrival_date" not in mapping.field_to_indices and start is None:
         raise ImportFileError(
             f'Conference "{conference.slug}" has no start date; map an arrival-date '

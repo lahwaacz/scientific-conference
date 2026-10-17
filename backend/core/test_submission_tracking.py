@@ -16,7 +16,7 @@ from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .conftest import api
-from .models import ConferenceInfo, ParticipantSubmission
+from .models import ParticipantSubmission
 from .serializers import (
     ParticipantSubmissionCreateSerializer,
     ParticipantSubmissionSerializer,
@@ -38,6 +38,12 @@ def make_submission(conference, **overrides):
     }
     data.update(overrides)
     return ParticipantSubmission.objects.create(**data)
+
+
+def set_conference_fields(conference, **fields):
+    for name, value in fields.items():
+        setattr(conference, name, value)
+    conference.save()
 
 
 @pytest.mark.django_db
@@ -507,9 +513,8 @@ class TestTrackingEndpoint:
 
     def test_get_allowed_when_registration_closed(self, wsc):
         submission = make_submission(wsc)
-        ConferenceInfo.objects.create(
-            conference=wsc,
-            registration_deadline=timezone.localdate() - timedelta(days=1),
+        set_conference_fields(
+            wsc, registration_deadline=timezone.localdate() - timedelta(days=1)
         )
 
         response = self.client.get(api(f"track/{submission.tracking_token}/"))
@@ -521,9 +526,8 @@ class TestTrackingEndpoint:
 
     def test_get_allowed_when_submission_edit_deadline_passed(self, wsc):
         submission = make_submission(wsc)
-        ConferenceInfo.objects.create(
-            conference=wsc,
-            submission_edit_deadline=timezone.localdate() - timedelta(days=1),
+        set_conference_fields(
+            wsc, submission_edit_deadline=timezone.localdate() - timedelta(days=1)
         )
 
         response = self.client.get(api(f"track/{submission.tracking_token}/"))
@@ -576,9 +580,8 @@ class TestTrackingEndpoint:
 
     def test_patch_allowed_when_registration_closed_and_no_edit_deadline(self, wsc):
         submission = make_submission(wsc)
-        ConferenceInfo.objects.create(
-            conference=wsc,
-            registration_deadline=timezone.localdate() - timedelta(days=1),
+        set_conference_fields(
+            wsc, registration_deadline=timezone.localdate() - timedelta(days=1)
         )
 
         response = self.client.patch(
@@ -593,8 +596,8 @@ class TestTrackingEndpoint:
 
     def test_patch_rejected_when_submission_edit_deadline_passed(self, wsc):
         submission = make_submission(wsc)
-        ConferenceInfo.objects.create(
-            conference=wsc,
+        set_conference_fields(
+            wsc,
             registration_deadline=timezone.localdate() + timedelta(days=30),
             submission_edit_deadline=timezone.localdate() - timedelta(days=1),
         )
@@ -614,8 +617,8 @@ class TestTrackingEndpoint:
 
     def test_patch_allowed_when_registration_closed_but_edit_window_open(self, wsc):
         submission = make_submission(wsc)
-        ConferenceInfo.objects.create(
-            conference=wsc,
+        set_conference_fields(
+            wsc,
             registration_deadline=timezone.localdate() - timedelta(days=1),
             submission_edit_deadline=timezone.localdate() + timedelta(days=30),
         )
@@ -632,8 +635,8 @@ class TestTrackingEndpoint:
 
     def test_patch_rejected_when_conference_ended_without_edit_deadline(self, wsc):
         submission = make_submission(wsc)
-        ConferenceInfo.objects.create(
-            conference=wsc,
+        set_conference_fields(
+            wsc,
             date_end=timezone.localdate() - timedelta(days=1),
             registration_deadline=timezone.localdate() + timedelta(days=30),
         )
@@ -653,8 +656,8 @@ class TestTrackingEndpoint:
 
     def test_patch_allowed_on_conference_end_day(self, wsc):
         submission = make_submission(wsc)
-        ConferenceInfo.objects.create(
-            conference=wsc,
+        set_conference_fields(
+            wsc,
             date_end=timezone.localdate(),
             registration_deadline=timezone.localdate() + timedelta(days=30),
         )
@@ -671,8 +674,8 @@ class TestTrackingEndpoint:
 
     def test_patch_rejected_when_no_edit_deadline_and_conference_started(self, wsc):
         submission = make_submission(wsc)
-        ConferenceInfo.objects.create(
-            conference=wsc,
+        set_conference_fields(
+            wsc,
             date_start=timezone.localdate(),
             registration_deadline=timezone.localdate() + timedelta(days=30),
         )
@@ -692,8 +695,8 @@ class TestTrackingEndpoint:
 
     def test_patch_allowed_when_no_edit_deadline_and_conference_not_started(self, wsc):
         submission = make_submission(wsc)
-        ConferenceInfo.objects.create(
-            conference=wsc,
+        set_conference_fields(
+            wsc,
             date_start=timezone.localdate() + timedelta(days=30),
             registration_deadline=timezone.localdate() + timedelta(days=30),
         )

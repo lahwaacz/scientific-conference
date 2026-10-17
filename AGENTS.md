@@ -34,7 +34,7 @@ No root Makefile / docker-compose / package.json / requirements.txt. Each app bu
 |------|----------|-------|
 | Add/change API endpoint | `backend/backend/urls.py` (global routes) + `backend/core/urls.py` (slug-scoped tails) + `backend/core/views.py` | explicit `path()`, no router; global = auth + `/api/conferences/` only |
 | Change data model | `backend/core/models.py` | then `makemigrations`; every domain model carries a `conference` FK |
-| Create/edit a conference | Django admin (`Conference` model) | CRUD via admin only; deletion disabled (`has_delete_permission=False`) |
+| Create/edit/delete a conference | Django admin (`Conference` model) | CRUD via admin only; delete gated by `Conference.is_referenced()` (nothing may reference it) |
 | Backend config/env vars | `backend/backend/settings.py` | single env-driven file, no dev/prod split |
 | Frontend routing | `frontend/src/App.jsx` | one flat HashRouter route table; renders `Landing` (no router) when no slug in path (or the slug matches no conference — with a not-found banner) |
 | Conference slug resolution | `frontend/src/utils/conferenceSlug.js` | pathname-parsed module singleton; `initConferenceSlug()` in main.jsx |
@@ -51,13 +51,13 @@ Codegraph covers Python only (JS unindexed); refs via pyright LSP.
 
 | Symbol | Type | Location | Refs | Role |
 |--------|------|----------|------|------|
-| `Conference` | model | backend/core/models.py:8 | all domain models FK to it | slug-only (`__str__` = slug); reserved slugs rejected in `clean()` |
-| `ConferenceScopedMixin` | mixin | backend/core/views.py:64 | most scoped views | resolves `conference_slug` URL kwarg → eager 404, queryset filter, `perform_create`, serializer context |
-| `get_conference_or_404` | function | backend/core/views.py:59 | function views + mixin | shared slug→Conference resolution |
-| `ConferenceListView` | view | backend/core/views.py:95 | the ONLY unscoped API view | public card list, server-ordered running→future asc→past desc |
-| `ConferenceInfo` | model | backend/core/models.py:416 | per-conference web content + logistics | `get_or_create(conference=…)`; owns title/dates/location/card_photo/hero_photo/short_description/badge_title; `year`+`status` computed; GET/PATCH `conference-info/` is the plain serializer (multipart PATCH accepted) |
+| `Conference` | model | backend/core/models.py:12 | all domain models FK to it | single row owns the slug plus all logistics and web config; reserved slugs + deadline ordering in `clean()`; `__str__` = slug |
+| `ConferenceScopedMixin` | mixin | backend/core/views.py:66 | most scoped views | resolves `conference_slug` URL kwarg → eager 404, queryset filter, `perform_create`, serializer context |
+| `get_conference_or_404` | function | backend/core/views.py:61 | function views + mixin | shared slug→Conference resolution |
+| `ConferenceListView` | view | backend/core/views.py:97 | the ONLY unscoped API view | public card list, server-ordered running→future asc→past desc |
+| `Conference.is_referenced()` | method | backend/core/models.py | `ConferenceAdmin` + tests | any reverse relation row exists → the admin refuses deletion |
 | `ParticipantSubmission.publish()` | method | backend/core/models.py | core workflow | creates Participant + Abstract + unscheduled Talk, dedup scoped to `conference` |
-| `generate_program_pdf` / `generate_badges_pdf` | function | backend/core/views.py | PDF endpoints | per-conference reportlab PDFs; badges header = info's `badge_title or title`, footer = info's `location`; need `core/fonts/*.ttf` |
+| `generate_program_pdf` / `generate_badges_pdf` | function | backend/core/views.py | PDF endpoints | per-conference reportlab PDFs; badges header = `badge_title or title`, footer = `location`; need `core/fonts/*.ttf` |
 | DRF views | classes | backend/core/views.py | scoped via core/urls.py + ConferenceListView | public `AllowAny` + admin `IsAdminUser` |
 | `App` | component | frontend/src/App.jsx | entry | renders `<Landing/>` when no slug (or unknown slug, with a not-found banner), else HashRouter + all routes + layout shell |
 | `Landing` / `ConferenceCard` | components | frontend/src/components/Landing/ | root page | cards grouped Running/Upcoming/Past; whole card is a plain `<a>` to `/<slug>/`; `unknownSlug` prop renders the not-found banner |
@@ -67,7 +67,7 @@ Codegraph covers Python only (JS unindexed); refs via pyright LSP.
 
 - Cross-app contract: REST under `/{RELATIVE_URL_ROOT}api/`, JWT Bearer; frontend base URL from `VITE_BACKEND_API_BASE_URL` (Vite env, inlined at build via import.meta.env).
 - Scoped API contract: only `/api/auth/login|refresh/` and `/api/conferences/` are global (registered in `backend/backend/urls.py` BEFORE the slug include); EVERYTHING else is served under `/api/<slug>/…` via `include("core.urls")` and must filter/assign by conference. New class views use `ConferenceScopedMixin`; new function views use `get_conference_or_404()`. Unknown slug → 404 for every scoped route (enforced in `initial()`).
-- Per-conference singletons: config tables (`ConferenceInfo`, `AccommodationInfo`) are created with `get_or_create(conference=…)` — never `get_or_create(id=1)`.
+- `Conference` is the single config row: logistics, web texts and the accommodation description live on it. Read endpoints (`/api/conferences/`, `conference-info/`, `accommodation/`) must stay side-effect free — never reintroduce lazy `get_or_create` rows in views.
 - JWT is global across conferences: one staff account administers every conference. Intended; do not scope tokens per conference.
 - Subpath deployment is first-class on BOTH sides. Backend: `RELATIVE_URL_ROOT` env feeds URL prefixes, STATIC_URL, MEDIA_URL, cookie paths. Frontend: `HashRouter` + Vite `base` from `VITE_BASE_PATH` (default `./` in dev; `frontend/Dockerfile` ARG defaults to `/conference-demo/`, making built asset URLs absolute and depth-independent). The outer proxy must serve the SPA index.html for any non-file path under the root (esp. `/<root>/<slug>/`) that is not routed to the backend. Any new route/URL must honor all of this.
 - Env-driven config only: backend `os.getenv(..., dev_default)`; no settings split, no django-environ.
@@ -83,13 +83,13 @@ Codegraph covers Python only (JS unindexed); refs via pyright LSP.
 - NEVER hardcode backend URLs in components — always `buildApiUrl`/`buildMediaUrl`/`fetchWithAuth` (fix 7209ddc swept many files for this).
 - NEVER "fix" the dual fetch-prefixing (`configuredFetch.js` global patch + `buildApiUrl`): they coexist only via `startsWith('http')` guards; touching one side risks double-prefixed URLs.
 - NEVER add an API endpoint outside the `/api/<slug>/` include without conference scoping — the route-table lock in `backend/core/test_conference_isolation.py` fails the suite for any unscoped route.
-- NEVER re-enable conference deletion (Django admin `has_delete_permission=False` on `ConferenceAdmin`): all domain models cascade from `Conference`; deletion is a deliberate ops-shell-only operation, not a UI action.
+- NEVER delete or allow deleting a Conference that still has related rows: every domain model cascades from `Conference`, so `ConferenceAdmin` gates deletion on `Conference.is_referenced()`, keeps bulk actions off (`actions = None`), and re-checks in `delete_model`/`delete_queryset`. Do not bypass or weaken this guard.
 - The frontend conference-slug singleton (`utils/conferenceSlug.js`) must NOT use react-router hooks — `useLocation` is hash-based and never sees the `/<slug>/` path prefix. It parses `window.location.pathname` once at startup; keep it that way.
 - NEVER commit `.venv/`, `db.sqlite3`, `media/`, `staticfiles/` (a venv was once committed: 4c321da).
 - `.github/workflows/quality.yml` runs ruff/pyright/pytest + biome/vitest on push to `main` and PRs. The Docker publish workflow does NOT depend on it — a red quality run does not block image pushes.
-- Do not treat cascade deletes as accidental: deleting a ConferenceDay deletes its Sessions+Talks; deleting an Abstract deletes its Talk (the FK sits on Talk); deleting a HikingRoute deletes its Stops; deleting a Conference deletes everything (UI path disabled, see above). NOTE: deleting a day or an unscheduled talk ORPHANS the linked abstract — deliberate admin choice (2026-10-03); do not add cascades unilaterally. The admin guide documents these as rules (`docs/admin_guide.md:287`,`:469`); backend guards exist deliberately (e.g. `UnscheduledTalkDeleteView` 400).
+- Do not treat cascade deletes as accidental: deleting a ConferenceDay deletes its Sessions+Talks; deleting an Abstract deletes its Talk (the FK sits on Talk); deleting a HikingRoute deletes its Stops; deleting a Conference deletes everything (UI path disabled, see above). NOTE: deleting a day or an unscheduled talk ORPHANS the linked abstract — deliberate admin choice (2026-10-03); do not add cascades unilaterally. The admin guide warns about deleting days (`docs/admin_guide.md:353`), and `UnscheduledTalkDeleteView` 400s on scheduled talks; keep both guards.
 - The dormant lines in `backend/Dockerfile` (RUN-time collectstatic, VOLUME declarations) are disabled on purpose — startup collectstatic lives in the active CMD; gunicorn has been the active server since 2026-10-06 (the old `manage.py runserver` prod note is obsolete). (The `frontend/Dockerfile` nginx.conf COPY used to be dormant too; it is active again since the universal-image rework — `frontend/nginx.conf` is the universal, deployment-value-free server config.)
-- If the app is extended, update `docs/admin_guide.md` (guide rule, line 575); deployment changes go to `docs/deployment.md`.
+- If the app is extended, update `docs/admin_guide.md` (guide rule, line 667); deployment changes go to `docs/deployment.md`.
 
 ## COMMANDS
 
@@ -100,7 +100,7 @@ uv run python manage.py makemigrations && uv run python manage.py migrate
 uv run python manage.py createsuperuser
 uv run python manage.py runserver     # :8000
 uv run pytest                         # backend suite (pytest-django;
-                                      #   incl. conference model/isolation/singleton/conferences-endpoint suites)
+                                      #   incl. conference model/isolation/conference-info/conferences-endpoint suites)
 uv run ruff check . && uv run ruff format --check .
 uv run pyright                        # type check via django-stubs
 uv run python manage.py loaddata conferences.json participants.json program.json  # seed: demo conferences, participants with abstracts/submissions, organizers/committee, a scheduled program (day + chaired session + talk per participant) for every conference

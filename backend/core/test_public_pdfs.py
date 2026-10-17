@@ -15,7 +15,6 @@ from .models import (
     Abstract,
     Conference,
     ConferenceDay,
-    ConferenceInfo,
     HikingRoute,
     HikingStop,
     Participant,
@@ -126,15 +125,13 @@ class TestPublicLists(TestCase):
         )
         self.assertEqual(response.status_code, 201)
 
-    def test_conference_info_autocreates_row_for_that_conference(self):
+    def test_conference_info_returns_the_conference_config(self):
         conference = wsc_conference()
-        self.assertFalse(ConferenceInfo.objects.filter(conference=conference).exists())
 
         response = self.client.get(api("conference-info/"))
 
         self.assertEqual(response.status_code, 200)
-        info = ConferenceInfo.objects.get(conference=conference)
-        self.assertEqual(info.conference, conference)
+        self.assertEqual(response.data["id"], conference.pk)
 
     def test_hiking_lists_routes_with_ordered_stops(self):
         conference = wsc_conference()

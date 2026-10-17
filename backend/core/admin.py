@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib import admin, messages
+from django.contrib.admin.utils import unquote
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.http import HttpResponseRedirect
@@ -23,11 +24,9 @@ from .importing import (
 )
 from .models import (
     Abstract,
-    AccommodationInfo,
     AccommodationOption,
     Conference,
     ConferenceDay,
-    ConferenceInfo,
     HikingRoute,
     HikingStop,
     Participant,
@@ -55,17 +54,50 @@ class SessionInline(admin.TabularInline):
 
 @admin.register(Conference)
 class ConferenceAdmin(admin.ModelAdmin):
-    # Conferences are managed ONLY here; deletion is forbidden (fork line 3)
-    # because every other model cascades from this table. Only the slug is
-    # editable here: logistics (title, dates, location, card/hero photos, badge title)
-    # live on ConferenceInfo and are edited via the conference's SPA admin.
+    # Conferences are managed ONLY here. Deleting one cascades to every
+    # domain row, so it is offered only while nothing references it; only
+    # the slug is editable here (logistics and web content are edited via
+    # the conference's SPA admin).
     fields = ("slug",)
     list_display = ("slug",)
     search_fields = ("slug",)
     actions = None
 
     def has_delete_permission(self, request, obj=None):
-        return False
+        if obj is not None and obj.is_referenced():
+            return False
+        return super().has_delete_permission(request, obj)
+
+    def delete_view(self, request, object_id, extra_context=None):
+        obj = self.get_object(request, unquote(object_id))
+        if (
+            obj is not None
+            and self.has_view_or_change_permission(request, obj)
+            and obj.is_referenced()
+        ):
+            self.message_user(
+                request,
+                "This conference still has related objects and cannot be deleted.",
+                level=messages.ERROR,
+            )
+            return HttpResponseRedirect(
+                reverse("admin:core_conference_change", args=[obj.pk])
+            )
+        return super().delete_view(request, object_id, extra_context)
+
+    def delete_model(self, request, obj):
+        if obj.is_referenced():
+            raise PermissionDenied(
+                "This conference still has related objects and cannot be deleted."
+            )
+        super().delete_model(request, obj)
+
+    def delete_queryset(self, request, queryset):
+        if any(conference.is_referenced() for conference in queryset):
+            raise PermissionDenied(
+                "Conferences that still have related objects cannot be deleted."
+            )
+        super().delete_queryset(request, queryset)
 
 
 @admin.register(ConferenceDay)
@@ -398,17 +430,11 @@ class ParticipantSubmissionAdmin(admin.ModelAdmin):
         return HttpResponseRedirect(reverse("admin:core_participantsubmission_import"))
 
 
-@admin.register(AccommodationInfo)
-class AccommodationInfoAdmin(admin.ModelAdmin):
-    list_display = ("conference",)
-    list_filter = ("conference",)
-
-
 @admin.register(AccommodationOption)
 class AccommodationOptionAdmin(admin.ModelAdmin):
-    list_display = ("conference", "name", "info", "order")
+    list_display = ("conference", "name", "order")
     list_filter = ("conference",)
-    list_select_related = ("conference", "info__conference")
+    list_select_related = ("conference",)
 
 
 class HikingStopInline(admin.TabularInline):
@@ -421,9 +447,3 @@ class HikingRouteAdmin(admin.ModelAdmin):
     list_display = ("conference", "name")
     list_filter = ("conference",)
     inlines = [HikingStopInline]
-
-
-@admin.register(ConferenceInfo)
-class ConferenceInfoAdmin(admin.ModelAdmin):
-    list_display = ("conference",)
-    list_filter = ("conference",)

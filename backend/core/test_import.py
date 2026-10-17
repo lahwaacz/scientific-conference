@@ -27,7 +27,7 @@ from .importing import (
     resolve_mapping,
     validate_rows,
 )
-from .models import Conference, ConferenceInfo, Participant, ParticipantSubmission
+from .models import Conference, Participant, ParticipantSubmission
 
 IMPORT_URL_NAME = "admin:core_participantsubmission_import"
 
@@ -40,9 +40,7 @@ CSV_PLAIN = "Name,Email,Affiliation\nJan Novák,jan@example.com,CTU\n"
 
 
 def make_conference(slug="import-conf", start=None, end=None):
-    conference = Conference.objects.create(slug=slug)
-    ConferenceInfo.objects.create(conference=conference, date_start=start, date_end=end)
-    return conference
+    return Conference.objects.create(slug=slug, date_start=start, date_end=end)
 
 
 def evaluate(text, conference, manual=None):

@@ -102,11 +102,13 @@ The logistical facts of a conference (title, dates, location, card and hero phot
 
 Website texts such as the homepage description, registration instructions, venue description, and footer are edited in the same form, as described in the **Edit Website Information** chapter. Only the slug is managed in the Django administration.
 
-### Why Conferences Cannot Be Deleted
+### Deleting a Conference
 
-The delete action is intentionally disabled for conferences in the Django administration. All data of a conference, including its participants, abstracts, submissions, and schedule, is attached to the conference record and would be deleted together with it. A single careless click could therefore destroy a whole conference, including its history.
+A conference can be deleted in the Django administration only while nothing references it. Participants, abstracts, submissions, people, accommodation options, hiking routes and stops, conference days, sessions, and talks all belong to exactly one conference and are deleted together with it. The delete action is therefore offered only after every related record has been removed.
 
-If a conference must be removed completely, this requires direct intervention in the database by a system administrator. In normal operation, finished conferences are simply left in place; they move to the **Past** group on the landing page automatically once their end date has passed.
+The conference settings (logistics, website texts, and the accommodation description) are part of the conference record itself, so they never block the deletion and are removed with it.
+
+In normal operation a finished conference does not need to be deleted: once its end date has passed it moves to the **Past** group on the landing page automatically.
 
 ### Documents Are Per-Conference
 

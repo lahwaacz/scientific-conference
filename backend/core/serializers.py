@@ -5,10 +5,9 @@ from rest_framework import serializers
 
 from .models import (
     Abstract,
-    AccommodationInfo,
     AccommodationOption,
+    Conference,
     ConferenceDay,
-    ConferenceInfo,
     HikingRoute,
     HikingStop,
     Participant,
@@ -188,11 +187,17 @@ class AccommodationOptionSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "description", "url", "photo", "order"]
 
 
+# Serializes the Conference row; the class name keeps the /accommodation/ contract.
 class AccommodationInfoSerializer(serializers.ModelSerializer):
-    options = AccommodationOptionSerializer(many=True, read_only=True)
+    description = serializers.CharField(
+        source="accommodation_description", required=False, allow_blank=True
+    )
+    options = AccommodationOptionSerializer(
+        many=True, read_only=True, source="accommodation_options"
+    )
 
     class Meta:
-        model = AccommodationInfo
+        model = Conference
         fields = ["id", "description", "options"]
 
 
@@ -500,15 +505,11 @@ class HikingRouteSerializer(serializers.ModelSerializer):
 
 
 class ConferenceCardSerializer(serializers.ModelSerializer):
-    # ReadOnlyField: year/status are model @property methods, not fields,
-    # and slug lives on the related Conference row, so none of the three
-    # is auto-discovered by ModelSerializer.
-    slug = serializers.ReadOnlyField(source="conference.slug")
     year = serializers.ReadOnlyField()
     status = serializers.ReadOnlyField()
 
     class Meta:
-        model = ConferenceInfo
+        model = Conference
         fields = [
             "slug",
             "title",
@@ -531,6 +532,7 @@ class BlankAsNoneDateField(serializers.DateField):
         return super().to_internal_value(value)
 
 
+# Serializes Conference; the name keeps the /conference-info/ contract.
 class ConferenceInfoWriteSerializer(serializers.ModelSerializer):
     registration_opening = BlankAsNoneDateField(required=False, allow_null=True)
     registration_deadline = BlankAsNoneDateField(required=False, allow_null=True)
@@ -539,7 +541,7 @@ class ConferenceInfoWriteSerializer(serializers.ModelSerializer):
     date_end = BlankAsNoneDateField(required=False, allow_null=True)
 
     class Meta:
-        model = ConferenceInfo
+        model = Conference
         fields = [
             "title",
             "date_start",
@@ -598,5 +600,5 @@ class ConferenceInfoSerializer(serializers.ModelSerializer):
     year = serializers.ReadOnlyField()
 
     class Meta:
-        model = ConferenceInfo
+        model = Conference
         fields = ["id", *ConferenceInfoWriteSerializer.Meta.fields, "year"]

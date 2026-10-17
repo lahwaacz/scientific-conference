@@ -24,7 +24,7 @@ backend/
 │   ├── tests.py            # original suites (Django TestCase, pytest runs them)
 │   ├── test_*.py           # pytest-django suites by domain (schedule, publishing,
 │   │                       # timeline, signals, admin, public, PDF + conference model,
-│   │                       # conferences endpoint, conference isolation, singletons)
+│   │                       # conferences endpoint, conference isolation, conference-info)
 │   └── fonts/DejaVu*.ttf   # required by reportlab PDF generation
 ├── manage.py
 ├── Dockerfile
@@ -40,19 +40,19 @@ backend/
 | Endpoint list | `backend/urls.py` (global + slug include) + `core/urls.py` (scoped tails) | explicit `path()`, no router |
 | Add a scoped endpoint | `core/views.py` | new class views use `ConferenceScopedMixin`; new function views call `get_conference_or_404()` |
 | Auth config | `backend/settings.py` | SIMPLE_JWT: 1h access / 7d refresh |
-| Conference model / admin policies | `core/models.py`, `core/admin.py` | slug reserved words in `clean()`; deletion forbidden (`has_delete_permission=False`) |
-| PDF generation | `core/views.py` | `generate_program_pdf` (line 128), `generate_badges_pdf` (line 369); per-conference, reportlab + `core/fonts/*.ttf` |
-| Publish workflow | `core/models.py` | `ParticipantSubmission.publish()` (line 279), `.delete()`; dedup scoped to `conference` |
+| Conference model / admin policies | `core/models.py`, `core/admin.py` | slug reserved words in `clean()`; deletion gated by `Conference.is_referenced()` |
+| PDF generation | `core/views.py` | `generate_program_pdf` (line 130), `generate_badges_pdf` (line 370); per-conference, reportlab + `core/fonts/*.ttf` |
+| Publish workflow | `core/models.py` | `ParticipantSubmission.publish()` (line 420), `.delete()`; dedup scoped to `conference` |
 | Email on publish | `core/signals.py` | fires via `CoreConfig.ready()` |
 | Env config | `backend/settings.py` | DJANGO_SECRET_KEY / DJANGO_DEBUG / DJANGO_ALLOWED_HOSTS / DJANGO_DB_PATH / DJANGO_STATIC_URL / DJANGO_STATIC_ROOT / DJANGO_MEDIA_ROOT / DJANGO_USE_HTTPS / DJANGO_CSRF_TRUSTED_ORIGINS, plus unprefixed RELATIVE_URL_ROOT |
 
 ## CONVENTIONS
 
 - Views: `generics.APIView`/generic classes mixed with `@api_view` functions (`generate_*`, `publish_submission`, `update_session`, `delete_session`); named `<Noun><Action>View`.
-- Conference scoping: every view in `core/urls.py` is served under `/api/<slug>/…` and must resolve its conference. Class views inherit `ConferenceScopedMixin` (views.py:64: eager 404 on unknown slug in `initial()`, queryset filter, `perform_create` assignment, serializer context); function views call `get_conference_or_404(conference_slug)`. The only unscoped views are auth + `ConferenceListView`, registered globally in `backend/urls.py` BEFORE the slug include.
+- Conference scoping: every view in `core/urls.py` is served under `/api/<slug>/…` and must resolve its conference. Class views inherit `ConferenceScopedMixin` (views.py:66: eager 404 on unknown slug in `initial()`, queryset filter, `perform_create` assignment, serializer context); function views call `get_conference_or_404(conference_slug)`. The only unscoped views are auth + `ConferenceListView`, registered globally in `backend/urls.py` BEFORE the slug include.
 - Serializers: `<Model>Serializer` for read, `...WriteSerializer` split for writes. Serializer field lists are explicit and exclude `conference`; the write path gets the conference via the view's `save(conference=…)`. `TalkSerializer` narrows `session`/`day` querysets via the context conference (cross-conference FK ⇒ 400).
 - URL paths kebab-case with trailing slash; API mounted under `/{RELATIVE_URL_ROOT}api/`, admin tails under the slug prefix (e.g. `/api/<slug>/admin/...`).
-- Config tables (`ConferenceInfo`, `AccommodationInfo`) are per-conference singletons: read/edit views do `get_or_create(conference=self.conference)` — never `get_or_create(id=1)`. `ConferenceInfo` owns the logistics (title, dates, location, card_photo, hero_photo, venue_photo, short_description, badge_title; `year` derived read-only): `GET conference-info/` returns the plain `ConferenceInfoSerializer` payload; `PATCH conference-info/edit/` (multipart-capable, `BlankAsNoneDateField` maps empty date strings to null) writes logistics + web fields.
+- `Conference` is the single config row: it owns the logistics (title, dates, location, card/hero/venue photos, short description, badge title), the web texts and the accommodation description; `year` and `status` are derived read-only properties. `GET conference-info/` returns the plain `ConferenceInfoSerializer` payload; `PATCH conference-info/edit/` (multipart-capable, `BlankAsNoneDateField` maps empty date strings to null) writes logistics + web fields. Read endpoints must stay side-effect free — no lazy row creation.
 - Global default is `AllowAny`; admin views declare `authentication_classes=[JWTAuthentication]` + `permission_classes=[IsAdminUser]` per-view — do not centralize into settings.
 - JWT is global across conferences: one staff account administers every conference. Intended; do not scope tokens per conference.
 - Refresh-token rotation blacklists old tokens via `rest_framework_simplejwt.token_blacklist` (in INSTALLED_APPS); frontend refresh flow stores the rotated pair.
@@ -65,13 +65,13 @@ backend/
 ## ANTI-PATTERNS (THIS APP)
 
 - NEVER add an endpoint outside the `/api/<slug>/` include without conference scoping — `test_conference_isolation.py` builds its route matrix from `core/urls.py` and fails the suite for any unscoped route.
-- NEVER re-enable conference deletion: `ConferenceAdmin.has_delete_permission` is deliberately `False`; all domain models cascade from `Conference`, so deletion is an ops-shell decision, not a UI action.
-- `AccommodationOptionListView` (views.py:321) is dead code — defined but never routed. Deliberate minimal diff; do not wire it up or delete it casually.
+- NEVER allow deleting a Conference while any row references it: all domain models cascade from `Conference`, so `ConferenceAdmin` hides the delete action when `Conference.is_referenced()` is true, re-checks in `delete_model`/`delete_queryset`, and keeps `actions = None`. `is_referenced()` walks `_meta.get_fields(include_hidden=True)`, so a new conference FK (even a hidden one) is covered automatically; do not filter relations out of that check.
+- `AccommodationOptionListView` (views.py:322) is dead code — defined but never routed. Deliberate minimal diff; do not wire it up or delete it casually.
 - `ConferenceDayDeleteView.destroy` calls bare `day.delete()` with no guard; `UnscheduledTalkDeleteView` 400s on scheduled talks. Both deliberate — cascade rules and rationale live in root AGENTS.md; keep guards as they are. Beware: Talk→Abstract FK direction means day/talk deletes orphan the Abstract row.
 - `AccommodationOptionEditView` and `HikingStopEditView` call `objects.get(pk, conference=…)` unguarded in patch/delete: unknown or cross-conference pks surface as 500, never 404. Deliberate security choice — keep; tests pin the 500.
 - `ParticipantListView` and `AbstractListView` are `ListCreateAPIView` under the global `AllowAny`: POST creates rows for ANYONE. Deliberate public surface (admin decision 2026-10-03, may be revisited for security); do not add permission_classes without a fresh decision.
 - Deleting a conference day or an unscheduled talk orphans the linked `Abstract` (FK sits on Talk). Deliberate admin choice (2026-10-03); do not add delete cascades.
-- PDF generators (`generate_program_pdf`, `generate_badges_pdf`) build into `io.BytesIO`, then write bytes into the response — do not pass the HttpResponse to canvas directly (pyright compatibility, bytes unchanged). Both filter every queryset by conference; badges header is the info's `badge_title or title`, footer is the info's `location`.
+- PDF generators (`generate_program_pdf`, `generate_badges_pdf`) build into `io.BytesIO`, then write bytes into the response — do not pass the HttpResponse to canvas directly (pyright compatibility, bytes unchanged). Both filter every queryset by conference; badges header is `badge_title or title`, footer is `location`.
 - `traceback.print_exc()` debug calls and Russian comments exist in models/views/settings — leave them.
 - Signals: publish email fires on status transition to approved via `_old_status` captured in pre_save — `QuerySet.update()`/bulk paths silently skip it, and `fail_silently=False` means mail errors raise inside the publish request.
 - No pagination configured: list endpoints return all rows.

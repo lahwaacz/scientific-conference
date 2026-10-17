@@ -4,21 +4,21 @@ from datetime import date
 from unittest.mock import patch
 
 from django.contrib import admin as django_admin
+from django.contrib.auth.models import User
+from django.core.exceptions import PermissionDenied
 from django.test import RequestFactory, TestCase
-from django.urls import resolve
+from django.urls import resolve, reverse
 from rest_framework.test import APIClient
 
 from .admin import ConferenceAdmin
-from .models import Conference, ConferenceInfo, Role
+from .models import Conference, Participant, Role
 from .views import ConferenceListView
 
 TODAY = date(2026, 10, 4)
 
 
 def make_conference(slug, **info_fields):
-    conference = Conference.objects.create(slug=slug)
-    ConferenceInfo.objects.create(conference=conference, **info_fields)
-    return conference
+    return Conference.objects.create(slug=slug, **info_fields)
 
 
 class ConferencesEndpointMixin(TestCase):
@@ -154,17 +154,124 @@ class TestConferenceListRouting(ConferencesEndpointMixin):
 
 class TestConferenceAdminPolicy(TestCase):
     def setUp(self):
+        self.superuser = User.objects.create_superuser(
+            username="conference-admin", password="pw", email="admin@example.com"
+        )
         self.request = RequestFactory().get("/")
+        self.request.user = self.superuser
 
-    def test_delete_permission_is_denied(self):
-        model_admin = ConferenceAdmin(Conference, django_admin.site)
+    def model_admin(self):
+        return ConferenceAdmin(Conference, django_admin.site)
 
-        self.assertIs(model_admin.has_delete_permission(self.request), False)
+    def test_delete_permission_is_allowed_without_references(self):
+        conference = Conference.objects.create(slug="unreferenced-conference")
+
+        self.assertTrue(
+            self.model_admin().has_delete_permission(self.request, conference)
+        )
+
+    def test_delete_permission_is_denied_with_a_reference(self):
+        conference = Conference.objects.create(slug="referenced-conference")
+        Participant.objects.create(conference=conference, name="Participant")
+
+        self.assertFalse(
+            self.model_admin().has_delete_permission(self.request, conference)
+        )
 
     def test_bulk_actions_are_disabled(self):
-        model_admin = ConferenceAdmin(Conference, django_admin.site)
+        self.assertIsNone(self.model_admin().actions)
 
-        self.assertIsNone(model_admin.actions)
+    def test_delete_view_deletes_an_unreferenced_conference(self):
+        conference = Conference.objects.create(slug="deletable-conference")
+        self.client.force_login(self.superuser)
+
+        response = self.client.post(
+            reverse("admin:core_conference_delete", args=[conference.pk]),
+            {"post": "yes"},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Conference.objects.filter(pk=conference.pk).exists())
+
+    def test_delete_view_redirects_a_referenced_conference_with_a_message(self):
+        conference = Conference.objects.create(slug="protected-conference")
+        Participant.objects.create(conference=conference, name="Participant")
+        self.client.force_login(self.superuser)
+        url = reverse("admin:core_conference_delete", args=[conference.pk])
+
+        self.assertRedirects(
+            self.client.get(url),
+            reverse("admin:core_conference_change", args=[conference.pk]),
+        )
+
+        response = self.client.post(url, {"post": "yes"}, follow=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "still has related objects")
+        self.assertTrue(Conference.objects.filter(pk=conference.pk).exists())
+
+    def test_delete_model_refuses_a_conference_that_gained_a_reference(self):
+        conference = Conference.objects.create(slug="race-conference")
+        Participant.objects.create(conference=conference, name="Participant")
+
+        with self.assertRaises(PermissionDenied):
+            self.model_admin().delete_model(self.request, conference)
+
+        self.assertTrue(Conference.objects.filter(pk=conference.pk).exists())
+
+    def test_delete_queryset_refuses_a_referenced_conference(self):
+        conference = Conference.objects.create(slug="bulk-conference")
+        Participant.objects.create(conference=conference, name="Participant")
+        queryset = Conference.objects.filter(pk=conference.pk)
+
+        with self.assertRaises(PermissionDenied):
+            self.model_admin().delete_queryset(self.request, queryset)
+
+        self.assertTrue(Conference.objects.filter(pk=conference.pk).exists())
+
+    def test_delete_queryset_refuses_when_only_one_conference_is_referenced(self):
+        referenced = Conference.objects.create(slug="bulk-referenced")
+        Participant.objects.create(conference=referenced, name="Participant")
+        clean = Conference.objects.create(slug="bulk-clean")
+        queryset = Conference.objects.filter(pk__in=[referenced.pk, clean.pk])
+
+        with self.assertRaises(PermissionDenied):
+            self.model_admin().delete_queryset(self.request, queryset)
+
+        self.assertTrue(Conference.objects.filter(pk=referenced.pk).exists())
+        self.assertTrue(Conference.objects.filter(pk=clean.pk).exists())
+
+    def test_delete_permission_without_an_object_checks_the_permission_only(self):
+        self.assertTrue(self.model_admin().has_delete_permission(self.request))
+
+    def test_change_form_hides_the_delete_link_for_a_referenced_conference(self):
+        conference = Conference.objects.create(slug="no-delete-link")
+        Participant.objects.create(conference=conference, name="Participant")
+        self.client.force_login(self.superuser)
+
+        response = self.client.get(
+            reverse("admin:core_conference_change", args=[conference.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(
+            response,
+            reverse("admin:core_conference_delete", args=[conference.pk]),
+        )
+
+    def test_change_form_shows_the_delete_link_for_an_unreferenced_conference(self):
+        conference = Conference.objects.create(slug="delete-link")
+        self.client.force_login(self.superuser)
+
+        response = self.client.get(
+            reverse("admin:core_conference_change", args=[conference.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            reverse("admin:core_conference_delete", args=[conference.pk]),
+        )
 
     def test_every_other_core_admin_shows_conference_column_and_filter(self):
         registered = django_admin.site._registry
@@ -177,7 +284,7 @@ class TestConferenceAdminPolicy(TestCase):
             if model._meta.app_label == "core" and model not in (Conference, Role)
         }
 
-        self.assertEqual(len(core_admins), 11)
+        self.assertEqual(len(core_admins), 9)
         for object_name, admin_instance in core_admins.items():
             self.assertIn("conference", admin_instance.list_display, msg=object_name)
             self.assertIn("conference", admin_instance.list_filter, msg=object_name)
