@@ -227,3 +227,24 @@ class TestPdfDownloads(TestCase):
         text = pdf_text(response.content)
         self.assertIn("Approved Person", text)
         self.assertNotIn("Pending Person", text)
+
+    @pytest.mark.skipif(
+        shutil.which("pdftotext") is None, reason="pdftotext not available"
+    )
+    def test_badges_pdf_orders_by_surname(self):
+        for name in ["Zdeněk Zeman", "Lucie Šimková", "Jana Novotná"]:
+            ParticipantSubmission.objects.create(
+                conference=wsc_conference(),
+                name=name,
+                email=f"{name.split()[1].lower()}@x.cz",
+                affiliation="CTU",
+                status="approved",
+                arrival_date=date(2026, 9, 10),
+                departure_date=date(2026, 9, 11),
+            )
+
+        response = self._client(is_staff=True).get(api("admin/badges/download/"))
+
+        text = pdf_text(response.content)
+        self.assertLess(text.index("Jana Novotná"), text.index("Lucie Šimková"))
+        self.assertLess(text.index("Lucie Šimková"), text.index("Zdeněk Zeman"))

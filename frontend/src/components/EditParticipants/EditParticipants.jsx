@@ -321,7 +321,7 @@ export default function EditParticipants() {
                       <span>{sub.affiliation}</span>
                     </div>
                     <div className={styles.infoRow}>
-                      <strong>Abstract Title:</strong>
+                      <strong>Title:</strong>
                       <span
                         className={!sub.abstract_title ? styles.emptyValue : ""}
                       >

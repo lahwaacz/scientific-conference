@@ -246,7 +246,7 @@ class TestSubmissionAdminAPI(TestCase):
         data.update(overrides)
         return data
 
-    def test_list_orders_submissions_by_name_case_insensitively(self):
+    def test_list_orders_submissions_by_surname(self):
         make_submission(name="Zoe Adams", email="zoe@example.com")
         make_submission(name="adam baker", email="adam@example.com")
         make_submission(name="Mia Clarke", email="mia@example.com")
@@ -256,10 +256,10 @@ class TestSubmissionAdminAPI(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             [row["name"] for row in response.data],
-            ["adam baker", "Mia Clarke", "Zoe Adams"],
+            ["Zoe Adams", "adam baker", "Mia Clarke"],
         )
 
-    def test_list_status_filter_preserves_name_order(self):
+    def test_list_status_filter_preserves_surname_order(self):
         make_submission(name="Zoe Adams", email="zoe@example.com", status="pending")
         make_submission(name="Adam Baker", email="adam@example.com", status="pending")
         make_submission(name="Mia Clarke", email="mia@example.com", status="approved")
@@ -269,7 +269,7 @@ class TestSubmissionAdminAPI(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             [row["name"] for row in response.data],
-            ["Adam Baker", "Zoe Adams"],
+            ["Zoe Adams", "Adam Baker"],
         )
 
     def test_put_approved_submission_syncs_published_records(self):

@@ -75,7 +75,7 @@ class MappingTests(TestCase):
             [
                 ("Name", "Name"),
                 ("Email", "Email"),
-                ("Abstract Title", "Abstract title"),
+                ("Abstract Title", "Title"),
             ],
         )
 
@@ -430,7 +430,7 @@ class ImportAdminViewTests(TestCase):
             self.url, {"step": "remap", "map_2": "abstract_title"}
         )
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Abstract title")
+        self.assertContains(response, "Title")
         self.assertContains(response, "Quantum Fields")
         self.assertEqual(ParticipantSubmission.objects.count(), 0)
 

@@ -3,7 +3,6 @@ import io
 import os
 import traceback
 
-from django.db.models.functions import Lower
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils.functional import cached_property
@@ -387,7 +386,7 @@ def generate_badges_pdf(request, conference_slug):
 
     submissions = ParticipantSubmission.objects.filter(
         status="approved", conference=conference
-    ).order_by("name")
+    ).order_by("sort_key", "name")
 
     response = HttpResponse(content_type="application/pdf")
     response["Content-Disposition"] = 'attachment; filename="badges.pdf"'
@@ -512,7 +511,7 @@ class ProgramView(ConferenceScopedMixin, generics.ListAPIView):
 
 # Participants
 class ParticipantListView(ConferenceScopedMixin, generics.ListCreateAPIView):
-    queryset = Participant.objects.all().order_by("name")
+    queryset = Participant.objects.all().order_by("sort_key", "name")
     serializer_class = ParticipantSerializer
 
 
@@ -646,7 +645,7 @@ class SubmissionListView(ConferenceScopedMixin, generics.ListAPIView):
         status_filter = self.request.query_params.get("status", None)
         if status_filter:
             qs = qs.filter(status=status_filter)
-        return qs.order_by(Lower("name"))
+        return qs.order_by("sort_key", "name")
 
 
 class SubmissionDetailView(

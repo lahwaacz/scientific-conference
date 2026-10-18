@@ -332,7 +332,7 @@ export default function Tracking() {
     ["Name", submission.name],
     ["Email", submission.email],
     ["Affiliation", submission.affiliation],
-    ["Abstract title", submission.abstract_title],
+    ["Title", submission.abstract_title],
     ["Abstract", submission.abstract_text],
     ["Additional authors", submission.additional_authors],
     ["Additional affiliations", submission.additional_affiliations],

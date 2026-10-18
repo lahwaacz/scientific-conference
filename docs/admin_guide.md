@@ -143,7 +143,7 @@ Each item displays:
 - Arrival and departure dates.
 - Additional information provided by the participant (dietary restrictions, accessibility needs, etc.).
 
-The list is ordered alphabetically by participant name.
+The list is ordered alphabetically by participant surname; each full name is displayed as entered.
 
 ### Important Note
 
@@ -155,7 +155,7 @@ This page is not interactive. It is intended only for reading information. To mo
 
 ### Purpose
 
-The **Edit Participants and Abstracts** section contains the complete information about participant submissions and their abstracts. This section is used for reviewing, editing, publishing, filtering, and deleting submissions. Submissions are listed alphabetically by participant name.
+The **Edit Participants and Abstracts** section contains the complete information about participant submissions and their abstracts. This section is used for reviewing, editing, publishing, filtering, and deleting submissions. Submissions are listed alphabetically by participant surname.
 
 ![Participant submissions](./assets/participantssubmissions.png)
 
@@ -178,8 +178,8 @@ Before publishing, the following fields must be filled in:
 
 - Name
 - Affiliation
-- Abstract Title
-- Abstract Text
+- Title
+- Abstract
 - Date of arrival
 - Date of departure
 
@@ -269,9 +269,9 @@ Participants who were collected before registration opened (for example an early
 
 The import lives in the **Django administration**, not in the conference website: open **Participant submissions** and select **Import CSV** in the top-right corner.
 
-A CSV column is matched to a participant field automatically when its name matches the field name, ignoring capital letters and spaces. For example, a column called `Name` fills the participant name, `Email` the e-mail, `Abstract Title` (or `abstract_title`) the abstract title, and `Admin Notes` the internal admin notes. The available fields are the participant-submission fields: name, e-mail, affiliation, abstract title, abstract text, additional authors, additional affiliations, arrival and departure dates, admin notes, additional info, and the student flag. **Name** and **Email** are required; everything else is optional. The student flag accepts `yes`/`no` (also `true`/`false`, `y`/`n`, `1`/`0`, and `ano`/`ne`); an empty cell is treated as `no`, and any other value is an error. A `photo` column is ignored, because photos are added later.
+A CSV column is matched to a participant field automatically when its name matches the field name, ignoring capital letters and spaces. For example, a column called `Name` fills the participant name, `Email` the e-mail, `Abstract Title` (or `abstract_title`) the title, and `Admin Notes` the internal admin notes. The available fields are the participant-submission fields: name, e-mail, affiliation, title, abstract, additional authors, additional affiliations, arrival and departure dates, admin notes, additional info, and the student flag. **Name** and **Email** are required; everything else is optional. The student flag accepts `yes`/`no` (also `true`/`false`, `y`/`n`, `1`/`0`, and `ano`/`ne`); an empty cell is treated as `no`, and any other value is an error. A `photo` column is ignored, because photos are added later.
 
-Columns that do not match a field name are shown on the preview screen, where each can be mapped to a field by hand — for example, mapping a column called `Topic / Title (Tentative, for all now)` to **Abstract title**. Several columns can be mapped to **Admin notes**; their values are merged, one per line (empty cells are dropped). Every other field accepts a single column.
+Columns that do not match a field name are shown on the preview screen, where each can be mapped to a field by hand — for example, mapping a column called `Topic / Title (Tentative, for all now)` to **Title**. Several columns can be mapped to **Admin notes**; their values are merged, one per line (empty cells are dropped). Every other field accepts a single column.
 
 The file may be comma-, semicolon-, or tab-separated, and may be UTF-8 or Windows-1250 encoded (the encoding Excel commonly produces for Czech text). The file must be at most 2 MB and contain at most 10,000 data rows.
 
@@ -627,8 +627,8 @@ Always verify that the following fields are filled in correctly:
 
 - Name
 - Affiliation
-- Abstract Title
-- Abstract Text
+- Title
+- Abstract
 - Arrival date
 - Departure date
 

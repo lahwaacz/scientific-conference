@@ -3,7 +3,16 @@ from django.core.mail import send_mail
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
-from .models import ParticipantSubmission
+from .models import Participant, ParticipantSubmission
+from .names import compute_sort_key
+
+
+@receiver(pre_save, sender=Participant)
+@receiver(pre_save, sender=ParticipantSubmission)
+def populate_sort_key_on_raw_save(sender, instance, raw=False, **kwargs):
+    # loaddata uses save_base(raw=True), bypassing Model.save().
+    if raw and not instance.sort_key:
+        instance.sort_key = compute_sort_key(instance.name)
 
 
 @receiver(pre_save, sender=ParticipantSubmission)

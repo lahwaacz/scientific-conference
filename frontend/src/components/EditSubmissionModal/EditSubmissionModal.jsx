@@ -388,7 +388,7 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
             </div>
 
             <div className={styles.fieldFull}>
-              <label>Abstract Title</label>
+              <label>Title</label>
               <input
                 type="text"
                 name="abstract_title"
@@ -399,7 +399,7 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
 
             <div className={styles.fieldFull}>
               <label>
-                Abstract Description
+                Abstract
                 <span className={styles.wordCount}>({wordCount} words)</span>
               </label>
               <textarea

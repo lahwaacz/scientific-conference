@@ -105,9 +105,9 @@ export default function SubmissionFields({
         <small className={styles.hint}>Max 5MB, JPG/PNG format</small>
       </div>
 
-      {/* Abstract title */}
+      {/* Title */}
       <div className={styles.field}>
-        <label className={styles.label}>Abstract Title</label>
+        <label className={styles.label}>Title</label>
         <input
           type="text"
           name="abstract_title"
@@ -118,10 +118,10 @@ export default function SubmissionFields({
         />
       </div>
 
-      {/* Abstract text */}
+      {/* Abstract */}
       <div className={styles.field}>
         <label className={styles.label}>
-          Abstract Description
+          Abstract
           <span className={styles.wordCount}> ({wordCount}/250 words)</span>
         </label>
         <textarea

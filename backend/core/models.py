@@ -6,6 +6,8 @@ from django.db import models
 from django.db.models.fields.reverse_related import ForeignObjectRel
 from django.utils import timezone
 
+from .names import compute_sort_key
+
 RESERVED_SLUGS = {"auth", "admin", "api", "conferences", "media", "static"}
 
 
@@ -197,9 +199,25 @@ class Participant(models.Model):
         Conference, related_name="participants", on_delete=models.CASCADE
     )
     name = models.CharField(max_length=255)
+    sort_key = models.CharField(
+        max_length=320, blank=True, default="", editable=False, db_index=True
+    )
     affiliation = models.CharField(max_length=500, blank=True)
     email = models.EmailField(blank=True)
     photo = models.ImageField(upload_to="participants/", blank=True, null=True)
+
+    class Meta:
+        ordering = ["sort_key", "name"]
+
+    def save(self, *args, **kwargs):
+        # Derived from ``name`` on every full save. QuerySet.update() and
+        # bulk_create() bypass this, so bulk renames must recompute sort_key.
+        update_fields = kwargs.get("update_fields")
+        if update_fields is None or "name" in update_fields:
+            self.sort_key = compute_sort_key(self.name)
+            if update_fields is not None:
+                kwargs["update_fields"] = {*update_fields, "sort_key"}
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -344,12 +362,15 @@ class ParticipantSubmission(models.Model):
         Conference, related_name="submissions", on_delete=models.CASCADE
     )
     name = models.CharField(max_length=255)
+    sort_key = models.CharField(
+        max_length=320, blank=True, default="", editable=False, db_index=True
+    )
     email = models.EmailField()
     affiliation = models.CharField(max_length=500)
     photo = models.ImageField(upload_to="submissions/photos/", blank=True, null=True)
 
-    abstract_title = models.CharField(max_length=500, blank=True)
-    abstract_text = models.TextField(blank=True)
+    abstract_title = models.CharField(max_length=500, blank=True, verbose_name="Title")
+    abstract_text = models.TextField(blank=True, verbose_name="Abstract")
     additional_authors = models.CharField(
         max_length=500, blank=True, help_text="Co-authors"
     )
@@ -402,6 +423,14 @@ class ParticipantSubmission(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.abstract_title or 'No title'} ({self.status})"
+
+    def save(self, *args, **kwargs):
+        update_fields = kwargs.get("update_fields")
+        if update_fields is None or "name" in update_fields:
+            self.sort_key = compute_sort_key(self.name)
+            if update_fields is not None:
+                kwargs["update_fields"] = {*update_fields, "sort_key"}
+        super().save(*args, **kwargs)
 
     @property
     def stay_duration(self):

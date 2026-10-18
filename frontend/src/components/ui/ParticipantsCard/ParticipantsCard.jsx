@@ -27,9 +27,11 @@ export default function ParticipantsCard({
           <p className={styles.department}>{department}</p>
         </div>
       </div>
-      <button className={styles.button} onClick={goToAbstract}>
-        TO THE ABSTRACT
-      </button>
+      {abstractId !== null && abstractId !== undefined && (
+        <button className={styles.button} onClick={goToAbstract}>
+          TO THE ABSTRACT
+        </button>
+      )}
     </div>
   );
 }
