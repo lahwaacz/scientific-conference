@@ -22,12 +22,24 @@ export default function EditWebInfoRegistration() {
   }, []);
 
   function handleChange(e) {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value, type, checked } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
     setSaved(false);
   }
 
   async function handleSave(e) {
     e.preventDefault();
+    if (
+      !form.registration_allow_talk &&
+      !form.registration_allow_poster &&
+      !form.registration_allow_attend
+    ) {
+      setError("Select at least one contribution type.");
+      return;
+    }
     setSaving(true);
     setError("");
     try {
@@ -39,6 +51,9 @@ export default function EditWebInfoRegistration() {
           registration_opening: form.registration_opening,
           registration_deadline: form.registration_deadline,
           submission_edit_deadline: form.submission_edit_deadline,
+          registration_allow_talk: form.registration_allow_talk !== false,
+          registration_allow_poster: form.registration_allow_poster !== false,
+          registration_allow_attend: form.registration_allow_attend !== false,
         }),
       });
       if (!res.ok) throw new Error();
@@ -142,6 +157,41 @@ export default function EditWebInfoRegistration() {
                 value={form.submission_edit_deadline || ""}
                 onChange={handleChange}
               />
+            </div>
+
+            <div className={styles.field}>
+              <label>Allowed Contribution Types</label>
+              <small className={styles.hint}>
+                Which options the public registration form offers. At least one
+                must stay enabled.
+              </small>
+              <label className={styles.checkboxOption}>
+                <input
+                  type="checkbox"
+                  name="registration_allow_talk"
+                  checked={form.registration_allow_talk !== false}
+                  onChange={handleChange}
+                />
+                Talk
+              </label>
+              <label className={styles.checkboxOption}>
+                <input
+                  type="checkbox"
+                  name="registration_allow_poster"
+                  checked={form.registration_allow_poster !== false}
+                  onChange={handleChange}
+                />
+                Poster
+              </label>
+              <label className={styles.checkboxOption}>
+                <input
+                  type="checkbox"
+                  name="registration_allow_attend"
+                  checked={form.registration_allow_attend !== false}
+                  onChange={handleChange}
+                />
+                Just attend
+              </label>
             </div>
           </section>
 

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import avatar from "../../assets/avatar.png";
 import { buildMediaUrl, fetchWithAuth } from "../../utils/api";
+import { contributionTypeLabel } from "../../utils/contributionTypes";
 import { markProgramDirty } from "../../utils/programRefresh";
 import EditSubmissionModal from "../EditSubmissionModal/EditSubmissionModal";
 import Loader from "../ui/Loader/Loader";
@@ -319,6 +320,12 @@ export default function EditParticipants() {
                     <div className={styles.infoRow}>
                       <strong>Affiliation:</strong>
                       <span>{sub.affiliation}</span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <strong>Participation:</strong>
+                      <span>
+                        {contributionTypeLabel(sub.contribution_type)}
+                      </span>
                     </div>
                     <div className={styles.infoRow}>
                       <strong>Title:</strong>

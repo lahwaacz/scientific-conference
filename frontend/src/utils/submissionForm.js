@@ -1,3 +1,5 @@
+import { CONTRIBUTION_TYPES } from "./contributionTypes";
+
 export function countWords(text) {
   return text
     .trim()
@@ -5,8 +7,19 @@ export function countWords(text) {
     .filter((w) => w.length > 0).length;
 }
 
-export function validateSubmissionForm({ formData, photo }) {
+export function validateSubmissionForm({
+  formData,
+  photo,
+  allowedTypes,
+  originalContributionType,
+}) {
   const errors = {};
+  const contributionType = formData.contribution_type || "talk";
+  const allowed = allowedTypes ?? CONTRIBUTION_TYPES.map((type) => type.value);
+
+  if (!allowed.includes(contributionType)) {
+    errors.contribution_type = "Please select a valid participation type";
+  }
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
     errors.email = "Please enter a valid email";
@@ -16,8 +29,16 @@ export function validateSubmissionForm({ formData, photo }) {
     errors.affiliation = "Please enter a valid affiliation";
   }
 
-  if (countWords(formData.abstract_text) > 250) {
-    errors.abstract_text = "Abstract must not exceed 250 words";
+  if (contributionType !== "attend") {
+    const requiresTitle =
+      originalContributionType === undefined ||
+      originalContributionType !== contributionType;
+    if (requiresTitle && !formData.abstract_title?.trim()) {
+      errors.abstract_title = "Please enter a title";
+    }
+    if (countWords(formData.abstract_text || "") > 250) {
+      errors.abstract_text = "Abstract must not exceed 250 words";
+    }
   }
 
   if (!formData.arrival) {

@@ -172,16 +172,16 @@ The **Edit Participants and Abstracts** section contains the complete informatio
 
 ### Publish a Submission
 
-Publishing makes the participant and abstract visible in the public part of the website.
+Publishing makes the participant and, for talks and posters, the abstract visible in the public part of the website.
 
 Before publishing, the following fields must be filled in:
 
 - Name
 - Affiliation
-- Title
-- Abstract
 - Date of arrival
 - Date of departure
+
+For a **Talk** or **Poster**, a **Title** is also required. The abstract text is optional.
 
 To publish a submission:
 
@@ -196,10 +196,18 @@ To publish a submission:
 After publication:
 
 - The participant appears in the public part of the website.
-- The abstract appears in the public part of the website.
-- The talk is created as an unpublished schedule item without an assigned presentation time.
+- A **Talk** creates an abstract and an unpublished schedule item without an assigned presentation time.
+- A **Poster** creates an abstract but no schedule item.
+- **Just attend** creates only the participant; no abstract or talk is created.
 
-After publication, the presentation time is still not set. To assign the time, continue to **Edit Program**.
+After publishing a talk, the presentation time is still not set. To assign the time, continue to **Edit Program**.
+
+Changing a published submission's participation type updates the public records:
+
+- **Talk → Poster** removes the unscheduled talk but keeps the abstract.
+- **Talk or Poster → Just attend** removes the abstract and the unscheduled talk.
+- **Poster → Talk** creates an unscheduled talk.
+- A talk that is already scheduled must be unscheduled before the submission can be changed to a poster or to just attend.
 
 Each abstract shown on the public abstracts page carries a **TO THE PROGRAM** button that jumps to the corresponding talk in the program. This button is hidden while the program is not ready (the conference has no scheduled days yet) and appears once at least one conference day has been created.
 
@@ -269,7 +277,7 @@ Participants who were collected before registration opened (for example an early
 
 The import lives in the **Django administration**, not in the conference website: open **Participant submissions** and select **Import CSV** in the top-right corner.
 
-A CSV column is matched to a participant field automatically when its name matches the field name, ignoring capital letters and spaces. For example, a column called `Name` fills the participant name, `Email` the e-mail, `Abstract Title` (or `abstract_title`) the title, and `Admin Notes` the internal admin notes. The available fields are the participant-submission fields: name, e-mail, affiliation, title, abstract, additional authors, additional affiliations, arrival and departure dates, admin notes, additional info, and the student flag. **Name** and **Email** are required; everything else is optional. The student flag accepts `yes`/`no` (also `true`/`false`, `y`/`n`, `1`/`0`, and `ano`/`ne`); an empty cell is treated as `no`, and any other value is an error. A `photo` column is ignored, because photos are added later.
+A CSV column is matched to a participant field automatically when its name matches the field name, ignoring capital letters and spaces. For example, a column called `Name` fills the participant name, `Email` the e-mail, `Abstract Title` (or `abstract_title`) the title, and `Admin Notes` the internal admin notes. The available fields are the participant-submission fields: name, e-mail, affiliation, title, abstract, contribution type, additional authors, additional affiliations, arrival and departure dates, admin notes, additional info, and the student flag. **Name** and **Email** are required; everything else is optional. The contribution type accepts `Talk`, `Poster`, or `Just attend` (also the Czech `přednáška` and `účast`); when the column is absent or empty, it is inferred as Talk when an abstract is present and Just attend otherwise. CSV import and the Django administration are administrative overrides: they do not enforce the conference's **Allowed Contribution Types** setting. The conference website, participant tracking links, and the conference admin panel enforce it. The student flag accepts `yes`/`no` (also `true`/`false`, `y`/`n`, `1`/`0`, and `ano`/`ne`); an empty cell is treated as `no`, and any other value is an error. A `photo` column is ignored, because photos are added later.
 
 Columns that do not match a field name are shown on the preview screen, where each can be mapped to a field by hand — for example, mapping a column called `Topic / Title (Tentative, for all now)` to **Title**. Several columns can be mapped to **Admin notes**; their values are merged, one per line (empty cells are dropped). Every other field accepts a single column.
 
@@ -483,6 +491,10 @@ Use the **Registration** subsection to update the registration page text and the
 
 After a successful submission, the public registration form is replaced by a confirmation screen showing the participant reference and the personal tracking link; see **Participant Tracking Links and Self-Service Edits** in **Edit Participants and Abstracts**.
 
+The registration form asks for a participation type: **Talk**, **Poster**, or **Just attend**. **Talk** is selected by default. Talk and poster submissions show the title and abstract fields; the title is required for both. **Just attend** hides them and creates no abstract or talk when published.
+
+**Allowed Contribution Types** controls which of the three options the form offers; at least one must stay enabled. Existing submissions keep their type if an option is later disabled.
+
 The registration window has two optional dates. The **Registration Opening Date** is the first day the registration form is available; before it, the public registration form is replaced by a "not open yet" notice. The **Registration Deadline** is the last day the form is available; after it, the form is replaced by a "registration closed" notice. Outside the window the backend also rejects submission attempts directly, so the form cannot be bypassed. When both dates are empty, registration is open — but a conference whose end date has passed always has closed registration, even without a deadline.
 
 The **Submission Editing Deadline** is an independent optional date that controls how long participants can edit their own submission through the personal tracking link (see **Participant Tracking Links and Self-Service Edits** in **Edit Participants and Abstracts**). Participants can keep editing until this date even after registration has closed. The deadline must fall on or after the registration deadline and on or before the conference end date (when those dates are set), because the conference end date always ends editing — even a later deadline cannot keep editing open past the end of the conference. When the field is empty, editing closes the day before the conference starts, based on the conference start date; if no start date is set either, editing stays open.
@@ -627,8 +639,8 @@ Always verify that the following fields are filled in correctly:
 
 - Name
 - Affiliation
-- Title
-- Abstract
+- Participation type
+- Title (for Talk and Poster)
 - Arrival date
 - Departure date
 
@@ -645,6 +657,12 @@ Make sure all talks are assigned to the correct days, chairs, and times, because
 ### A Published Participant Is Not Visible in the Program
 
 Publication alone is not enough. After publication, the talk still has no assigned time. Open **Edit Program** and assign the talk in **Unscheduled Talks**.
+
+A **Poster** or **Just attend** participant never appears in the program: posters have an abstract but no schedule item, and just-attend participants have no contribution at all.
+
+### A Just attend Participant Is Not in the Abstracts
+
+This is expected. Abstract and title fields are only used for Talk and Poster submissions; a just-attend participant creates no abstract row.
 
 ### The Required Chair Does Not Appear During Scheduling
 

@@ -2,16 +2,34 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import avatar from "../../assets/avatar.png";
 import { buildMediaUrl, fetchWithAuth } from "../../utils/api.js";
+import { allowedContributionTypes } from "../../utils/contributionTypes";
+import { useConferenceInfo } from "../hooks/useConferenceInfo";
 import PhotoCropModal from "../PhotoCropModal/PhotoCropModal";
 import Modal from "../ui/Modal/Modal";
 import Title from "../ui/Title/Title";
 import styles from "./EditSubmissionModal.module.css";
+
+function formatApiError(text, status) {
+  try {
+    const parsed = JSON.parse(text);
+    if (typeof parsed === "string") return parsed;
+    return Object.entries(parsed)
+      .map(([key, value]) => {
+        const message = Array.isArray(value) ? value.join(" ") : value;
+        return `${key}: ${message}`;
+      })
+      .join("\n");
+  } catch {
+    return text || `Failed to save (${status}).`;
+  }
+}
 
 export default function EditSubmissionModal({ submission, onClose, onSave }) {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     affiliation: "",
+    contribution_type: "talk",
     abstract_title: "",
     abstract_text: "",
     additional_authors: "",
@@ -37,6 +55,12 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
     type: "default",
   });
 
+  const info = useConferenceInfo();
+  const allowedTypes = allowedContributionTypes(
+    info,
+    submission?.contribution_type
+  );
+
   function openModal(config) {
     setModal({
       isOpen: true,
@@ -60,6 +84,7 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
         name: submission.name || "",
         email: submission.email || "",
         affiliation: submission.affiliation || "",
+        contribution_type: submission.contribution_type || "talk",
         abstract_title: submission.abstract_title || "",
         abstract_text: submission.abstract_text || "",
         additional_authors: submission.additional_authors || "",
@@ -263,7 +288,7 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
         const errorText = await response.text();
         openModal({
           title: "Save failed",
-          message: errorText || `Failed to save (${response.status}).`,
+          message: formatApiError(errorText, response.status),
           type: "danger",
           onConfirm: closeModal,
         });
@@ -388,47 +413,71 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
             </div>
 
             <div className={styles.fieldFull}>
-              <label>Title</label>
-              <input
-                type="text"
-                name="abstract_title"
-                value={formData.abstract_title}
-                onChange={handleChange}
-              />
+              <label>Participation *</label>
+              <div className={styles.radioGroup}>
+                {allowedTypes.map((type) => (
+                  <label key={type.value} className={styles.radioOption}>
+                    <input
+                      type="radio"
+                      name="contribution_type"
+                      value={type.value}
+                      checked={formData.contribution_type === type.value}
+                      onChange={handleChange}
+                    />
+                    {type.label}
+                  </label>
+                ))}
+              </div>
             </div>
 
-            <div className={styles.fieldFull}>
-              <label>
-                Abstract
-                <span className={styles.wordCount}>({wordCount} words)</span>
-              </label>
-              <textarea
-                name="abstract_text"
-                value={formData.abstract_text}
-                onChange={handleChange}
-                rows="8"
-              />
-            </div>
+            {formData.contribution_type !== "attend" && (
+              <>
+                <div className={styles.fieldFull}>
+                  <label>Title</label>
+                  <input
+                    type="text"
+                    name="abstract_title"
+                    value={formData.abstract_title}
+                    onChange={handleChange}
+                  />
+                </div>
 
-            <div className={styles.fieldFull}>
-              <label>Additional Authors</label>
-              <input
-                type="text"
-                name="additional_authors"
-                value={formData.additional_authors}
-                onChange={handleChange}
-              />
-            </div>
+                <div className={styles.fieldFull}>
+                  <label>
+                    Abstract
+                    <span className={styles.wordCount}>
+                      ({wordCount} words)
+                    </span>
+                  </label>
+                  <textarea
+                    name="abstract_text"
+                    value={formData.abstract_text}
+                    onChange={handleChange}
+                    rows="8"
+                  />
+                </div>
 
-            <div className={styles.fieldFull}>
-              <label>Additional Affiliations</label>
-              <textarea
-                name="additional_affiliations"
-                value={formData.additional_affiliations}
-                onChange={handleChange}
-                rows="3"
-              />
-            </div>
+                <div className={styles.fieldFull}>
+                  <label>Additional Authors</label>
+                  <input
+                    type="text"
+                    name="additional_authors"
+                    value={formData.additional_authors}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className={styles.fieldFull}>
+                  <label>Additional Affiliations</label>
+                  <textarea
+                    name="additional_affiliations"
+                    value={formData.additional_affiliations}
+                    onChange={handleChange}
+                    rows="3"
+                  />
+                </div>
+              </>
+            )}
 
             <div className={styles.field}>
               <label>Arrival Date *</label>

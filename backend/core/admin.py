@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib import admin, messages
 from django.contrib.admin.utils import unquote
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.http import HttpResponseRedirect
 from django.template.response import TemplateResponse
@@ -96,6 +96,9 @@ class ConferenceAdmin(admin.ModelAdmin):
                     "registration_opening",
                     "registration_deadline",
                     "submission_edit_deadline",
+                    "registration_allow_talk",
+                    "registration_allow_poster",
+                    "registration_allow_attend",
                     "registration_fee_note",
                 )
             },
@@ -256,6 +259,7 @@ class ParticipantSubmissionAdmin(admin.ModelAdmin):
     list_display = [
         "conference",
         "name",
+        "contribution_type",
         "email",
         "abstract_title",
         "status",
@@ -263,7 +267,7 @@ class ParticipantSubmissionAdmin(admin.ModelAdmin):
         "linked_user",
         "submitted_at",
     ]
-    list_filter = ["conference", "status", "submitted_at"]
+    list_filter = ["conference", "status", "contribution_type", "submitted_at"]
     search_fields = ["name", "email", "abstract_title"]
     readonly_fields = [
         "tracking_token",
@@ -275,10 +279,33 @@ class ParticipantSubmissionAdmin(admin.ModelAdmin):
     actions = ["publish_selected"]
 
     def publish_selected(self, request, queryset):
+        published = 0
+        failed = 0
+        skipped = 0
         for submission in queryset:
-            if submission.status != "approved":
+            if submission.status == "approved":
+                skipped += 1
+                continue
+            try:
                 submission.publish()
-        self.message_user(request, f"{queryset.count()} submissions published")
+                published += 1
+            except ValidationError as exc:
+                failed += 1
+                self.message_user(
+                    request,
+                    f"{submission.name}: {exc.messages[0]}",
+                    level=messages.ERROR,
+                )
+        summary = f"{published} published"
+        if failed:
+            summary += f", {failed} failed"
+        if skipped:
+            summary += f", {skipped} already published"
+        self.message_user(
+            request,
+            summary,
+            level=messages.WARNING if failed else messages.SUCCESS,
+        )
 
     publish_selected.short_description = "Publish selected submissions"
 

@@ -66,6 +66,17 @@ MERGEABLE_FIELDS = frozenset({"admin_notes"})
 _TRUE_VALUES = frozenset({"1", "true", "yes", "y", "ano"})
 _FALSE_VALUES = frozenset({"0", "false", "no", "n", "ne", ""})
 
+_CONTRIBUTION_VALUES = {
+    "talk": "talk",
+    "prednaska": "talk",
+    "přednáška": "talk",
+    "poster": "poster",
+    "attend": "attend",
+    "ucast": "attend",
+    "účast": "attend",
+    "just attend": "attend",
+}
+
 
 class ImportFileError(Exception):
     """A file-level problem (empty file, no rows, unmappable required columns)."""
@@ -312,6 +323,16 @@ def _typed_payload(values: dict[str, str], errors: list[str]) -> dict:
                 payload[name] = False
             else:
                 errors.append(f'{field_label(name)} must be yes or no (got "{value}").')
+        elif name == "contribution_type":
+            if not value.strip():
+                continue
+            contribution_type = _CONTRIBUTION_VALUES.get(value.strip().lower())
+            if contribution_type is None:
+                errors.append(
+                    f'{field_label(name)} must be Talk, Poster, or Just attend (got "{value}").'
+                )
+            else:
+                payload[name] = contribution_type
         elif name in DATE_FIELDS:
             if value:
                 if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
@@ -377,6 +398,12 @@ def validate_rows(
                 )
 
         payload = _typed_payload(values, errors)
+        payload.setdefault(
+            "contribution_type",
+            "talk"
+            if values.get("abstract_title") or values.get("abstract_text")
+            else "attend",
+        )
         payload.setdefault("arrival_date", defaults.arrival)
         payload.setdefault("departure_date", defaults.departure)
         arrival = payload.get("arrival_date")

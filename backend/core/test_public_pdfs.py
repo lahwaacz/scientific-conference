@@ -125,6 +125,38 @@ class TestPublicLists(TestCase):
         )
         self.assertEqual(response.status_code, 201)
 
+    def test_abstracts_exclude_attend_participants(self):
+        conference = wsc_conference()
+        participant = Participant.objects.create(
+            conference=conference, name="Attendee", contribution_type="attend"
+        )
+        Abstract.objects.create(
+            conference=conference, title="Stale", participant=participant
+        )
+
+        response = self.client.get(api("abstracts/"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
+    def test_published_attend_submission_is_absent_from_abstracts(self):
+        conference = wsc_conference()
+        submission = ParticipantSubmission.objects.create(
+            conference=conference,
+            name="Attendee",
+            email="attendee@example.com",
+            affiliation="",
+            contribution_type="attend",
+            arrival_date=date(2026, 9, 10),
+            departure_date=date(2026, 9, 12),
+        )
+        submission.publish()
+
+        response = self.client.get(api("abstracts/"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
     def test_conference_info_returns_the_conference_config(self):
         conference = wsc_conference()
 

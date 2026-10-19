@@ -76,6 +76,23 @@
   color: #888;
 }
 
+.checkboxOption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-main);
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--text-color);
+  cursor: pointer;
+}
+
+.checkboxOption input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--secondary-color);
+}
+
 .hintInline {
   font-weight: 400;
   font-size: 13px;

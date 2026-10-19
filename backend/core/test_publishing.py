@@ -5,6 +5,7 @@ import tempfile
 from datetime import date
 
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
@@ -47,8 +48,10 @@ def make_submission(**overrides):
 
 
 class TestPublishBranches(TestCase):
-    def test_no_abstract_creates_participant_only(self):
-        submission = make_submission(abstract_title="", abstract_text="")
+    def test_attend_creates_participant_only(self):
+        submission = make_submission(
+            contribution_type="attend", abstract_title="", abstract_text=""
+        )
 
         participant, abstract, talk = submission.publish()
 
@@ -144,6 +147,142 @@ class TestPublishBranches(TestCase):
         assert talk2 is not None
         self.assertEqual(abstract2.title, "Better Title")
         self.assertEqual(talk2.title, "Better Title")
+
+    def test_poster_creates_abstract_without_talk(self):
+        submission = make_submission(contribution_type="poster")
+
+        participant, abstract, talk = submission.publish()
+
+        self.assertIsNotNone(abstract)
+        self.assertIsNone(talk)
+        participant.refresh_from_db()
+        self.assertEqual(participant.contribution_type, "poster")
+        self.assertEqual(Talk.objects.count(), 0)
+
+    def test_talk_to_poster_removes_unscheduled_talk(self):
+        submission = make_submission()
+        _, abstract, talk = submission.publish()
+        assert abstract is not None
+        assert talk is not None
+
+        submission.refresh_from_db()
+        submission.contribution_type = "poster"
+        submission.save()
+        _, abstract2, talk2 = submission.publish()
+
+        self.assertEqual(abstract2, abstract)
+        self.assertIsNone(talk2)
+        self.assertFalse(Talk.objects.filter(pk=talk.pk).exists())
+
+    def test_talk_to_attend_removes_abstract_and_talk(self):
+        submission = make_submission()
+        _, abstract, talk = submission.publish()
+        assert abstract is not None
+        assert talk is not None
+
+        submission.refresh_from_db()
+        submission.contribution_type = "attend"
+        submission.save()
+        participant, abstract2, talk2 = submission.publish()
+
+        self.assertIsNone(abstract2)
+        self.assertIsNone(talk2)
+        self.assertEqual(Abstract.objects.count(), 0)
+        self.assertEqual(Talk.objects.count(), 0)
+        participant.refresh_from_db()
+        self.assertEqual(participant.contribution_type, "attend")
+
+    def test_scheduled_talk_blocks_type_change(self):
+        submission = make_submission()
+        _, _, talk = submission.publish()
+        assert talk is not None
+        talk.is_scheduled = True
+        talk.save()
+
+        submission.refresh_from_db()
+        submission.contribution_type = "poster"
+        submission.save()
+
+        with self.assertRaises(ValidationError):
+            submission.publish()
+        self.assertTrue(Talk.objects.filter(pk=talk.pk).exists())
+
+    def test_same_email_attend_does_not_delete_existing_talk(self):
+        talk_submission = make_submission()
+        talk_participant, abstract, talk = talk_submission.publish()
+        assert abstract is not None
+        assert talk is not None
+
+        attend_submission = make_submission(
+            contribution_type="attend", abstract_title="", abstract_text=""
+        )
+        attend_participant, attend_abstract, attend_talk = attend_submission.publish()
+
+        self.assertNotEqual(attend_participant, talk_participant)
+        self.assertIsNone(attend_abstract)
+        self.assertIsNone(attend_talk)
+        self.assertTrue(Abstract.objects.filter(pk=abstract.pk).exists())
+        self.assertTrue(Talk.objects.filter(pk=talk.pk).exists())
+        talk_participant.refresh_from_db()
+        attend_participant.refresh_from_db()
+        self.assertEqual(talk_participant.contribution_type, "talk")
+        self.assertEqual(attend_participant.contribution_type, "attend")
+
+    def test_same_email_poster_does_not_overwrite_existing_abstract(self):
+        talk_submission = make_submission()
+        _, abstract, talk = talk_submission.publish()
+        assert abstract is not None
+        assert talk is not None
+
+        poster_submission = make_submission(
+            contribution_type="poster", abstract_title="Poster Title"
+        )
+        poster_participant, poster_abstract, poster_talk = poster_submission.publish()
+
+        self.assertIsNotNone(poster_abstract)
+        self.assertIsNone(poster_talk)
+        self.assertNotEqual(poster_abstract, abstract)
+        abstract.refresh_from_db()
+        self.assertEqual(abstract.title, "Numerical Methods")
+        self.assertTrue(Talk.objects.filter(pk=talk.pk).exists())
+        self.assertEqual(Abstract.objects.count(), 2)
+        self.assertEqual(
+            poster_participant.contribution_type,
+            "poster",
+        )
+
+    def test_same_email_second_talk_gets_its_own_records(self):
+        first = make_submission(abstract_title="First Talk")
+        first_participant, first_abstract, first_talk = first.publish()
+        assert first_abstract is not None
+        assert first_talk is not None
+
+        second = make_submission(abstract_title="Second Talk")
+        second_participant, second_abstract, second_talk = second.publish()
+
+        self.assertNotEqual(second_participant, first_participant)
+        self.assertNotEqual(second_abstract, first_abstract)
+        self.assertNotEqual(second_talk, first_talk)
+        self.assertEqual(Abstract.objects.count(), 2)
+        self.assertEqual(Talk.objects.count(), 2)
+        first_abstract.refresh_from_db()
+        self.assertEqual(first_abstract.title, "First Talk")
+
+    def test_same_email_attend_leaves_scheduled_talk_untouched(self):
+        talk_submission = make_submission()
+        _, _, talk = talk_submission.publish()
+        assert talk is not None
+        talk.is_scheduled = True
+        talk.save()
+
+        attend_submission = make_submission(
+            contribution_type="attend", abstract_title="", abstract_text=""
+        )
+        attend_submission.publish()
+
+        talk.refresh_from_db()
+        self.assertTrue(talk.is_scheduled)
+        self.assertTrue(Talk.objects.filter(pk=talk.pk).exists())
 
 
 class TestPublishConferenceIsolation(TestCase):
@@ -360,14 +499,21 @@ class TestSubmissionAdminAPI(TestCase):
 
     def test_patch_adding_abstract_creates_rows_in_own_conference(self):
         sub_b = make_submission(
-            conference=other_conference(), abstract_title="", abstract_text=""
+            conference=other_conference(),
+            contribution_type="attend",
+            abstract_title="",
+            abstract_text="",
         )
         sub_b.publish()
         self.assertIsNone(sub_b.published_abstract)
 
         response = self.client.patch(
             OTHER_SUBMISSION_URL.format(sub_b.id),
-            {"abstract_title": "Late Abstract", "abstract_text": "Late text"},
+            {
+                "contribution_type": "talk",
+                "abstract_title": "Late Abstract",
+                "abstract_text": "Late text",
+            },
             format="json",
         )
 
@@ -391,3 +537,71 @@ class TestSubmissionAdminAPI(TestCase):
         self.assertEqual(Participant.objects.count(), 0)
         self.assertEqual(Abstract.objects.count(), 0)
         self.assertEqual(Talk.objects.count(), 0)
+
+    def test_patch_to_attend_removes_published_abstract(self):
+        submission = make_submission()
+        submission.publish()
+        self.assertEqual(Abstract.objects.count(), 1)
+
+        response = self.client.patch(
+            SUBMISSION_URL.format(submission.id),
+            {"contribution_type": "attend"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        submission.refresh_from_db()
+        self.assertIsNone(submission.published_abstract)
+        self.assertEqual(Abstract.objects.count(), 0)
+        self.assertEqual(Talk.objects.count(), 0)
+        self.assertEqual(submission.published_participant.contribution_type, "attend")
+
+    def test_patch_rejects_type_disabled_for_conference(self):
+        conference = wsc_conference()
+        conference.registration_allow_poster = False
+        conference.registration_allow_attend = False
+        conference.save()
+        submission = make_submission()
+
+        response = self.client.patch(
+            SUBMISSION_URL.format(submission.id),
+            {"contribution_type": "poster"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("contribution_type", response.data)
+        submission.refresh_from_db()
+        self.assertEqual(submission.contribution_type, "talk")
+
+    def test_patch_to_talk_requires_title(self):
+        submission = make_submission(
+            contribution_type="attend", abstract_title="", abstract_text=""
+        )
+
+        response = self.client.patch(
+            SUBMISSION_URL.format(submission.id),
+            {"contribution_type": "talk"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("abstract_title", response.data)
+
+    def test_patch_type_change_with_scheduled_talk_returns_400(self):
+        submission = make_submission()
+        _, _, talk = submission.publish()
+        assert talk is not None
+        talk.is_scheduled = True
+        talk.save()
+
+        response = self.client.patch(
+            SUBMISSION_URL.format(submission.id),
+            {"contribution_type": "poster"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        submission.refresh_from_db()
+        self.assertEqual(submission.contribution_type, "talk")
+        self.assertTrue(Talk.objects.filter(pk=talk.pk).exists())

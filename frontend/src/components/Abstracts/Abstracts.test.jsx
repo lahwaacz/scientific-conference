@@ -15,14 +15,14 @@ const ABSTRACT = {
   talk_id: 7,
 };
 
-function mockFetches({ program, programFails = false }) {
+function mockFetches({ program, programFails = false, abstract = ABSTRACT }) {
   globalThis.fetch = vi.fn((url) => {
     if (url.includes("program")) {
       return programFails
         ? Promise.reject(new Error("offline"))
         : Promise.resolve({ ok: true, json: async () => program });
     }
-    return Promise.resolve({ ok: true, json: async () => [ABSTRACT] });
+    return Promise.resolve({ ok: true, json: async () => [abstract] });
   });
 }
 
@@ -46,6 +46,18 @@ describe("Abstracts program button visibility", () => {
 
     expect(await screen.findByText("A talk")).toBeInTheDocument();
     expect(programButton()).toBeInTheDocument();
+  });
+
+  test("hides the button for poster abstracts without a talk", async () => {
+    mockFetches({
+      program: [{ id: 1, date: "2027-05-29" }],
+      abstract: { ...ABSTRACT, id: 2, title: "A poster", talk_id: null },
+    });
+
+    render(<Abstracts />);
+
+    expect(await screen.findByText("A poster")).toBeInTheDocument();
+    expect(programButton()).not.toBeInTheDocument();
   });
 
   test("fails open when the program fetch fails", async () => {

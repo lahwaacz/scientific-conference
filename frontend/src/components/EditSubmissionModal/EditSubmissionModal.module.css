@@ -169,6 +169,28 @@
   grid-column: 1 / -1;
 }
 
+.radioGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+}
+
+.radioOption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-main);
+  font-size: 14px;
+  font-weight: 600;
+  color: #555;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.radioOption input {
+  accent-color: var(--secondary-color);
+}
+
 .checkboxLabel {
   display: flex;
   align-items: center;

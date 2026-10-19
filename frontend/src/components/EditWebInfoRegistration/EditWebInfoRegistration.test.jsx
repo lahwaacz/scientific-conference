@@ -14,6 +14,9 @@ const loadedInfo = {
   registration_opening: "2026-03-01",
   registration_deadline: "2026-04-01",
   submission_edit_deadline: "2026-04-15",
+  registration_allow_talk: true,
+  registration_allow_poster: true,
+  registration_allow_attend: true,
 };
 
 function jsonOf(payload) {
@@ -66,6 +69,26 @@ describe("EditWebInfoRegistration", () => {
       registration_opening: "2026-03-01",
       registration_deadline: "2026-04-01",
       submission_edit_deadline: "2026-04-15",
+      registration_allow_talk: true,
+      registration_allow_poster: true,
+      registration_allow_attend: true,
     });
+  });
+
+  test("rejects disabling every contribution type", async () => {
+    await renderLoaded();
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Talk" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Poster" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Just attend" }));
+    fireEvent.submit(document.querySelector("form"));
+
+    expect(
+      await screen.findByText("Select at least one contribution type.")
+    ).toBeInTheDocument();
+    expect(fetchWithAuth).not.toHaveBeenCalledWith(
+      "/api/conference-info/edit/",
+      expect.anything()
+    );
   });
 });

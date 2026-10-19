@@ -25,7 +25,7 @@ export default function AbstractCard({
       <p className={styles.abstractText}>{abstractText}</p>
       {/* Hidden only once the program is known to be not ready; unknown
           (null) and fetch-failure (true, fail open) keep the button. */}
-      {programReady !== false && (
+      {programReady !== false && talkId != null && (
         <button className={styles.button} onClick={goToProgram}>
           TO THE PROGRAM
         </button>

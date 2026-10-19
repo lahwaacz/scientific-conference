@@ -13,11 +13,24 @@ vi.mock("../../utils/imageCrop", async () => ({
   cropToSquareFile: vi.fn(),
 }));
 
+const conferenceInfo = vi.hoisted(() => ({
+  value: {
+    registration_allow_talk: true,
+    registration_allow_poster: true,
+    registration_allow_attend: true,
+  },
+}));
+
+vi.mock("../hooks/useConferenceInfo", () => ({
+  useConferenceInfo: () => conferenceInfo.value,
+}));
+
 const submission = {
   id: 7,
   name: "Jane Doe",
   email: "jane@example.com",
   affiliation: "CTU",
+  contribution_type: "talk",
   abstract_title: "Numerical Methods",
   abstract_text: "Some abstract text",
   arrival_date: "2026-09-10",
@@ -31,6 +44,11 @@ describe("EditSubmissionModal save paths", () => {
 
   beforeEach(() => {
     localStorage.clear();
+    conferenceInfo.value = {
+      registration_allow_talk: true,
+      registration_allow_poster: true,
+      registration_allow_attend: true,
+    };
     onClose = vi.fn();
     onSave = vi.fn();
     fetchWithAuth.mockReset();
@@ -150,14 +168,35 @@ describe("EditSubmissionModal save paths", () => {
     fetchWithAuth.mockResolvedValueOnce({
       ok: false,
       status: 400,
-      text: async () => "Validation failed",
+      text: async () =>
+        JSON.stringify({
+          contribution_type: ["Unschedule the talk before changing this type."],
+        }),
     });
     renderModal();
 
     fireEvent.submit(document.querySelector("form"));
 
     expect(await screen.findByText("Save failed")).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        "contribution_type: Unschedule the talk before changing this type."
+      )
+    ).toBeInTheDocument();
     expect(onSave).not.toHaveBeenCalled();
+  });
+
+  test("only offers contribution types enabled for the conference", () => {
+    conferenceInfo.value = {
+      registration_allow_talk: true,
+      registration_allow_poster: false,
+      registration_allow_attend: false,
+    };
+    renderModal();
+
+    expect(screen.getByLabelText("Talk")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Poster")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Just attend")).not.toBeInTheDocument();
   });
 
   test("a successful save surfaces onSave through the success modal", async () => {

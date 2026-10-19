@@ -1,6 +1,8 @@
 import datetime
 
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import transaction
 from rest_framework import serializers
 
 from .models import (
@@ -20,6 +22,51 @@ from .models import (
 
 User = get_user_model()
 
+CONTRIBUTION_TYPES = ("talk", "poster", "attend")
+
+
+def _allowed_contribution_types(conference):
+    if conference is None:
+        return CONTRIBUTION_TYPES
+    return conference.allowed_contribution_types
+
+
+def _validate_contribution_type(serializer, data, instance=None):
+    allowed = _allowed_contribution_types(serializer.context.get("conference"))
+    if not allowed:
+        raise serializers.ValidationError(
+            {"contribution_type": "Registration is not accepting contributions."}
+        )
+
+    current = instance.contribution_type if instance is not None else None
+    supplied = "contribution_type" in data
+    contribution_type = data.get("contribution_type", current)
+    if contribution_type is None:
+        contribution_type = allowed[0]
+        data["contribution_type"] = contribution_type
+
+    if contribution_type not in allowed and contribution_type != current:
+        raise serializers.ValidationError(
+            {
+                "contribution_type": (
+                    "This contribution type is not available for this conference."
+                )
+            }
+        )
+
+    if (instance is None or (supplied and contribution_type != current)) and (
+        contribution_type in ("talk", "poster")
+    ):
+        title = data.get("abstract_title")
+        if title is None and instance is not None:
+            title = instance.abstract_title
+        if not (title or "").strip():
+            raise serializers.ValidationError(
+                {"abstract_title": "Title is required for a talk or poster."}
+            )
+
+    return data
+
 
 class ParticipantSerializer(serializers.ModelSerializer):
     abstract_id = serializers.IntegerField(source="abstract.id", read_only=True)
@@ -27,7 +74,15 @@ class ParticipantSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Participant
-        fields = ["id", "name", "affiliation", "email", "abstract_id", "photo"]
+        fields = [
+            "id",
+            "name",
+            "affiliation",
+            "email",
+            "abstract_id",
+            "photo",
+            "contribution_type",
+        ]
 
 
 class AbstractSerializer(serializers.ModelSerializer):
@@ -221,6 +276,7 @@ class ParticipantSubmissionSerializer(serializers.ModelSerializer):
             "email",
             "affiliation",
             "photo",
+            "contribution_type",
             "abstract_title",
             "abstract_text",
             "additional_authors",
@@ -262,97 +318,60 @@ class ParticipantSubmissionSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"departure_date": "Departure date must be after arrival date"}
             )
-        return data
 
+        new_type = data.get("contribution_type")
+        if (
+            self.instance is not None
+            and self.instance.status == "approved"
+            and new_type
+            and new_type != self.instance.contribution_type
+            and new_type != "talk"
+            and self.instance.published_abstract is not None
+        ):
+            talk = getattr(self.instance.published_abstract, "talk", None)
+            if talk is not None and talk.is_scheduled:
+                raise serializers.ValidationError(
+                    {
+                        "contribution_type": (
+                            "Unschedule the talk before changing this submission "
+                            "to poster or just attend."
+                        )
+                    }
+                )
+        return _validate_contribution_type(self, data, self.instance)
+
+    @transaction.atomic
     def update(self, instance, validated_data):
+        old_photo = None
         if "photo" in validated_data:
             photo = validated_data.pop("photo")
 
-            # If photo is explicitly set to None, delete existing photo
             if photo is None and instance.photo:
-                instance.photo.delete(save=False)
+                old_photo = instance.photo
                 instance.photo = None
             elif photo:
-                # delete old photo if exists
                 if instance.photo:
-                    instance.photo.delete(save=False)
+                    old_photo = instance.photo
                 instance.photo = photo
 
-        # Update all other fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 
         instance.save()
 
         if instance.status == "approved" and instance.published_participant:
-            self._update_published_data(instance)
+            try:
+                instance.sync_published_data()
+            except DjangoValidationError as exc:
+                detail = getattr(exc, "message_dict", None) or {
+                    "contribution_type": exc.messages
+                }
+                raise serializers.ValidationError(detail) from exc
+
+        if old_photo:
+            old_photo.delete(save=False)
 
         return instance
-
-    def _update_published_data(self, instance):
-        # Update Participant
-        participant = instance.published_participant
-        participant.name = instance.name
-        participant.email = instance.email
-        participant.affiliation = instance.affiliation
-
-        # Handle photo update
-        if instance.photo:
-            participant.photo = instance.photo
-        else:
-            if participant.photo:
-                participant.photo.delete(save=False)
-            participant.photo = None
-
-        participant.save()
-
-        abstract = instance.published_abstract
-        if instance.abstract_title or instance.abstract_text:
-            all_authors = instance.name
-            if instance.additional_authors:
-                all_authors += f", {instance.additional_authors}"
-
-            all_affiliations = instance.affiliation
-            if instance.additional_affiliations:
-                all_affiliations += f"\n{instance.additional_affiliations}"
-
-            if instance.published_abstract:
-                abstract = instance.published_abstract
-                abstract.title = (
-                    instance.abstract_title or f"Presentation by {instance.name}"
-                )
-                abstract.text = instance.abstract_text
-                abstract.authors = all_authors
-                abstract.department = all_affiliations
-                abstract.save()
-            else:
-                abstract = Abstract.objects.create(
-                    conference=instance.conference,
-                    participant=participant,
-                    title=instance.abstract_title or f"Presentation by {instance.name}",
-                    text=instance.abstract_text,
-                    authors=all_authors,
-                    department=all_affiliations,
-                )
-                instance.published_abstract = abstract
-                instance.save()
-        if abstract:
-            try:
-                talk = abstract.talk
-                talk.title = abstract.title
-                talk.participant = participant
-                talk.save()
-            except Exception:  # noqa: BLE001
-                from .models import Talk
-
-                Talk.objects.create(
-                    conference=instance.conference,
-                    title=abstract.title,
-                    participant=participant,
-                    abstract=abstract,
-                    talk_type="talk",
-                    is_scheduled=False,
-                )
 
 
 class ParticipantSubmissionCreateSerializer(ParticipantSubmissionSerializer):
@@ -389,6 +408,7 @@ class ParticipantTrackingSerializer(serializers.ModelSerializer):
             "email",
             "affiliation",
             "photo",
+            "contribution_type",
             "abstract_title",
             "abstract_text",
             "additional_authors",
@@ -420,6 +440,7 @@ class ParticipantTrackingUpdateSerializer(serializers.ModelSerializer):
             "email",
             "affiliation",
             "photo",
+            "contribution_type",
             "abstract_title",
             "abstract_text",
             "additional_authors",
@@ -451,7 +472,7 @@ class ParticipantTrackingUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"departure_date": "Departure date must be after arrival date"}
             )
-        return data
+        return _validate_contribution_type(self, data, self.instance)
 
     def update(self, instance, validated_data):
         was_approved = instance.status == "approved"
@@ -556,6 +577,9 @@ class ConferenceInfoWriteSerializer(serializers.ModelSerializer):
             "registration_opening",
             "registration_deadline",
             "submission_edit_deadline",
+            "registration_allow_talk",
+            "registration_allow_poster",
+            "registration_allow_attend",
             "registration_fee_note",
             "grant_text",
             "venue_text",
@@ -592,6 +616,18 @@ class ConferenceInfoWriteSerializer(serializers.ModelSerializer):
                         "submission_edit_deadline": "Submission editing deadline must be on or before the conference end date."
                     }
                 )
+        if not any(
+            (
+                current("registration_allow_talk"),
+                current("registration_allow_poster"),
+                current("registration_allow_attend"),
+            )
+        ):
+            raise serializers.ValidationError(
+                {
+                    "registration_allow_talk": "At least one contribution type must be allowed."
+                }
+            )
         return attrs
 
 

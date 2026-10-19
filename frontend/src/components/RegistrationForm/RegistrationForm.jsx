@@ -1,6 +1,10 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { buildApiUrl } from "../../utils/api";
+import {
+  allowedContributionTypes,
+  defaultContributionType,
+} from "../../utils/contributionTypes";
 import {
   isArrivalDepartureTentative,
   registrationWindowStatus,
@@ -62,6 +66,7 @@ const initialFormData = {
   name: "",
   email: "",
   affiliation: "",
+  contribution_type: "talk",
   abstract_title: "",
   abstract_text: "",
   additional_authors: "",
@@ -86,19 +91,39 @@ export default function RegistrationForm() {
   const [successData, setSuccessData] = useState(null);
   const [copied, setCopied] = useState(false);
 
+  const allowedTypes = allowedContributionTypes(info);
+  const allowedTypeValues = allowedTypes.map((type) => type.value);
+  const allowedKey = allowedTypeValues.join(",");
+  const defaultType = defaultContributionType(info);
+
+  useEffect(() => {
+    if (!info) return;
+    const values = allowedContributionTypes(info).map((type) => type.value);
+    setFormData((prev) =>
+      values.includes(prev.contribution_type)
+        ? prev
+        : { ...prev, contribution_type: defaultType }
+    );
+  }, [info, allowedKey, defaultType]);
+
+  const defaultFormData = {
+    ...initialFormData,
+    contribution_type: defaultType,
+  };
   const isDirty =
     photo !== null ||
-    formData.is_student ||
-    Object.keys(formData).some(
-      (key) => key !== "is_student" && formData[key] !== ""
-    );
+    Object.keys(formData).some((key) => formData[key] !== defaultFormData[key]);
   useUnsavedChangesGuard(
     isDirty,
     "Leave the registration form? Unsubmitted changes will be lost."
   );
 
   const validate = () => {
-    const newErrors = validateSubmissionForm({ formData, photo });
+    const newErrors = validateSubmissionForm({
+      formData,
+      photo,
+      allowedTypes: allowedTypeValues,
+    });
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -109,7 +134,7 @@ export default function RegistrationForm() {
 
   // Clearing the form state also disarms the unsaved-changes guard.
   const clearFormState = () => {
-    setFormData({ ...initialFormData });
+    setFormData({ ...defaultFormData });
     setPhoto(null);
     setPhotoPreview(null);
     setErrors({});
@@ -148,15 +173,26 @@ export default function RegistrationForm() {
     if (validate()) {
       try {
         const submitData = new FormData();
+        const isAttend = formData.contribution_type === "attend";
         submitData.append("name", formData.name);
         submitData.append("email", formData.email);
         submitData.append("affiliation", formData.affiliation);
-        submitData.append("abstract_title", formData.abstract_title);
-        submitData.append("abstract_text", formData.abstract_text);
-        submitData.append("additional_authors", formData.additional_authors);
+        submitData.append("contribution_type", formData.contribution_type);
+        submitData.append(
+          "abstract_title",
+          isAttend ? "" : formData.abstract_title
+        );
+        submitData.append(
+          "abstract_text",
+          isAttend ? "" : formData.abstract_text
+        );
+        submitData.append(
+          "additional_authors",
+          isAttend ? "" : formData.additional_authors
+        );
         submitData.append(
           "additional_affiliations",
-          formData.additional_affiliations
+          isAttend ? "" : formData.additional_affiliations
         );
         submitData.append("arrival_date", formData.arrival);
         submitData.append("departure_date", formData.departure);
@@ -371,6 +407,7 @@ export default function RegistrationForm() {
               onCropPhoto={photo ? () => setCropFile(photo) : undefined}
               wordCount={wordCount}
               arrivalDepartureTentative={arrivalDepartureTentative}
+              allowedTypes={allowedTypes}
             />
 
             <button type="submit" className={styles.button}>

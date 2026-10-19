@@ -2,6 +2,10 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { buildApiUrl, buildMediaUrl } from "../../utils/api";
 import {
+  allowedContributionTypes,
+  contributionTypeLabel,
+} from "../../utils/contributionTypes";
+import {
   submissionEditEffectiveDeadline,
   submissionEditWindowStatus,
 } from "../../utils/registrationWindow";
@@ -20,6 +24,7 @@ const toFormData = (submission) => ({
   name: submission.name || "",
   email: submission.email || "",
   affiliation: submission.affiliation || "",
+  contribution_type: submission.contribution_type || "talk",
   abstract_title: submission.abstract_title || "",
   abstract_text: submission.abstract_text || "",
   additional_authors: submission.additional_authors || "",
@@ -30,19 +35,23 @@ const toFormData = (submission) => ({
   is_student: Boolean(submission.is_student),
 });
 
-const toApiPayload = (formData) => ({
-  name: formData.name,
-  email: formData.email,
-  affiliation: formData.affiliation,
-  abstract_title: formData.abstract_title,
-  abstract_text: formData.abstract_text,
-  additional_authors: formData.additional_authors,
-  additional_affiliations: formData.additional_affiliations,
-  arrival_date: formData.arrival,
-  departure_date: formData.departure,
-  info: formData.info,
-  is_student: formData.is_student,
-});
+const toApiPayload = (formData) => {
+  const isAttend = formData.contribution_type === "attend";
+  return {
+    name: formData.name,
+    email: formData.email,
+    affiliation: formData.affiliation,
+    contribution_type: formData.contribution_type,
+    abstract_title: isAttend ? "" : formData.abstract_title,
+    abstract_text: isAttend ? "" : formData.abstract_text,
+    additional_authors: isAttend ? "" : formData.additional_authors,
+    additional_affiliations: isAttend ? "" : formData.additional_affiliations,
+    arrival_date: formData.arrival,
+    departure_date: formData.departure,
+    info: formData.info,
+    is_student: formData.is_student,
+  };
+};
 
 // Backend 400 keys arrive in API naming; SubmissionFields keys are form-local.
 const REVERSE_FIELD_MAP = {
@@ -95,6 +104,12 @@ export default function Tracking() {
   const [wordCount, setWordCount] = useState(0);
   const [saving, setSaving] = useState(false);
   const [savedMessage, setSavedMessage] = useState("");
+
+  const allowedTypes = allowedContributionTypes(
+    info,
+    submission?.contribution_type
+  );
+  const allowedTypeValues = allowedTypes.map((type) => type.value);
 
   useEffect(() => {
     let cancelled = false;
@@ -240,7 +255,12 @@ export default function Tracking() {
   // the key is omitted entirely so the stored photo is kept.
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const newErrors = validateSubmissionForm({ formData, photo });
+    const newErrors = validateSubmissionForm({
+      formData,
+      photo,
+      allowedTypes: allowedTypeValues,
+      originalContributionType: submission?.contribution_type,
+    });
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) {
       return;
@@ -332,6 +352,7 @@ export default function Tracking() {
     ["Name", submission.name],
     ["Email", submission.email],
     ["Affiliation", submission.affiliation],
+    ["Participation", contributionTypeLabel(submission.contribution_type)],
     ["Title", submission.abstract_title],
     ["Abstract", submission.abstract_text],
     ["Additional authors", submission.additional_authors],
@@ -400,6 +421,7 @@ export default function Tracking() {
                 onRemovePhoto={handleRemovePhoto}
                 onCropPhoto={photo ? () => setCropFile(photo) : undefined}
                 wordCount={wordCount}
+                allowedTypes={allowedTypes}
               />
               <div className={styles.formActions}>
                 <button

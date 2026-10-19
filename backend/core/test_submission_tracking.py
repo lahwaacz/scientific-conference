@@ -216,6 +216,72 @@ class TestCreateSerializerTrackingGuards:
         assert data["tracking_token"] == submission.tracking_token
         assert data["participant_reference"] == submission.participant_reference
 
+    def test_create_defaults_to_first_allowed_type(self, wsc):
+        wsc.registration_allow_talk = False
+        wsc.save()
+
+        serializer = ParticipantSubmissionCreateSerializer(
+            data=CREATE_PAYLOAD, context={"conference": wsc}
+        )
+        assert serializer.is_valid(), serializer.errors
+        submission = serializer.save(conference=wsc)
+
+        assert submission.contribution_type == "poster"
+
+    def test_create_rejects_a_disabled_type(self, wsc):
+        wsc.registration_allow_poster = False
+        wsc.save()
+        payload = {**CREATE_PAYLOAD, "contribution_type": "poster"}
+
+        serializer = ParticipantSubmissionCreateSerializer(
+            data=payload, context={"conference": wsc}
+        )
+
+        assert not serializer.is_valid()
+        assert "contribution_type" in serializer.errors
+
+    def test_create_requires_a_title_for_talk_or_poster(self, wsc):
+        for contribution_type in ("talk", "poster"):
+            payload = {
+                **CREATE_PAYLOAD,
+                "contribution_type": contribution_type,
+                "abstract_title": "",
+            }
+            serializer = ParticipantSubmissionCreateSerializer(
+                data=payload, context={"conference": wsc}
+            )
+            assert not serializer.is_valid()
+            assert "abstract_title" in serializer.errors
+
+    def test_create_rejects_when_all_types_are_disabled(self, wsc):
+        wsc.registration_allow_talk = False
+        wsc.registration_allow_poster = False
+        wsc.registration_allow_attend = False
+        wsc.save()
+
+        serializer = ParticipantSubmissionCreateSerializer(
+            data=CREATE_PAYLOAD, context={"conference": wsc}
+        )
+
+        assert not serializer.is_valid()
+        assert "contribution_type" in serializer.errors
+
+    def test_create_allows_attend_without_a_title(self, wsc):
+        payload = {
+            **CREATE_PAYLOAD,
+            "contribution_type": "attend",
+            "abstract_title": "",
+            "abstract_text": "",
+        }
+
+        serializer = ParticipantSubmissionCreateSerializer(
+            data=payload, context={"conference": wsc}
+        )
+
+        assert serializer.is_valid(), serializer.errors
+        submission = serializer.save(conference=wsc)
+        assert submission.contribution_type == "attend"
+
 
 @pytest.mark.django_db
 class TestTrackingReadSerializer:
@@ -230,6 +296,7 @@ class TestTrackingReadSerializer:
             "email",
             "affiliation",
             "photo",
+            "contribution_type",
             "abstract_title",
             "abstract_text",
             "additional_authors",
@@ -307,6 +374,49 @@ class TestTrackingUpdateSerializer:
         assert submission.is_student is True
         assert submission.status == "pending"
         assert submission.reviewed_at is None
+
+    def test_current_disabled_type_can_stay(self, wsc):
+        submission = make_submission(
+            wsc, contribution_type="attend", abstract_title="", abstract_text=""
+        )
+        wsc.registration_allow_attend = False
+        wsc.save()
+
+        serializer = ParticipantTrackingUpdateSerializer(
+            submission,
+            data={"name": "New Name"},
+            partial=True,
+            context={"conference": wsc},
+        )
+
+        assert serializer.is_valid(), serializer.errors
+
+    def test_unchanged_legacy_type_does_not_require_a_title(self, wsc):
+        submission = make_submission(wsc, abstract_title="", abstract_text="")
+
+        serializer = ParticipantTrackingUpdateSerializer(
+            submission,
+            data={"name": "New Name", "contribution_type": "talk"},
+            partial=True,
+            context={"conference": wsc},
+        )
+
+        assert serializer.is_valid(), serializer.errors
+
+    def test_change_to_disabled_type_is_rejected(self, wsc):
+        submission = make_submission(wsc)
+        wsc.registration_allow_poster = False
+        wsc.save()
+
+        serializer = ParticipantTrackingUpdateSerializer(
+            submission,
+            data={"contribution_type": "poster", "abstract_title": "A poster"},
+            partial=True,
+            context={"conference": wsc},
+        )
+
+        assert not serializer.is_valid()
+        assert "contribution_type" in serializer.errors
 
     def test_ignores_admin_and_linking_input_keys(self, wsc):
         staff = User.objects.create_user(username="admin3", password="x")

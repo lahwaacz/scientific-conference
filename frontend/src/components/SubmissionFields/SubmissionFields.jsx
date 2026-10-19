@@ -1,3 +1,4 @@
+import { CONTRIBUTION_TYPES } from "../../utils/contributionTypes";
 import styles from "./SubmissionFields.module.css";
 
 export default function SubmissionFields({
@@ -10,7 +11,10 @@ export default function SubmissionFields({
   onCropPhoto,
   wordCount,
   arrivalDepartureTentative = false,
+  allowedTypes = CONTRIBUTION_TYPES,
 }) {
+  const showContribution = formData.contribution_type !== "attend";
+
   return (
     <>
       {/* Name */}
@@ -105,62 +109,101 @@ export default function SubmissionFields({
         <small className={styles.hint}>Max 5MB, JPG/PNG format</small>
       </div>
 
-      {/* Title */}
-      <div className={styles.field}>
-        <label className={styles.label}>Title</label>
-        <input
-          type="text"
-          name="abstract_title"
-          placeholder="Title of your presentation"
-          value={formData.abstract_title}
-          onChange={onChange}
-          maxLength={400}
-        />
-      </div>
-
-      {/* Abstract */}
+      {/* Participation type */}
       <div className={styles.field}>
         <label className={styles.label}>
-          Abstract
-          <span className={styles.wordCount}> ({wordCount}/250 words)</span>
+          Participation <span className={styles.required}>*</span>
         </label>
-        <textarea
-          name="abstract_text"
-          placeholder="Brief description of your contribution (max 250 words)"
-          value={formData.abstract_text}
-          onChange={onChange}
-          maxLength={2500}
-        />
-        {errors.abstract_text && (
-          <span className={styles.error}>{errors.abstract_text}</span>
+        <div className={styles.radioGroup}>
+          {allowedTypes.map((type) => (
+            <label key={type.value} className={styles.radioOption}>
+              <input
+                className={styles.radioInput}
+                type="radio"
+                name="contribution_type"
+                value={type.value}
+                checked={formData.contribution_type === type.value}
+                onChange={onChange}
+              />
+              {type.label}
+            </label>
+          ))}
+        </div>
+        {errors.contribution_type && (
+          <span className={styles.error}>{errors.contribution_type}</span>
+        )}
+        {!showContribution && (
+          <small className={styles.hint}>
+            You will be registered without a talk or poster.
+          </small>
         )}
       </div>
 
-      {/* Additional authors */}
-      <div className={styles.field}>
-        <label className={styles.label}>Additional Authors</label>
-        <input
-          type="text"
-          name="additional_authors"
-          placeholder="Co-authors (if any)"
-          value={formData.additional_authors}
-          onChange={onChange}
-          maxLength={300}
-        />
-      </div>
+      {showContribution && (
+        <>
+          {/* Title */}
+          <div className={styles.field}>
+            <label className={styles.label}>
+              Title <span className={styles.required}>*</span>
+            </label>
+            <input
+              type="text"
+              name="abstract_title"
+              placeholder="Title of your presentation"
+              value={formData.abstract_title}
+              onChange={onChange}
+              maxLength={400}
+            />
+            {errors.abstract_title && (
+              <span className={styles.error}>{errors.abstract_title}</span>
+            )}
+          </div>
 
-      {/* Additional affiliations */}
-      <div className={styles.field}>
-        <label className={styles.label}>Additional Affiliations</label>
-        <textarea
-          name="additional_affiliations"
-          placeholder="Affiliations of co-authors (if any)"
-          value={formData.additional_affiliations}
-          onChange={onChange}
-          rows="3"
-          maxLength={500}
-        />
-      </div>
+          {/* Abstract */}
+          <div className={styles.field}>
+            <label className={styles.label}>
+              Abstract
+              <span className={styles.wordCount}> ({wordCount}/250 words)</span>
+            </label>
+            <textarea
+              name="abstract_text"
+              placeholder="Brief description of your contribution (max 250 words)"
+              value={formData.abstract_text}
+              onChange={onChange}
+              maxLength={2500}
+            />
+            {errors.abstract_text && (
+              <span className={styles.error}>{errors.abstract_text}</span>
+            )}
+          </div>
+
+          {/* Additional authors */}
+          <div className={styles.field}>
+            <label className={styles.label}>Additional Authors</label>
+            <input
+              type="text"
+              name="additional_authors"
+              placeholder="Co-authors (if any)"
+              value={formData.additional_authors}
+              onChange={onChange}
+              maxLength={300}
+            />
+          </div>
+
+          {/* Additional affiliations */}
+          <div className={styles.field}>
+            <label className={styles.label}>Additional Affiliations</label>
+            <textarea
+              name="additional_affiliations"
+              placeholder="Affiliations of co-authors (if any)"
+              value={formData.additional_affiliations}
+              onChange={onChange}
+              rows="3"
+              maxLength={500}
+            />
+          </div>
+        </>
+      )}
 
       {/* Dates */}
       <div className={styles.fieldRow}>

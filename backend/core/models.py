@@ -2,13 +2,19 @@ import secrets
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
 from django.db.models.fields.reverse_related import ForeignObjectRel
 from django.utils import timezone
 
 from .names import compute_sort_key
 
 RESERVED_SLUGS = {"auth", "admin", "api", "conferences", "media", "static"}
+
+CONTRIBUTION_TYPES = [
+    ("talk", "Talk"),
+    ("poster", "Poster"),
+    ("attend", "Just attend"),
+]
 
 
 class Conference(models.Model):
@@ -31,6 +37,9 @@ class Conference(models.Model):
     registration_opening = models.DateField(null=True, blank=True)
     registration_deadline = models.DateField(null=True, blank=True)
     submission_edit_deadline = models.DateField(null=True, blank=True)
+    registration_allow_talk = models.BooleanField(default=True)
+    registration_allow_poster = models.BooleanField(default=True)
+    registration_allow_attend = models.BooleanField(default=True)
     registration_fee_note = models.CharField(
         max_length=300, blank=True, default="Conference fee is free of charge"
     )
@@ -93,8 +102,29 @@ class Conference(models.Model):
                 )
         if deadline_errors:
             errors["submission_edit_deadline"] = deadline_errors
+        if not any(
+            (
+                self.registration_allow_talk,
+                self.registration_allow_poster,
+                self.registration_allow_attend,
+            )
+        ):
+            errors["registration_allow_talk"] = (
+                "At least one contribution type must be allowed."
+            )
         if errors:
             raise ValidationError(errors)
+
+    @property
+    def allowed_contribution_types(self):
+        allowed = []
+        if self.registration_allow_talk:
+            allowed.append("talk")
+        if self.registration_allow_poster:
+            allowed.append("poster")
+        if self.registration_allow_attend:
+            allowed.append("attend")
+        return tuple(allowed)
 
     def __str__(self):
         return self.slug
@@ -201,6 +231,9 @@ class Participant(models.Model):
     name = models.CharField(max_length=255)
     sort_key = models.CharField(
         max_length=320, blank=True, default="", editable=False, db_index=True
+    )
+    contribution_type = models.CharField(
+        max_length=20, choices=CONTRIBUTION_TYPES, default="talk"
     )
     affiliation = models.CharField(max_length=500, blank=True)
     email = models.EmailField(blank=True)
@@ -365,6 +398,9 @@ class ParticipantSubmission(models.Model):
     sort_key = models.CharField(
         max_length=320, blank=True, default="", editable=False, db_index=True
     )
+    contribution_type = models.CharField(
+        max_length=20, choices=CONTRIBUTION_TYPES, default="talk"
+    )
     email = models.EmailField()
     affiliation = models.CharField(max_length=500)
     photo = models.ImageField(upload_to="submissions/photos/", blank=True, null=True)
@@ -446,99 +482,176 @@ class ParticipantSubmission(models.Model):
             return ""
         return f"{self.conference.slug}-{self.pk:04d}"
 
-    def publish(self):
-        from django.utils import timezone
+    def _create_participant(self):
+        return Participant.objects.create(
+            conference=self.conference,
+            name=self.name,
+            email=self.email,
+            affiliation=self.affiliation,
+            photo=self.photo,
+        )
 
-        if self.published_participant:
-            participant = self.published_participant
-            # Sync the participant-controlled fields the way the dedup-update
-            # branch below does; otherwise a participant edit followed by an
-            # admin re-publish leaves the public row stale.
+    def _participant_claimed_by_other(self, participant):
+        return (
+            ParticipantSubmission.objects.filter(published_participant=participant)
+            .exclude(pk=self.pk)
+            .exists()
+        )
+
+    def _abstract_used_by_other(self, abstract):
+        return (
+            abstract is not None
+            and ParticipantSubmission.objects.filter(published_abstract=abstract)
+            .exclude(pk=self.pk)
+            .exists()
+        )
+
+    def _sync_participant(self, *, clear_photo=False):
+        """Return the public participant owned by this submission.
+
+        A Participant can own only one public Abstract, so a second
+        submission with the same email must get its own row. Reusing it
+        would let that submission overwrite or delete the first
+        submission's abstract and talk.
+        """
+        participant = self.published_participant
+        if participant is not None and self._participant_claimed_by_other(participant):
+            participant = None
+
+        if participant is None and self.email:
+            try:
+                participant = Participant.objects.get(
+                    email=self.email, conference=self.conference
+                )
+            except (
+                Participant.DoesNotExist,
+                Participant.MultipleObjectsReturned,
+            ):
+                participant = None
+
+            if participant is not None and self._participant_claimed_by_other(
+                participant
+            ):
+                participant = None
+
+        old_photo = None
+        if participant is None:
+            participant = self._create_participant()
+        else:
             participant.name = self.name
             participant.affiliation = self.affiliation
             participant.email = self.email
             if self.photo:
                 participant.photo = self.photo
-            participant.save()
+            elif clear_photo and participant.photo:
+                old_photo = participant.photo
+                participant.photo = None
+
+        participant.contribution_type = self.contribution_type
+        participant.save()
+        return participant, old_photo
+
+    def _delete_publication_talk(self, abstract):
+        talk = getattr(abstract, "talk", None)
+        if talk is None:
+            return
+        if talk.is_scheduled:
+            raise ValidationError(
+                {
+                    "contribution_type": (
+                        "Unschedule the talk before changing this submission "
+                        "to poster or just attend."
+                    )
+                }
+            )
+        talk.delete()
+
+    def _sync_abstract(self, participant):
+        abstract = self.published_abstract
+        if self._abstract_used_by_other(abstract):
+            # Legacy shared rows: never mutate an abstract another
+            # submission points at. Its owner keeps it.
+            abstract = None
+
+        if abstract is None:
+            abstract = getattr(participant, "abstract", None)
+            if self._abstract_used_by_other(abstract):
+                abstract = None
+
+        if self.contribution_type == "attend":
+            if abstract is not None:
+                self._delete_publication_talk(abstract)
+                abstract.delete()
+            self.published_abstract = None
+            return None
+
+        if abstract is None and getattr(participant, "abstract", None) is not None:
+            raise ValidationError(
+                {
+                    "contribution_type": (
+                        "This participant already has a published contribution."
+                    )
+                }
+            )
+
+        all_authors = self.name
+        if self.additional_authors:
+            all_authors += f", {self.additional_authors}"
+
+        all_affiliations = self.affiliation
+        if self.additional_affiliations:
+            all_affiliations += f"\n{self.additional_affiliations}"
+
+        title = self.abstract_title or f"Presentation by {self.name}"
+        if abstract is not None:
+            if abstract.participant_id != participant.pk:
+                abstract.participant = participant
+            abstract.title = title
+            abstract.text = self.abstract_text
+            abstract.authors = all_authors
+            abstract.department = all_affiliations
+            abstract.save()
         else:
-            if self.email:
-                try:
-                    participant = Participant.objects.get(
-                        email=self.email, conference=self.conference
-                    )
-                    participant.name = self.name
-                    participant.affiliation = self.affiliation
-                    if self.photo:
-                        participant.photo = self.photo
-                    participant.save()
-                except Participant.DoesNotExist:
-                    participant = Participant.objects.create(
-                        conference=self.conference,
-                        name=self.name,
-                        email=self.email,
-                        affiliation=self.affiliation,
-                        photo=self.photo,
-                    )
-                except Participant.MultipleObjectsReturned:
-                    participant = Participant.objects.create(
-                        conference=self.conference,
-                        name=self.name,
-                        email=self.email,
-                        affiliation=self.affiliation,
-                        photo=self.photo,
-                    )
-            else:
-                participant = Participant.objects.create(
-                    conference=self.conference,
-                    name=self.name,
-                    email=self.email,
-                    affiliation=self.affiliation,
-                    photo=self.photo,
-                )
+            abstract = Abstract.objects.create(
+                conference=self.conference,
+                participant=participant,
+                title=title,
+                text=self.abstract_text,
+                authors=all_authors,
+                department=all_affiliations,
+            )
+        self.published_abstract = abstract
+        return abstract
 
-        abstract = None
-        if self.abstract_title or self.abstract_text:
-            all_authors = self.name
-            if self.additional_authors:
-                all_authors += f", {self.additional_authors}"
+    def _sync_talk(self, participant, abstract):
+        if abstract is None:
+            return None
+        if self.contribution_type != "talk":
+            self._delete_publication_talk(abstract)
+            return None
 
-            all_affiliations = self.affiliation
-            if self.additional_affiliations:
-                all_affiliations += f"\n{self.additional_affiliations}"
+        talk = getattr(abstract, "talk", None)
+        if talk is not None:
+            talk.title = abstract.title
+            talk.participant = participant
+            talk.save()
+            return talk
+        return Talk.objects.create(
+            conference=self.conference,
+            title=abstract.title,
+            participant=participant,
+            abstract=abstract,
+            talk_type="talk",
+            is_scheduled=False,
+        )
 
-            if hasattr(participant, "abstract") and participant.abstract:
-                abstract = participant.abstract
-                abstract.title = self.abstract_title or f"Presentation by {self.name}"
-                abstract.text = self.abstract_text
-                abstract.authors = all_authors
-                abstract.department = all_affiliations
-                abstract.save()
-            else:
-                abstract = Abstract.objects.create(
-                    conference=self.conference,
-                    participant=participant,
-                    title=self.abstract_title or f"Presentation by {self.name}",
-                    text=self.abstract_text,
-                    authors=all_authors,
-                    department=all_affiliations,
-                )
+    @transaction.atomic
+    def publish(self):
+        from django.utils import timezone
 
-        talk = None
-        if abstract:
-            if hasattr(abstract, "talk") and abstract.talk:
-                talk = abstract.talk
-                talk.title = abstract.title
-                talk.participant = participant
-                talk.save()
-            else:
-                talk = Talk.objects.create(
-                    conference=self.conference,
-                    title=abstract.title,
-                    participant=participant,
-                    abstract=abstract,
-                    talk_type="talk",
-                    is_scheduled=False,
-                )
+        participant, _ = self._sync_participant()
+        abstract = self._sync_abstract(participant)
+        talk = self._sync_talk(participant, abstract)
         self.published_participant = participant
         self.published_abstract = abstract
         self.status = "approved"
@@ -547,13 +660,32 @@ class ParticipantSubmission(models.Model):
 
         return participant, abstract, talk
 
+    @transaction.atomic
+    def sync_published_data(self):
+        if self.published_participant is None:
+            return None, None, None
+
+        participant, old_photo = self._sync_participant(clear_photo=True)
+        abstract = self._sync_abstract(participant)
+        talk = self._sync_talk(participant, abstract)
+        self.published_participant = participant
+        self.published_abstract = abstract
+        self.save()
+        if old_photo:
+            old_photo.delete(save=False)
+        return participant, abstract, talk
+
     def delete(self, *args, **kwargs):
 
         if self.status == "approved":
-            if self.published_abstract:
+            if self.published_abstract and not self._abstract_used_by_other(
+                self.published_abstract
+            ):
                 self.published_abstract.delete()
 
-            if self.published_participant:
+            if self.published_participant and not self._participant_claimed_by_other(
+                self.published_participant
+            ):
                 self.published_participant.delete()
 
         if self.photo:

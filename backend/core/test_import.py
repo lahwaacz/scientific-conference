@@ -56,6 +56,7 @@ class ImportableFieldsTests(TestCase):
         self.assertIn("name", names)
         self.assertIn("abstract_title", names)
         self.assertIn("is_student", names)
+        self.assertIn("contribution_type", names)
         self.assertIn("admin_notes", names)
         self.assertNotIn("photo", names)
         self.assertNotIn("status", names)
@@ -193,6 +194,57 @@ class ValidationTests(TestCase):
             "Name,Email,Is Student\nJan,jan@example.com,Yes\n", self.conf
         )
         self.assertIs(results[0].payload["is_student"], True)
+
+    def test_contribution_type_is_parsed(self):
+        results = evaluate(
+            "Name,Email,Contribution Type\n"
+            "Jan,jan@example.com,Talk\n"
+            "Eva,eva@example.com,Poster\n"
+            "Petr,petr@example.com,Just attend\n",
+            self.conf,
+        )
+        self.assertEqual(results[0].payload["contribution_type"], "talk")
+        self.assertEqual(results[1].payload["contribution_type"], "poster")
+        self.assertEqual(results[2].payload["contribution_type"], "attend")
+
+    def test_contribution_type_accepts_czech_values(self):
+        results = evaluate(
+            "Name,Email,Contribution Type\n"
+            "Jan,jan@example.com,přednáška\n"
+            "Eva,eva@example.com,účast\n",
+            self.conf,
+        )
+        self.assertEqual(results[0].payload["contribution_type"], "talk")
+        self.assertEqual(results[1].payload["contribution_type"], "attend")
+
+    def test_invalid_contribution_type_is_error(self):
+        results = evaluate(
+            "Name,Email,Contribution Type\nJan,jan@example.com,workshop\n",
+            self.conf,
+        )
+        self.assertEqual(results[0].status, STATUS_ERROR)
+        self.assertTrue(
+            any("Talk, Poster, or Just attend" in m for m in results[0].messages)
+        )
+
+    def test_contribution_type_is_inferred_when_absent(self):
+        results = evaluate(
+            "Name,Email,Abstract Title\n"
+            "Jan,jan@example.com,A talk\n"
+            "Eva,eva@example.com,\n",
+            self.conf,
+        )
+        self.assertEqual(results[0].payload["contribution_type"], "talk")
+        self.assertEqual(results[1].payload["contribution_type"], "attend")
+
+    def test_empty_contribution_type_cell_is_inferred(self):
+        results = evaluate(
+            "Name,Email,Contribution Type,Abstract Title\n"
+            "Jan,jan@example.com,,A talk\n",
+            self.conf,
+        )
+        self.assertEqual(results[0].status, STATUS_OK)
+        self.assertEqual(results[0].payload["contribution_type"], "talk")
 
     def test_length_error_names_the_column(self):
         long_name = "x" * 300

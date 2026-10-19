@@ -3,6 +3,8 @@ import io
 import os
 import traceback
 
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils.functional import cached_property
@@ -525,10 +527,30 @@ class AbstractListView(ConferenceScopedMixin, generics.ListCreateAPIView):
     queryset = Abstract.objects.all().order_by("title")
     serializer_class = AbstractSerializer
 
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .filter(
+                Q(participant__isnull=True)
+                | Q(participant__contribution_type__in=("talk", "poster"))
+            )
+        )
+
 
 class AbstractDetailView(ConferenceScopedMixin, generics.RetrieveAPIView):
     queryset = Abstract.objects.all()
     serializer_class = AbstractSerializer
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .filter(
+                Q(participant__isnull=True)
+                | Q(participant__contribution_type__in=("talk", "poster"))
+            )
+        )
 
 
 # Talks (optional endpoints)
@@ -744,6 +766,8 @@ def publish_submission(request, conference_slug, pk):
             },
             status=200,
         )
+    except DjangoValidationError as e:
+        return Response({"error": e.messages[0]}, status=400)
     except Exception as e:  # noqa: BLE001
         traceback.print_exc()  # Для отладки
         return Response({"error": f"Failed to publish: {e!s}"}, status=500)

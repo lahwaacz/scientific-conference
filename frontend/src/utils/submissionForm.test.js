@@ -4,6 +4,7 @@ const validFormData = (overrides = {}) => ({
   name: "Alice Smith",
   email: "alice@example.com",
   affiliation: "CTU Prague",
+  contribution_type: "talk",
   abstract_title: "A talk",
   abstract_text: "A brief description of the contribution.",
   additional_authors: "",
@@ -78,6 +79,67 @@ describe("validateSubmissionForm", () => {
       photo: null,
     });
     expect(errors.abstract_text).toBe("Abstract must not exceed 250 words");
+  });
+
+  test("requires a title for talk and poster", () => {
+    for (const contribution_type of ["talk", "poster"]) {
+      const errors = validateSubmissionForm({
+        formData: validFormData({
+          contribution_type,
+          abstract_title: "",
+        }),
+        photo: null,
+      });
+      expect(errors.abstract_title).toBe("Please enter a title");
+    }
+  });
+
+  test("just attend needs neither a title nor an abstract", () => {
+    const errors = validateSubmissionForm({
+      formData: validFormData({
+        contribution_type: "attend",
+        abstract_title: "",
+        abstract_text: words(251),
+      }),
+      photo: null,
+    });
+    expect(errors.abstract_title).toBeUndefined();
+    expect(errors.abstract_text).toBeUndefined();
+  });
+
+  test("does not re-require a title when the type is unchanged", () => {
+    const errors = validateSubmissionForm({
+      formData: validFormData({
+        contribution_type: "talk",
+        abstract_title: "",
+      }),
+      photo: null,
+      originalContributionType: "talk",
+    });
+    expect(errors.abstract_title).toBeUndefined();
+  });
+
+  test("requires a title when changing to talk or poster", () => {
+    const errors = validateSubmissionForm({
+      formData: validFormData({
+        contribution_type: "talk",
+        abstract_title: "",
+      }),
+      photo: null,
+      originalContributionType: "attend",
+    });
+    expect(errors.abstract_title).toBe("Please enter a title");
+  });
+
+  test("rejects a contribution type not allowed by the conference", () => {
+    const errors = validateSubmissionForm({
+      formData: validFormData({ contribution_type: "poster" }),
+      photo: null,
+      allowedTypes: ["talk", "attend"],
+    });
+    expect(errors.contribution_type).toBe(
+      "Please select a valid participation type"
+    );
   });
 
   test("accepts an abstract of exactly 250 words", () => {

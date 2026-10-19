@@ -27,6 +27,9 @@ INFO_PAYLOAD_KEYS = frozenset(
         "registration_opening",
         "registration_deadline",
         "submission_edit_deadline",
+        "registration_allow_talk",
+        "registration_allow_poster",
+        "registration_allow_attend",
         "registration_fee_note",
         "grant_text",
         "venue_text",
@@ -89,7 +92,7 @@ class TestConferenceInfoEndpoint(InfoTestCase):
         self.client.get(api("conference-info/", slug=SLUG_B))
         self.assertEqual(Conference.objects.count(), before)
 
-    def test_payload_has_exactly_the_27_payload_keys(self):
+    def test_payload_has_exactly_the_30_payload_keys(self):
         for slug in (SLUG_A, SLUG_B):
             with self.subTest(slug=slug):
                 response = self.client.get(api("conference-info/", slug=slug))
@@ -161,6 +164,40 @@ class TestConferenceInfoEndpoint(InfoTestCase):
 
 
 class TestConferenceInfoEditValidation(InfoTestCase):
+    def test_contribution_flags_persist(self):
+        staff = self.staff_client()
+        response = staff.patch(
+            api("conference-info/edit/"),
+            {
+                "registration_allow_talk": False,
+                "registration_allow_poster": True,
+                "registration_allow_attend": False,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.conf_a.refresh_from_db()
+        self.assertFalse(self.conf_a.registration_allow_talk)
+        self.assertTrue(self.conf_a.registration_allow_poster)
+        self.assertFalse(self.conf_a.registration_allow_attend)
+        self.assertEqual(self.conf_a.allowed_contribution_types, ("poster",))
+
+    def test_disabling_every_contribution_type_is_rejected(self):
+        staff = self.staff_client()
+        response = staff.patch(
+            api("conference-info/edit/"),
+            {
+                "registration_allow_talk": False,
+                "registration_allow_poster": False,
+                "registration_allow_attend": False,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("registration_allow_talk", response.json())
+
     def test_deadline_before_registration_deadline_rejected(self):
         staff = self.staff_client()
         response = staff.patch(

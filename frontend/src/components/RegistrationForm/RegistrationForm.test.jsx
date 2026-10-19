@@ -11,6 +11,9 @@ const { mockInfo, holder } = vi.hoisted(() => ({
     date_start: null,
     date_end: null,
     registration_fee_note: "Conference fee is free of charge",
+    registration_allow_talk: true,
+    registration_allow_poster: true,
+    registration_allow_attend: true,
   },
   holder: { info: null },
 }));
@@ -57,6 +60,10 @@ function submitValidForm() {
     target: { name: "affiliation", value: "CTU Prague" },
   });
 
+  fireEvent.change(screen.getByPlaceholderText(/Title of your presentation/i), {
+    target: { name: "abstract_title", value: "A talk" },
+  });
+
   fireEvent.change(document.querySelector('input[name="arrival"]'), {
     target: { name: "arrival", value: "2026-09-10" },
   });
@@ -81,6 +88,9 @@ describe("RegistrationForm", () => {
       date_start: null,
       date_end: null,
       registration_fee_note: "Conference fee is free of charge",
+      registration_allow_talk: true,
+      registration_allow_poster: true,
+      registration_allow_attend: true,
     });
     holder.info = mockInfo;
     cropToSquareFile.mockReset();
@@ -120,6 +130,108 @@ describe("RegistrationForm", () => {
       screen.getByPlaceholderText(/Brief description of your contribution/i)
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /submit/i })).toBeInTheDocument();
+  });
+
+  test("defaults the participation type to Talk", () => {
+    render(<RegistrationForm />);
+
+    expect(screen.getByRole("radio", { name: "Talk" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Poster" })).not.toBeChecked();
+    expect(
+      screen.getByRole("radio", { name: "Just attend" })
+    ).not.toBeChecked();
+  });
+
+  test("Just attend hides the contribution fields", () => {
+    render(<RegistrationForm />);
+
+    fireEvent.click(screen.getByRole("radio", { name: "Just attend" }));
+
+    expect(
+      screen.queryByPlaceholderText(/Title of your presentation/i)
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByPlaceholderText(/Brief description of your contribution/i)
+    ).not.toBeInTheDocument();
+  });
+
+  test("Just attend submission clears hidden contribution fields", async () => {
+    globalThis.fetch.mockResolvedValueOnce(successResponse);
+    render(<RegistrationForm />);
+
+    fireEvent.change(document.querySelector('input[name="name"]'), {
+      target: { name: "name", value: "Alice Smith" },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/your.email@example.com/i), {
+      target: { name: "email", value: "alice@example.com" },
+    });
+    fireEvent.change(
+      screen.getByPlaceholderText(/University or Institution/i),
+      { target: { name: "affiliation", value: "CTU Prague" } }
+    );
+    fireEvent.change(
+      screen.getByPlaceholderText(/Title of your presentation/i),
+      { target: { name: "abstract_title", value: "Stale title" } }
+    );
+    fireEvent.click(screen.getByRole("radio", { name: "Just attend" }));
+    fireEvent.change(document.querySelector('input[name="arrival"]'), {
+      target: { name: "arrival", value: "2026-09-10" },
+    });
+    fireEvent.change(document.querySelector('input[name="departure"]'), {
+      target: { name: "departure", value: "2026-09-12" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /^submit$/i }));
+
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(1));
+    const body = globalThis.fetch.mock.calls[0][1].body;
+    expect(body.get("contribution_type")).toBe("attend");
+    expect(body.get("abstract_title")).toBe("");
+    expect(body.get("abstract_text")).toBe("");
+  });
+
+  test("renders only the contribution types allowed by the conference", () => {
+    mockInfo.registration_allow_talk = false;
+    mockInfo.registration_allow_poster = false;
+
+    render(<RegistrationForm />);
+
+    expect(
+      screen.queryByRole("radio", { name: "Talk" })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("radio", { name: "Poster" })
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Just attend" })).toBeChecked();
+    expect(
+      screen.queryByPlaceholderText(/Title of your presentation/i)
+    ).not.toBeInTheDocument();
+  });
+
+  test("requires a title for a talk", async () => {
+    render(<RegistrationForm />);
+
+    fireEvent.change(document.querySelector('input[name="name"]'), {
+      target: { name: "name", value: "Alice Smith" },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/your.email@example.com/i), {
+      target: { name: "email", value: "alice@example.com" },
+    });
+    fireEvent.change(
+      screen.getByPlaceholderText(/University or Institution/i),
+      { target: { name: "affiliation", value: "CTU Prague" } }
+    );
+    fireEvent.change(document.querySelector('input[name="arrival"]'), {
+      target: { name: "arrival", value: "2026-09-10" },
+    });
+    fireEvent.change(document.querySelector('input[name="departure"]'), {
+      target: { name: "departure", value: "2026-09-12" },
+    });
+
+    fireEvent.submit(document.querySelector("form"));
+
+    expect(
+      await screen.findByText(/Please enter a title/i)
+    ).toBeInTheDocument();
   });
 
   test("keeps the plain arrival and departure labels by default", () => {
@@ -461,6 +573,13 @@ describe("RegistrationForm", () => {
       }
     );
 
+    fireEvent.change(
+      screen.getByPlaceholderText(/Title of your presentation/i),
+      {
+        target: { name: "abstract_title", value: "A talk" },
+      }
+    );
+
     fireEvent.change(document.querySelector('input[name="arrival"]'), {
       target: { name: "arrival", value: "2026-09-10" },
     });
@@ -493,6 +612,13 @@ describe("RegistrationForm", () => {
       screen.getByPlaceholderText(/University or Institution/i),
       {
         target: { name: "affiliation", value: "CTU Prague" },
+      }
+    );
+
+    fireEvent.change(
+      screen.getByPlaceholderText(/Title of your presentation/i),
+      {
+        target: { name: "abstract_title", value: "A talk" },
       }
     );
 

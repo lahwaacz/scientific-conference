@@ -30,6 +30,7 @@ const pendingSubmission = {
   name: "Alice Smith",
   email: "alice@example.com",
   affiliation: "CTU Prague",
+  contribution_type: "talk",
   photo: "/media/photos/alice.jpg",
   abstract_title: "Quantum Widgets",
   abstract_text: "We study widgets.",
@@ -185,6 +186,7 @@ describe("Tracking", () => {
       "name",
       "email",
       "affiliation",
+      "contribution_type",
       "abstract_title",
       "abstract_text",
       "additional_authors",
@@ -232,6 +234,7 @@ describe("Tracking", () => {
       "additional_authors",
       "affiliation",
       "arrival_date",
+      "contribution_type",
       "departure_date",
       "email",
       "info",
@@ -239,6 +242,31 @@ describe("Tracking", () => {
       "name",
     ]);
     expect(payload.is_student).toBe(true);
+  });
+
+  test("Just attend edit clears hidden contribution fields", async () => {
+    await renderWithSubmission(pendingSubmission);
+    await openEditForm();
+
+    fireEvent.click(screen.getByRole("radio", { name: "Just attend" }));
+
+    globalThis.fetch
+      .mockResolvedValueOnce(jsonResponse(200, pendingSubmission))
+      .mockResolvedValueOnce(jsonResponse(200, pendingSubmission));
+
+    fireEvent.submit(document.querySelector("form"));
+
+    expect(await screen.findByText(/Changes saved/i)).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(globalThis.fetch).toHaveBeenCalledTimes(3);
+    });
+    const payload = JSON.parse(globalThis.fetch.mock.calls[1][1].body);
+    expect(payload.contribution_type).toBe("attend");
+    expect(payload.abstract_title).toBe("");
+    expect(payload.abstract_text).toBe("");
+    expect(payload.additional_authors).toBe("");
+    expect(payload.additional_affiliations).toBe("");
   });
 
   test("Remove on an existing photo sends an explicit-null JSON PATCH", async () => {

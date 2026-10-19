@@ -3,7 +3,7 @@
   flex-direction: column;
 }
 
-.field input:not([type="checkbox"]),
+.field input:not([type="checkbox"]):not([type="radio"]),
 .field textarea {
   padding: clamp(8px, 1.5vw, 10px) clamp(10px, 2vw, 12px);
   font-size: clamp(14px, 1.6vw, 16px);
@@ -87,6 +87,29 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   color: #dc3545;
   font-weight: 600;
   margin-left: 4px;
+}
+
+.radioGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+}
+
+.radioOption {
+  display: flex;
+  align-items: center;
+  font-family: "Roboto", sans-serif;
+  font-size: clamp(14px, 1.6vw, 16px);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.radioInput {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+  accent-color: var(--secondary-color);
 }
 
 .wordCount {
