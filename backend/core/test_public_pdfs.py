@@ -125,6 +125,54 @@ class TestPublicLists(TestCase):
         )
         self.assertEqual(response.status_code, 201)
 
+    def test_abstracts_are_ordered_by_presenter_surname(self):
+        conference = wsc_conference()
+        for name, title in (
+            ("Zoe Adams", "Zeta"),
+            ("Amy Baker", "Alpha"),
+            ("Mia Clarke", "Mu"),
+        ):
+            participant = Participant.objects.create(
+                conference=conference, name=name, contribution_type="talk"
+            )
+            Abstract.objects.create(
+                conference=conference,
+                title=title,
+                authors=name,
+                participant=participant,
+            )
+
+        response = self.client.get(api("abstracts/"))
+
+        self.assertEqual(
+            [row["authors_string"] for row in response.data],
+            ["Zoe Adams", "Amy Baker", "Mia Clarke"],
+        )
+
+    def test_abstracts_put_missing_presenters_last(self):
+        conference = wsc_conference()
+        participant = Participant.objects.create(
+            conference=conference, name="Amy Baker", contribution_type="talk"
+        )
+        Abstract.objects.create(
+            conference=conference,
+            title="With presenter",
+            authors="Amy Baker",
+            participant=participant,
+        )
+        Abstract.objects.create(
+            conference=conference,
+            title="Without presenter",
+            authors="Unknown",
+        )
+
+        response = self.client.get(api("abstracts/"))
+
+        self.assertEqual(
+            [row["title"] for row in response.data],
+            ["With presenter", "Without presenter"],
+        )
+
     def test_abstracts_exclude_attend_participants(self):
         conference = wsc_conference()
         participant = Participant.objects.create(

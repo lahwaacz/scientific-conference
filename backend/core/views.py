@@ -4,7 +4,7 @@ import os
 import traceback
 
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db.models import Q
+from django.db.models import F, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils.functional import cached_property
@@ -524,7 +524,9 @@ class ParticipantDetailView(ConferenceScopedMixin, generics.RetrieveAPIView):
 
 # Abstracts
 class AbstractListView(ConferenceScopedMixin, generics.ListCreateAPIView):
-    queryset = Abstract.objects.all().order_by("title")
+    queryset = Abstract.objects.select_related("participant", "talk").order_by(
+        F("participant__sort_key").asc(nulls_last=True), "title"
+    )
     serializer_class = AbstractSerializer
 
     def get_queryset(self):
