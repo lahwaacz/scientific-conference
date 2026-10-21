@@ -37,7 +37,7 @@ RUN npm run build
 ## =========================================
 ## Stage 2: Serve static files + proxy API requests with nginx
 ## =========================================
-FROM ghcr.io/nginx/nginx-unprivileged:1.31.6-alpine3.24-slim@sha256:ac4d9c7e457c6510b95ac72dd84b27f7cc68ecb9a83fbd44f05a6460cf08aba4 AS runner
+FROM ghcr.io/nginx/nginx-unprivileged:1.31.7-alpine3.24-slim@sha256:9f239061cbd9cc83fa684c653a5e825a0726410364aa3401f9490d7dc8c35e77 AS runner
 
 # Switch to root for the following RUN and COPY
 USER root
