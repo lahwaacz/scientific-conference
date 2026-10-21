@@ -15,19 +15,6 @@ export default function AdminLoginModal({ onSuccess, onClose }) {
     usernameRef.current?.focus();
   }, []);
 
-  useEffect(() => {
-    const scrollbarWidth =
-      window.innerWidth - document.documentElement.clientWidth;
-
-    document.body.style.overflow = "hidden";
-    document.body.style.paddingRight = `${scrollbarWidth}px`;
-
-    return () => {
-      document.body.style.overflow = "";
-      document.body.style.paddingRight = "";
-    };
-  }, []);
-
   async function submit(e) {
     e.preventDefault();
     setError("");

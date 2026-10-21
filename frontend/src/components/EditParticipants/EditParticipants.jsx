@@ -218,7 +218,7 @@ export default function EditParticipants() {
     openModal({
       title: "Delete submission",
       message: isApproved
-        ? "WARNING: This will also remove the published Participant and Abstract from the public site!"
+        ? "WARNING: This permanently deletes the submission and cannot be undone. It will also remove the published Participant, Abstract, and any scheduled talk from the public site!"
         : "Delete this submission permanently? This cannot be undone.",
       onCancel: closeModal,
       onConfirm: async () => {
