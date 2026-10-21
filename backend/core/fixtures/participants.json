@@ -6,7 +6,8 @@
       "conference": 1,
       "name": "Jana Novotná",
       "affiliation": "Czech Technical University in Prague, FNSPE",
-      "email": "jana.novotna@example.org"
+      "email": "jana.novotna@example.org",
+      "contribution_type": "talk"
     }
   },
   {
@@ -16,7 +17,8 @@
       "conference": 1,
       "name": "Petr Kalenský",
       "affiliation": "Czech Technical University in Prague, FNSPE",
-      "email": "petr.kalensky@example.org"
+      "email": "petr.kalensky@example.org",
+      "contribution_type": "talk"
     }
   },
   {
@@ -26,7 +28,8 @@
       "conference": 1,
       "name": "Markéta Doležalová",
       "affiliation": "Charles University, Faculty of Mathematics and Physics",
-      "email": "marketa.dolezalova@example.org"
+      "email": "marketa.dolezalova@example.org",
+      "contribution_type": "talk"
     }
   },
   {
@@ -36,7 +39,8 @@
       "conference": 1,
       "name": "Tomáš Vrána",
       "affiliation": "Czech Technical University in Prague, FNSPE",
-      "email": "tomas.vrana@example.org"
+      "email": "tomas.vrana@example.org",
+      "contribution_type": "talk"
     }
   },
   {
@@ -46,7 +50,8 @@
       "conference": 1,
       "name": "Lucie Šimková",
       "affiliation": "Brno University of Technology",
-      "email": "lucie.simkova@example.org"
+      "email": "lucie.simkova@example.org",
+      "contribution_type": "talk"
     }
   },
   {
@@ -56,7 +61,8 @@
       "conference": 2,
       "name": "Martin Havelka",
       "affiliation": "Czech Technical University in Prague, FNSPE",
-      "email": "martin.havelka@example.org"
+      "email": "martin.havelka@example.org",
+      "contribution_type": "talk"
     }
   },
   {
@@ -66,7 +72,8 @@
       "conference": 2,
       "name": "Eva Beranová",
       "affiliation": "University of West Bohemia",
-      "email": "eva.beranova@example.org"
+      "email": "eva.beranova@example.org",
+      "contribution_type": "talk"
     }
   },
   {
@@ -76,7 +83,8 @@
       "conference": 2,
       "name": "Jan Kolář",
       "affiliation": "Czech Technical University in Prague, FNSPE",
-      "email": "jan.kolar@example.org"
+      "email": "jan.kolar@example.org",
+      "contribution_type": "talk"
     }
   },
   {
@@ -86,7 +94,8 @@
       "conference": 3,
       "name": "Klára Sýkorová",
       "affiliation": "Palacký University Olomouc",
-      "email": "klara.sykorova@example.org"
+      "email": "klara.sykorova@example.org",
+      "contribution_type": "talk"
     }
   },
   {
@@ -96,7 +105,8 @@
       "conference": 3,
       "name": "Ondřej Marek",
       "affiliation": "Czech Technical University in Prague, FNSPE",
-      "email": "ondrej.marek@example.org"
+      "email": "ondrej.marek@example.org",
+      "contribution_type": "talk"
     }
   },
   {
@@ -106,7 +116,8 @@
       "conference": 3,
       "name": "Barbora Krátká",
       "affiliation": "Charles University, Faculty of Mathematics and Physics",
-      "email": "barbora.kratka@example.org"
+      "email": "barbora.kratka@example.org",
+      "contribution_type": "talk"
     }
   },
   {
@@ -116,7 +127,8 @@
       "conference": 3,
       "name": "Filip Holub",
       "affiliation": "Czech Technical University in Prague, FNSPE",
-      "email": "filip.holub@example.org"
+      "email": "filip.holub@example.org",
+      "contribution_type": "talk"
     }
   },
   {
@@ -126,7 +138,8 @@
       "conference": 4,
       "name": "Tereza Bláhová",
       "affiliation": "Czech Technical University in Prague, FNSPE",
-      "email": "tereza.blahova@example.org"
+      "email": "tereza.blahova@example.org",
+      "contribution_type": "talk"
     }
   },
   {
@@ -136,7 +149,8 @@
       "conference": 4,
       "name": "Jakub Rychtář",
       "affiliation": "Technical University of Liberec",
-      "email": "jakub.rychtar@example.org"
+      "email": "jakub.rychtar@example.org",
+      "contribution_type": "talk"
     }
   },
   {
@@ -146,7 +160,8 @@
       "conference": 4,
       "name": "Anna Žáková",
       "affiliation": "Czech Technical University in Prague, FNSPE",
-      "email": "anna.zakova@example.org"
+      "email": "anna.zakova@example.org",
+      "contribution_type": "talk"
     }
   },
   {
@@ -156,7 +171,8 @@
       "conference": 5,
       "name": "David Černý",
       "affiliation": "Czech Technical University in Prague, FNSPE",
-      "email": "david.cerny@example.org"
+      "email": "david.cerny@example.org",
+      "contribution_type": "talk"
     }
   },
   {
@@ -166,7 +182,8 @@
       "conference": 5,
       "name": "Veronika Kučerová",
       "affiliation": "University of South Bohemia",
-      "email": "veronika.kucerova@example.org"
+      "email": "veronika.kucerova@example.org",
+      "contribution_type": "talk"
     }
   },
   {
@@ -176,7 +193,8 @@
       "conference": 5,
       "name": "Michal Stejskal",
       "affiliation": "Czech Technical University in Prague, FNSPE",
-      "email": "michal.stejskal@example.org"
+      "email": "michal.stejskal@example.org",
+      "contribution_type": "talk"
     }
   },
   {
@@ -186,7 +204,8 @@
       "conference": 5,
       "name": "Petra Malá",
       "affiliation": "Charles University, Faculty of Mathematics and Physics",
-      "email": "petra.mala@example.org"
+      "email": "petra.mala@example.org",
+      "contribution_type": "talk"
     }
   },
   {
@@ -438,7 +457,8 @@
       "info": "Vegetarian meals requested.",
       "is_student": false,
       "published_participant": 1,
-      "published_abstract": 1
+      "published_abstract": 1,
+      "contribution_type": "talk"
     }
   },
   {
@@ -462,7 +482,8 @@
       "info": "",
       "is_student": false,
       "published_participant": 2,
-      "published_abstract": 2
+      "published_abstract": 2,
+      "contribution_type": "talk"
     }
   },
   {
@@ -486,7 +507,8 @@
       "info": "",
       "is_student": true,
       "published_participant": 3,
-      "published_abstract": 3
+      "published_abstract": 3,
+      "contribution_type": "talk"
     }
   },
   {
@@ -510,7 +532,8 @@
       "info": "Arriving by train on Wednesday evening.",
       "is_student": false,
       "published_participant": 4,
-      "published_abstract": 4
+      "published_abstract": 4,
+      "contribution_type": "talk"
     }
   },
   {
@@ -534,7 +557,8 @@
       "info": "",
       "is_student": false,
       "published_participant": 5,
-      "published_abstract": 5
+      "published_abstract": 5,
+      "contribution_type": "talk"
     }
   },
   {
@@ -558,7 +582,8 @@
       "info": "",
       "is_student": false,
       "published_participant": 6,
-      "published_abstract": 6
+      "published_abstract": 6,
+      "contribution_type": "talk"
     }
   },
   {
@@ -582,7 +607,8 @@
       "info": "Accommodation in a single room requested.",
       "is_student": false,
       "published_participant": 7,
-      "published_abstract": 7
+      "published_abstract": 7,
+      "contribution_type": "talk"
     }
   },
   {
@@ -606,7 +632,8 @@
       "info": "",
       "is_student": false,
       "published_participant": 8,
-      "published_abstract": 8
+      "published_abstract": 8,
+      "contribution_type": "talk"
     }
   },
   {
@@ -630,7 +657,8 @@
       "info": "",
       "is_student": true,
       "published_participant": 9,
-      "published_abstract": 9
+      "published_abstract": 9,
+      "contribution_type": "talk"
     }
   },
   {
@@ -654,7 +682,8 @@
       "info": "",
       "is_student": false,
       "published_participant": 10,
-      "published_abstract": 10
+      "published_abstract": 10,
+      "contribution_type": "talk"
     }
   },
   {
@@ -678,7 +707,8 @@
       "info": "",
       "is_student": false,
       "published_participant": 11,
-      "published_abstract": 11
+      "published_abstract": 11,
+      "contribution_type": "talk"
     }
   },
   {
@@ -702,7 +732,8 @@
       "info": "Student accommodation requested.",
       "is_student": true,
       "published_participant": 12,
-      "published_abstract": 12
+      "published_abstract": 12,
+      "contribution_type": "talk"
     }
   },
   {
@@ -726,7 +757,8 @@
       "info": "",
       "is_student": false,
       "published_participant": 13,
-      "published_abstract": 13
+      "published_abstract": 13,
+      "contribution_type": "talk"
     }
   },
   {
@@ -750,7 +782,8 @@
       "info": "",
       "is_student": false,
       "published_participant": 14,
-      "published_abstract": 14
+      "published_abstract": 14,
+      "contribution_type": "talk"
     }
   },
   {
@@ -774,7 +807,8 @@
       "info": "",
       "is_student": false,
       "published_participant": 15,
-      "published_abstract": 15
+      "published_abstract": 15,
+      "contribution_type": "talk"
     }
   },
   {
@@ -798,7 +832,8 @@
       "info": "",
       "is_student": false,
       "published_participant": 16,
-      "published_abstract": 16
+      "published_abstract": 16,
+      "contribution_type": "talk"
     }
   },
   {
@@ -822,7 +857,8 @@
       "info": "",
       "is_student": false,
       "published_participant": 17,
-      "published_abstract": 17
+      "published_abstract": 17,
+      "contribution_type": "talk"
     }
   },
   {
@@ -846,7 +882,8 @@
       "info": "",
       "is_student": false,
       "published_participant": 18,
-      "published_abstract": 18
+      "published_abstract": 18,
+      "contribution_type": "talk"
     }
   },
   {
@@ -870,7 +907,8 @@
       "info": "",
       "is_student": true,
       "published_participant": 19,
-      "published_abstract": 19
+      "published_abstract": 19,
+      "contribution_type": "talk"
     }
   },
   {
@@ -1337,6 +1375,426 @@
         2
       ],
       "user": null
+    }
+  },
+  {
+    "model": "core.participant",
+    "pk": 20,
+    "fields": {
+      "conference": 1,
+      "name": "Hana Nováková",
+      "contribution_type": "poster",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "hana.novakova@example.org"
+    }
+  },
+  {
+    "model": "core.abstract",
+    "pk": 20,
+    "fields": {
+      "conference": 1,
+      "title": "Adaptive mesh refinement for contact problems",
+      "text": "We present an adaptive refinement strategy for contact problems with evolving interfaces.",
+      "authors": "Hana Nováková",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "participant": 20
+    }
+  },
+  {
+    "model": "core.participantsubmission",
+    "pk": 20,
+    "fields": {
+      "conference": 1,
+      "name": "Hana Nováková",
+      "email": "hana.novakova@example.org",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "contribution_type": "poster",
+      "abstract_title": "Adaptive mesh refinement for contact problems",
+      "abstract_text": "We present an adaptive refinement strategy for contact problems with evolving interfaces.",
+      "additional_authors": "",
+      "additional_affiliations": "",
+      "arrival_date": "2025-05-29",
+      "departure_date": "2025-05-30",
+      "status": "approved",
+      "submitted_at": "2025-04-18T09:00:00Z",
+      "reviewed_at": "2025-04-18T15:00:00Z",
+      "admin_notes": "",
+      "info": "",
+      "is_student": false,
+      "published_participant": 20,
+      "published_abstract": 20
+    }
+  },
+  {
+    "model": "core.participant",
+    "pk": 21,
+    "fields": {
+      "conference": 1,
+      "name": "Jakub Šťastný",
+      "contribution_type": "attend",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "jakub.stastny@example.org"
+    }
+  },
+  {
+    "model": "core.participantsubmission",
+    "pk": 21,
+    "fields": {
+      "conference": 1,
+      "name": "Jakub Šťastný",
+      "email": "jakub.stastny@example.org",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "contribution_type": "attend",
+      "abstract_title": "",
+      "abstract_text": "",
+      "additional_authors": "",
+      "additional_affiliations": "",
+      "arrival_date": "2025-05-29",
+      "departure_date": "2025-05-30",
+      "status": "approved",
+      "submitted_at": "2025-04-19T09:00:00Z",
+      "reviewed_at": "2025-04-19T15:00:00Z",
+      "admin_notes": "",
+      "info": "",
+      "is_student": false,
+      "published_participant": 21,
+      "published_abstract": null
+    }
+  },
+  {
+    "model": "core.participant",
+    "pk": 22,
+    "fields": {
+      "conference": 2,
+      "name": "Eliška Horáková",
+      "contribution_type": "poster",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "eliska.horakova@example.org"
+    }
+  },
+  {
+    "model": "core.abstract",
+    "pk": 21,
+    "fields": {
+      "conference": 2,
+      "title": "Sparse tensor decompositions in uncertainty quantification",
+      "text": "Low-rank tensor formats make uncertainty quantification tractable for high-dimensional parametric models.",
+      "authors": "Eliška Horáková",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "participant": 22
+    }
+  },
+  {
+    "model": "core.participantsubmission",
+    "pk": 22,
+    "fields": {
+      "conference": 2,
+      "name": "Eliška Horáková",
+      "email": "eliska.horakova@example.org",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "contribution_type": "poster",
+      "abstract_title": "Sparse tensor decompositions in uncertainty quantification",
+      "abstract_text": "Low-rank tensor formats make uncertainty quantification tractable for high-dimensional parametric models.",
+      "additional_authors": "",
+      "additional_affiliations": "",
+      "arrival_date": "2026-10-04",
+      "departure_date": "2026-10-06",
+      "status": "approved",
+      "submitted_at": "2026-09-01T09:00:00Z",
+      "reviewed_at": "2026-09-01T15:00:00Z",
+      "admin_notes": "",
+      "info": "",
+      "is_student": false,
+      "published_participant": 22,
+      "published_abstract": 21
+    }
+  },
+  {
+    "model": "core.participant",
+    "pk": 23,
+    "fields": {
+      "conference": 3,
+      "name": "Matěj Kříž",
+      "contribution_type": "poster",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "matej.kriz@example.org"
+    }
+  },
+  {
+    "model": "core.abstract",
+    "pk": 22,
+    "fields": {
+      "conference": 3,
+      "title": "GPU-accelerated Monte Carlo transport",
+      "text": "A GPU implementation of Monte Carlo transport with hierarchical variance reduction.",
+      "authors": "Matěj Kříž",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "participant": 23
+    }
+  },
+  {
+    "model": "core.participantsubmission",
+    "pk": 23,
+    "fields": {
+      "conference": 3,
+      "name": "Matěj Kříž",
+      "email": "matej.kriz@example.org",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "contribution_type": "poster",
+      "abstract_title": "GPU-accelerated Monte Carlo transport",
+      "abstract_text": "A GPU implementation of Monte Carlo transport with hierarchical variance reduction.",
+      "additional_authors": "",
+      "additional_affiliations": "",
+      "arrival_date": "2027-06-14",
+      "departure_date": "2027-06-18",
+      "status": "approved",
+      "submitted_at": "2027-05-01T09:00:00Z",
+      "reviewed_at": "2027-05-01T15:00:00Z",
+      "admin_notes": "",
+      "info": "",
+      "is_student": false,
+      "published_participant": 23,
+      "published_abstract": 22
+    }
+  },
+  {
+    "model": "core.participant",
+    "pk": 24,
+    "fields": {
+      "conference": 3,
+      "name": "Sofia Benešová",
+      "contribution_type": "attend",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "sofia.benesova@example.org"
+    }
+  },
+  {
+    "model": "core.participantsubmission",
+    "pk": 24,
+    "fields": {
+      "conference": 3,
+      "name": "Sofia Benešová",
+      "email": "sofia.benesova@example.org",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "contribution_type": "attend",
+      "abstract_title": "",
+      "abstract_text": "",
+      "additional_authors": "",
+      "additional_affiliations": "",
+      "arrival_date": "2027-06-14",
+      "departure_date": "2027-06-18",
+      "status": "approved",
+      "submitted_at": "2027-05-02T09:00:00Z",
+      "reviewed_at": "2027-05-02T15:00:00Z",
+      "admin_notes": "",
+      "info": "",
+      "is_student": false,
+      "published_participant": 24,
+      "published_abstract": null
+    }
+  },
+  {
+    "model": "core.participant",
+    "pk": 25,
+    "fields": {
+      "conference": 4,
+      "name": "Radek Vaněk",
+      "contribution_type": "attend",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "radek.vanek@example.org"
+    }
+  },
+  {
+    "model": "core.participantsubmission",
+    "pk": 25,
+    "fields": {
+      "conference": 4,
+      "name": "Radek Vaněk",
+      "email": "radek.vanek@example.org",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "contribution_type": "attend",
+      "abstract_title": "",
+      "abstract_text": "",
+      "additional_authors": "",
+      "additional_affiliations": "",
+      "arrival_date": "2027-11-04",
+      "departure_date": "2027-11-05",
+      "status": "approved",
+      "submitted_at": "2027-10-01T09:00:00Z",
+      "reviewed_at": "2027-10-01T15:00:00Z",
+      "admin_notes": "",
+      "info": "",
+      "is_student": false,
+      "published_participant": 25,
+      "published_abstract": null
+    }
+  },
+  {
+    "model": "core.participant",
+    "pk": 26,
+    "fields": {
+      "conference": 6,
+      "name": "Nina Čermáková",
+      "contribution_type": "poster",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "nina.cermakova@example.org"
+    }
+  },
+  {
+    "model": "core.abstract",
+    "pk": 23,
+    "fields": {
+      "conference": 6,
+      "title": "Data-driven turbulence closures",
+      "text": "A data-driven closure model for coarse-grained turbulence simulations.",
+      "authors": "Nina Čermáková",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "participant": 26
+    }
+  },
+  {
+    "model": "core.participantsubmission",
+    "pk": 26,
+    "fields": {
+      "conference": 6,
+      "name": "Nina Čermáková",
+      "email": "nina.cermakova@example.org",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "contribution_type": "poster",
+      "abstract_title": "Data-driven turbulence closures",
+      "abstract_text": "A data-driven closure model for coarse-grained turbulence simulations.",
+      "additional_authors": "",
+      "additional_affiliations": "",
+      "arrival_date": "2028-04-06",
+      "departure_date": "2028-04-07",
+      "status": "approved",
+      "submitted_at": "2028-03-01T09:00:00Z",
+      "reviewed_at": "2028-03-01T15:00:00Z",
+      "admin_notes": "",
+      "info": "",
+      "is_student": false,
+      "published_participant": 26,
+      "published_abstract": 23
+    }
+  },
+  {
+    "model": "core.participant",
+    "pk": 27,
+    "fields": {
+      "conference": 6,
+      "name": "Oskar Pospíšil",
+      "contribution_type": "attend",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "oskar.pospisil@example.org"
+    }
+  },
+  {
+    "model": "core.participantsubmission",
+    "pk": 27,
+    "fields": {
+      "conference": 6,
+      "name": "Oskar Pospíšil",
+      "email": "oskar.pospisil@example.org",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "contribution_type": "attend",
+      "abstract_title": "",
+      "abstract_text": "",
+      "additional_authors": "",
+      "additional_affiliations": "",
+      "arrival_date": "2028-04-06",
+      "departure_date": "2028-04-07",
+      "status": "approved",
+      "submitted_at": "2028-03-02T09:00:00Z",
+      "reviewed_at": "2028-03-02T15:00:00Z",
+      "admin_notes": "",
+      "info": "",
+      "is_student": false,
+      "published_participant": 27,
+      "published_abstract": null
+    }
+  },
+  {
+    "model": "core.participant",
+    "pk": 28,
+    "fields": {
+      "conference": 7,
+      "name": "Viktor Hruška",
+      "contribution_type": "poster",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "viktor.hruska@example.org"
+    }
+  },
+  {
+    "model": "core.abstract",
+    "pk": 24,
+    "fields": {
+      "conference": 7,
+      "title": "Robust optimization under uncertainty",
+      "text": "Robust optimization formulations for engineering design with uncertain inputs.",
+      "authors": "Viktor Hruška",
+      "department": "Czech Technical University in Prague, FNSPE",
+      "participant": 28
+    }
+  },
+  {
+    "model": "core.participantsubmission",
+    "pk": 28,
+    "fields": {
+      "conference": 7,
+      "name": "Viktor Hruška",
+      "email": "viktor.hruska@example.org",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "contribution_type": "poster",
+      "abstract_title": "Robust optimization under uncertainty",
+      "abstract_text": "Robust optimization formulations for engineering design with uncertain inputs.",
+      "additional_authors": "",
+      "additional_affiliations": "",
+      "arrival_date": "2028-06-08",
+      "departure_date": "2028-06-09",
+      "status": "approved",
+      "submitted_at": "2028-05-01T09:00:00Z",
+      "reviewed_at": "2028-05-01T15:00:00Z",
+      "admin_notes": "",
+      "info": "",
+      "is_student": false,
+      "published_participant": 28,
+      "published_abstract": 24
+    }
+  },
+  {
+    "model": "core.participant",
+    "pk": 29,
+    "fields": {
+      "conference": 8,
+      "name": "Amálie Konečná",
+      "contribution_type": "attend",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "email": "amalie.konecna@example.org"
+    }
+  },
+  {
+    "model": "core.participantsubmission",
+    "pk": 29,
+    "fields": {
+      "conference": 8,
+      "name": "Amálie Konečná",
+      "email": "amalie.konecna@example.org",
+      "affiliation": "Czech Technical University in Prague, FNSPE",
+      "contribution_type": "attend",
+      "abstract_title": "",
+      "abstract_text": "",
+      "additional_authors": "",
+      "additional_affiliations": "",
+      "arrival_date": "2028-10-12",
+      "departure_date": "2028-10-13",
+      "status": "approved",
+      "submitted_at": "2028-09-01T09:00:00Z",
+      "reviewed_at": "2028-09-01T15:00:00Z",
+      "admin_notes": "",
+      "info": "",
+      "is_student": false,
+      "published_participant": 29,
+      "published_abstract": null
     }
   }
 ]

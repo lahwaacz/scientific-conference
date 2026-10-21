@@ -83,9 +83,9 @@ The backend uses [uv](https://docs.astral.sh/uv/) for dependency management
    uv run python manage.py migrate
    ```
 
-3. Optionally, load the demo fixture. It seeds five demo conferences
-   (one running, two upcoming, two past) with participants and a sample
-   program:
+3. Optionally, load the demo fixture. It seeds eight demo conferences
+   covering every non-empty combination of allowed participation types,
+   with participants of every allowed type and a sample program:
    ```bash
    uv run python manage.py loaddata conferences.json participants.json program.json
    ```

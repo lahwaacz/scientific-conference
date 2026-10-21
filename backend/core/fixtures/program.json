@@ -29,7 +29,8 @@
       "title": "Finite volume schemes for two-phase flow in heterogeneous porous media",
       "start_time": "14:10",
       "end_time": "14:30",
-      "is_scheduled": true
+      "is_scheduled": true,
+      "day": 1
     }
   },
   {
@@ -43,7 +44,8 @@
       "title": "Adaptive time stepping for stiff reaction-diffusion systems",
       "start_time": "14:35",
       "end_time": "14:55",
-      "is_scheduled": true
+      "is_scheduled": true,
+      "day": 1
     }
   },
   {
@@ -57,7 +59,8 @@
       "title": "A posteriori error estimates for mixed finite element methods",
       "start_time": "15:00",
       "end_time": "15:20",
-      "is_scheduled": true
+      "is_scheduled": true,
+      "day": 1
     }
   },
   {
@@ -71,7 +74,8 @@
       "title": "Numerical simulation of shallow water flows on unstructured meshes",
       "start_time": "15:25",
       "end_time": "15:45",
-      "is_scheduled": true
+      "is_scheduled": true,
+      "day": 1
     }
   },
   {
@@ -85,7 +89,8 @@
       "title": "Higher-order discontinuous Galerkin methods for compressible flow",
       "start_time": "15:50",
       "end_time": "16:10",
-      "is_scheduled": true
+      "is_scheduled": true,
+      "day": 1
     }
   },
   {
@@ -118,7 +123,8 @@
       "title": "Parallel solvers for large sparse linear systems",
       "start_time": "14:10",
       "end_time": "14:30",
-      "is_scheduled": true
+      "is_scheduled": true,
+      "day": 2
     }
   },
   {
@@ -132,7 +138,8 @@
       "title": "Model order reduction of parametrized partial differential equations",
       "start_time": "14:35",
       "end_time": "14:55",
-      "is_scheduled": true
+      "is_scheduled": true,
+      "day": 2
     }
   },
   {
@@ -146,7 +153,8 @@
       "title": "Uncertainty quantification in groundwater flow models",
       "start_time": "15:00",
       "end_time": "15:20",
-      "is_scheduled": true
+      "is_scheduled": true,
+      "day": 2
     }
   },
   {
@@ -179,7 +187,8 @@
       "title": "Particle methods for the Vlasov-Poisson system",
       "start_time": "14:10",
       "end_time": "14:30",
-      "is_scheduled": true
+      "is_scheduled": true,
+      "day": 3
     }
   },
   {
@@ -193,7 +202,8 @@
       "title": "Spectral element discretizations of wave propagation problems",
       "start_time": "14:35",
       "end_time": "14:55",
-      "is_scheduled": true
+      "is_scheduled": true,
+      "day": 3
     }
   },
   {
@@ -207,7 +217,8 @@
       "title": "Machine learning surrogates for multiscale simulations",
       "start_time": "15:00",
       "end_time": "15:20",
-      "is_scheduled": true
+      "is_scheduled": true,
+      "day": 3
     }
   },
   {
@@ -221,7 +232,8 @@
       "title": "Structure-preserving integrators for Hamiltonian systems",
       "start_time": "15:25",
       "end_time": "15:45",
-      "is_scheduled": true
+      "is_scheduled": true,
+      "day": 3
     }
   },
   {
@@ -254,7 +266,8 @@
       "title": "Optimal control of flows in vascular networks",
       "start_time": "14:10",
       "end_time": "14:30",
-      "is_scheduled": true
+      "is_scheduled": true,
+      "day": 4
     }
   },
   {
@@ -268,7 +281,8 @@
       "title": "Domain decomposition methods for coupled multiphysics problems",
       "start_time": "14:35",
       "end_time": "14:55",
-      "is_scheduled": true
+      "is_scheduled": true,
+      "day": 4
     }
   },
   {
@@ -282,7 +296,8 @@
       "title": "Parameter identification in reaction-diffusion models",
       "start_time": "15:00",
       "end_time": "15:20",
-      "is_scheduled": true
+      "is_scheduled": true,
+      "day": 4
     }
   },
   {
@@ -315,7 +330,8 @@
       "title": "Lattice Boltzmann methods for complex geometries",
       "start_time": "14:10",
       "end_time": "14:30",
-      "is_scheduled": true
+      "is_scheduled": true,
+      "day": 5
     }
   },
   {
@@ -329,7 +345,8 @@
       "title": "Anisotropic mesh adaptation for singularly perturbed problems",
       "start_time": "14:35",
       "end_time": "14:55",
-      "is_scheduled": true
+      "is_scheduled": true,
+      "day": 5
     }
   },
   {
@@ -343,7 +360,8 @@
       "title": "GPU acceleration of explicit finite difference solvers",
       "start_time": "15:00",
       "end_time": "15:20",
-      "is_scheduled": true
+      "is_scheduled": true,
+      "day": 5
     }
   },
   {
@@ -357,7 +375,164 @@
       "title": "Verified numerics for enclosure of solutions of ODEs",
       "start_time": "15:25",
       "end_time": "15:45",
-      "is_scheduled": true
+      "is_scheduled": true,
+      "day": 5
+    }
+  },
+  {
+    "model": "core.conferenceday",
+    "pk": 6,
+    "fields": {
+      "conference": 6,
+      "date": "2028-04-06"
+    }
+  },
+  {
+    "model": "core.conferenceday",
+    "pk": 7,
+    "fields": {
+      "conference": 7,
+      "date": "2028-06-08"
+    }
+  },
+  {
+    "model": "core.session",
+    "pk": 6,
+    "fields": {
+      "conference": 6,
+      "day": 6,
+      "chair": "Nina Čermáková",
+      "start_time": "10:00",
+      "end_time": "11:00",
+      "kind": "poster"
+    }
+  },
+  {
+    "model": "core.session",
+    "pk": 7,
+    "fields": {
+      "conference": 7,
+      "day": 7,
+      "chair": "Viktor Hruška",
+      "start_time": "10:00",
+      "end_time": "11:00",
+      "kind": "poster"
+    }
+  },
+  {
+    "model": "core.session",
+    "pk": 8,
+    "fields": {
+      "conference": 1,
+      "day": 1,
+      "chair": "Lucie Šimková",
+      "start_time": "16:30",
+      "end_time": "17:30",
+      "kind": "poster"
+    }
+  },
+  {
+    "model": "core.session",
+    "pk": 9,
+    "fields": {
+      "conference": 2,
+      "day": 2,
+      "chair": "Eva Beranová",
+      "start_time": "16:00",
+      "end_time": "17:00",
+      "kind": "poster"
+    }
+  },
+  {
+    "model": "core.session",
+    "pk": 10,
+    "fields": {
+      "conference": 3,
+      "day": 3,
+      "chair": "Filip Holub",
+      "start_time": "16:30",
+      "end_time": "17:30",
+      "kind": "poster"
+    }
+  },
+  {
+    "model": "core.talk",
+    "pk": 20,
+    "fields": {
+      "conference": 1,
+      "session": 8,
+      "participant": 20,
+      "abstract": 20,
+      "title": "Adaptive mesh refinement for contact problems",
+      "talk_type": "poster",
+      "start_time": null,
+      "end_time": null,
+      "is_scheduled": true,
+      "day": 1
+    }
+  },
+  {
+    "model": "core.talk",
+    "pk": 21,
+    "fields": {
+      "conference": 2,
+      "session": 9,
+      "participant": 22,
+      "abstract": 21,
+      "title": "Sparse tensor decompositions in uncertainty quantification",
+      "talk_type": "poster",
+      "start_time": null,
+      "end_time": null,
+      "is_scheduled": true,
+      "day": 2
+    }
+  },
+  {
+    "model": "core.talk",
+    "pk": 22,
+    "fields": {
+      "conference": 3,
+      "session": 10,
+      "participant": 23,
+      "abstract": 22,
+      "title": "GPU-accelerated Monte Carlo transport",
+      "talk_type": "poster",
+      "start_time": null,
+      "end_time": null,
+      "is_scheduled": true,
+      "day": 3
+    }
+  },
+  {
+    "model": "core.talk",
+    "pk": 23,
+    "fields": {
+      "conference": 6,
+      "session": 6,
+      "participant": 26,
+      "abstract": 23,
+      "title": "Data-driven turbulence closures",
+      "talk_type": "poster",
+      "start_time": null,
+      "end_time": null,
+      "is_scheduled": true,
+      "day": 6
+    }
+  },
+  {
+    "model": "core.talk",
+    "pk": 24,
+    "fields": {
+      "conference": 7,
+      "session": 7,
+      "participant": 28,
+      "abstract": 24,
+      "title": "Robust optimization under uncertainty",
+      "talk_type": "poster",
+      "start_time": null,
+      "end_time": null,
+      "is_scheduled": true,
+      "day": 7
     }
   }
 ]
