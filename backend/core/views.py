@@ -755,6 +755,28 @@ class TalkScheduleUpdateView(ConferenceScopedMixin, generics.UpdateAPIView):
         return Response(self.get_serializer(updated_talk).data)
 
 
+@api_view(["POST"])
+def unpublish_submission(request, conference_slug, pk):
+    if not request.user.is_staff:
+        return Response({"error": "Admin only"}, status=403)
+
+    conference = get_conference_or_404(conference_slug)
+
+    try:
+        submission = ParticipantSubmission.objects.get(pk=pk, conference=conference)
+    except ParticipantSubmission.DoesNotExist:
+        return Response({"error": "Submission not found"}, status=404)
+
+    if submission.status != "approved":
+        return Response(
+            {"error": "Submission is not published"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    submission.unpublish()
+    return Response({"message": "Unpublished successfully"})
+
+
 # Admin: publish submission
 @api_view(["POST"])
 def publish_submission(request, conference_slug, pk):

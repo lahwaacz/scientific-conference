@@ -4,13 +4,15 @@ import shutil
 import tempfile
 from datetime import date, time
 
+from django.contrib import admin as django_admin
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase, override_settings
+from django.test import RequestFactory, TestCase, override_settings
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from .admin import ParticipantAdmin
 from .conftest import api
 from .models import (
     Abstract,
@@ -370,6 +372,44 @@ class TestPublishConferenceIsolation(TestCase):
         self.assertEqual(existing.affiliation, "Old Affil")
 
 
+class TestSubmissionUnpublish(TestCase):
+    def test_unpublish_keeps_submission_and_removes_public_rows(self):
+        submission = make_submission()
+        participant, abstract, talk = submission.publish()
+        assert participant is not None
+        assert abstract is not None
+        assert talk is not None
+
+        submission.unpublish()
+
+        submission.refresh_from_db()
+        self.assertEqual(submission.status, "pending")
+        self.assertIsNone(submission.published_participant)
+        self.assertIsNone(submission.published_abstract)
+        self.assertEqual(Participant.objects.count(), 0)
+        self.assertEqual(Abstract.objects.count(), 0)
+        self.assertEqual(Talk.objects.count(), 0)
+
+    def test_admin_participant_delete_unpublishes_linked_submission(self):
+        submission = make_submission()
+        participant, abstract, talk = submission.publish()
+        assert participant is not None
+        assert abstract is not None
+        assert talk is not None
+        participant_id = participant.pk
+
+        model_admin = ParticipantAdmin(Participant, django_admin.site)
+        model_admin.delete_model(RequestFactory().get("/"), participant)
+
+        submission.refresh_from_db()
+        self.assertEqual(submission.status, "pending")
+        self.assertIsNone(submission.published_participant)
+        self.assertIsNone(submission.published_abstract)
+        self.assertFalse(Participant.objects.filter(pk=participant_id).exists())
+        self.assertEqual(Abstract.objects.count(), 0)
+        self.assertEqual(Talk.objects.count(), 0)
+
+
 class TestSubmissionDelete(TestCase):
     def test_delete_approved_cascades_published_records(self):
         submission = make_submission()
@@ -494,6 +534,7 @@ class TestSubmissionAdminAPI(TestCase):
         submission.publish()
         self.assertTrue(submission.photo)
         participant = submission.published_participant
+        assert participant is not None
         participant.refresh_from_db()
         self.assertTrue(participant.photo)
 
@@ -579,6 +620,34 @@ class TestSubmissionAdminAPI(TestCase):
         self.assertEqual(Abstract.objects.count(), 0)
         self.assertEqual(Talk.objects.count(), 0)
 
+    def test_unpublish_keeps_submission_and_resets_public_state(self):
+        submission = make_submission()
+        submission.publish()
+
+        response = self.client.post(
+            api(f"admin/submissions/{submission.id}/unpublish/")
+        )
+
+        self.assertEqual(response.status_code, 200)
+        submission.refresh_from_db()
+        self.assertEqual(submission.status, "pending")
+        self.assertIsNone(submission.published_participant)
+        self.assertIsNone(submission.published_abstract)
+        self.assertEqual(Participant.objects.count(), 0)
+        self.assertEqual(Abstract.objects.count(), 0)
+        self.assertEqual(Talk.objects.count(), 0)
+
+    def test_unpublish_rejects_pending_submission(self):
+        submission = make_submission()
+
+        response = self.client.post(
+            api(f"admin/submissions/{submission.id}/unpublish/")
+        )
+
+        self.assertEqual(response.status_code, 400)
+        submission.refresh_from_db()
+        self.assertEqual(submission.status, "pending")
+
     def test_patch_to_attend_removes_published_abstract(self):
         submission = make_submission()
         submission.publish()
@@ -595,7 +664,9 @@ class TestSubmissionAdminAPI(TestCase):
         self.assertIsNone(submission.published_abstract)
         self.assertEqual(Abstract.objects.count(), 0)
         self.assertEqual(Talk.objects.count(), 0)
-        self.assertEqual(submission.published_participant.contribution_type, "attend")
+        participant = submission.published_participant
+        assert participant is not None
+        self.assertEqual(participant.contribution_type, "attend")
 
     def test_patch_rejects_type_disabled_for_conference(self):
         conference = wsc_conference()

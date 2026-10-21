@@ -281,12 +281,26 @@
   background: var(--hover-color);
 }
 
+.unpublishBtn {
+  background: white;
+  color: var(--primary-color);
+  border: 2px solid var(--primary-color);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  font-family: var(--font-title);
+  text-transform: uppercase;
+}
+
+.unpublishBtn:hover {
+  background: var(--primary-color);
+  color: white;
+}
+
 .deleteBtn {
-  flex: 1;
   background: white;
   color: var(--secondary-color);
   border: 2px solid var(--secondary-color);
-  font-size: 16px;
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.3s;

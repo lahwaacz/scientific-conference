@@ -105,6 +105,33 @@ describe("EditParticipants workflows", () => {
     expect(isProgramDirty()).toBe(true);
   });
 
+  test("unpublishing an approved submission keeps it and marks the program dirty", async () => {
+    fetchWithAuth
+      .mockResolvedValueOnce(listResponse([approvedSubmission]))
+      .mockResolvedValueOnce({ ok: true, json: async () => ({}) })
+      .mockResolvedValueOnce(listResponse([]));
+
+    render(<EditParticipants />);
+    fireEvent.click(await screen.findByRole("button", { name: "Unpublish" }));
+
+    expect(
+      await screen.findByText(/removes the published Participant/i)
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(
+      await screen.findByText(/The submission is pending review/i)
+    ).toBeInTheDocument();
+    expect(
+      fetchWithAuth.mock.calls.some(
+        ([url, opts]) =>
+          url === "/api/admin/submissions/12/unpublish/" &&
+          opts.method === "POST"
+      )
+    ).toBe(true);
+    expect(isProgramDirty()).toBe(true);
+  });
+
   test("renders the participant reference and copies the tracking link", async () => {
     fetchWithAuth.mockResolvedValueOnce(
       listResponse([

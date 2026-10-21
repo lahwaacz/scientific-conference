@@ -687,6 +687,31 @@ class ParticipantSubmission(models.Model):
         return participant, abstract, talk
 
     @transaction.atomic
+    def unpublish(self):
+        abstract = self.published_abstract
+        participant = self.published_participant
+        abstract_shared = self._abstract_used_by_other(abstract)
+        participant_shared = self._participant_claimed_by_other(participant)
+
+        if abstract is not None and not abstract_shared:
+            abstract.delete()
+        if participant is not None and not participant_shared and not abstract_shared:
+            participant.delete()
+
+        self.published_abstract = None
+        self.published_participant = None
+        self.status = "pending"
+        self.reviewed_at = None
+        self.save(
+            update_fields=[
+                "published_abstract",
+                "published_participant",
+                "status",
+                "reviewed_at",
+            ]
+        )
+
+    @transaction.atomic
     def sync_published_data(self):
         if self.published_participant is None:
             return None, None, None

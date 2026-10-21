@@ -133,6 +133,52 @@ export default function EditParticipants() {
     });
   }
 
+  async function unpublishSubmission(id) {
+    try {
+      const res = await fetchWithAuth(
+        `/api/admin/submissions/${id}/unpublish/`,
+        { method: "POST" }
+      );
+
+      if (res.ok) {
+        markProgramDirty();
+        openModal({
+          title: "Success",
+          message:
+            "Unpublished successfully. The submission is pending review and can be published again.",
+          onConfirm: closeModal,
+        });
+        fetchSubmissions();
+      } else {
+        const error = await res.json();
+        openModal({
+          title: "Unpublish failed",
+          message: error.error || "Unknown error",
+          onConfirm: closeModal,
+        });
+      }
+    } catch (error) {
+      openModal({
+        title: "Connection error",
+        message: error.message,
+        onConfirm: closeModal,
+      });
+    }
+  }
+
+  function confirmUnpublish(id) {
+    openModal({
+      title: "Unpublish submission",
+      message:
+        "This removes the published Participant, Abstract, and any scheduled talk from the public site. The submission stays here as pending so you can edit and republish it.",
+      onCancel: closeModal,
+      onConfirm: async () => {
+        closeModal();
+        await unpublishSubmission(id);
+      },
+    });
+  }
+
   async function deleteSubmission(id) {
     const submission = submissions.find((s) => s.id === id);
     const isApproved = submission?.status === "approved";
@@ -384,6 +430,14 @@ export default function EditParticipants() {
                           onClick={() => confirmPublish(sub.id)}
                         >
                           Publish
+                        </button>
+                      )}
+                      {sub.status === "approved" && (
+                        <button
+                          className={styles.unpublishBtn}
+                          onClick={() => confirmUnpublish(sub.id)}
+                        >
+                          Unpublish
                         </button>
                       )}
                       <button

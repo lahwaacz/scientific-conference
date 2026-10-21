@@ -225,6 +225,12 @@ To find them:
 
 Changes made to an already published submission are reflected immediately in the public part of the website.
 
+### Unpublish a Submission
+
+Published submissions have an **Unpublish** action. It removes the public Participant and Abstract, together with any scheduled program item, but keeps the submission in **Pending** state so it can be edited and published again. Use **Delete** only when the submission itself should be removed permanently.
+
+Deleting a **participant** in the Django administration also unpublishes every linked submission. Those submissions stay in **Edit Participants and Abstracts** as **Pending**, while the public participant, abstract, and any linked talk — including scheduled program items — are removed. Use **Unpublish** from Edit Participants when you want to do this for one submission; use Django admin deletion when you are removing the participant record itself.
+
 ### Delete a Submission
 
 To delete a submission:

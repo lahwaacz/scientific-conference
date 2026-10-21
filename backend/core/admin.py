@@ -200,6 +200,23 @@ class ParticipantAdmin(admin.ModelAdmin):
     list_filter = ("conference",)
     search_fields = ("name",)
 
+    def _unpublish_linked_submissions(self, participant):
+        submissions = list(
+            ParticipantSubmission.objects.filter(published_participant=participant)
+        )
+        for submission in submissions:
+            submission.unpublish()
+        return Participant.objects.filter(pk=participant.pk).exists()
+
+    def delete_model(self, request, obj):
+        if not self._unpublish_linked_submissions(obj):
+            return
+        super().delete_model(request, obj)
+
+    def delete_queryset(self, request, queryset):
+        for participant in list(queryset):
+            self.delete_model(request, participant)
+
 
 @admin.register(Abstract)
 class AbstractAdmin(admin.ModelAdmin):
