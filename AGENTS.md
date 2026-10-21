@@ -56,7 +56,7 @@ Codegraph covers Python only (JS unindexed); refs via pyright LSP.
 | `get_conference_or_404` | function | backend/core/views.py | function views + mixin | shared slug→Conference resolution |
 | `ConferenceListView` | view | backend/core/views.py | the ONLY unscoped API view | public card list, server-ordered running→future asc→past desc |
 | `Conference.is_referenced()` | method | backend/core/models.py | `ConferenceAdmin` + tests | any reverse relation row exists → the admin refuses deletion |
-| `ParticipantSubmission.publish()` | method | backend/core/models.py | core workflow | creates Participant + Abstract + unscheduled Talk, dedup scoped to `conference` |
+| `ParticipantSubmission.publish()` / `.unpublish()` | method | backend/core/models.py | core workflow | creates public rows or removes them while keeping the submission pending; dedup scoped to `conference` |
 | `generate_program_pdf` / `generate_badges_pdf` | function | backend/core/views.py | PDF endpoints | per-conference reportlab PDFs; badges header = `badge_title or title`, footer = `location`; need `core/fonts/*.ttf` |
 | DRF views | classes | backend/core/views.py | scoped via core/urls.py + ConferenceListView | public `AllowAny` + admin `IsAdminUser` |
 | `App` | component | frontend/src/App.jsx | entry | renders `<Landing/>` when no slug (or unknown slug, with a not-found banner), else HashRouter + all routes + layout shell |
@@ -83,6 +83,7 @@ Codegraph covers Python only (JS unindexed); refs via pyright LSP.
 - NEVER hardcode backend URLs in components — always `buildApiUrl`/`buildMediaUrl`/`fetchWithAuth` (fix 7209ddc swept many files for this).
 - NEVER "fix" the dual fetch-prefixing (`configuredFetch.js` global patch + `buildApiUrl`): they coexist only via `startsWith('http')` guards; touching one side risks double-prefixed URLs.
 - NEVER add an API endpoint outside the `/api/<slug>/` include without conference scoping — the route-table lock in `backend/core/test_conference_isolation.py` fails the suite for any unscoped route.
+- Public writes are limited to registration (`/submit/`) and token-based submission edits (`/track/<token>/`). Never reintroduce anonymous create on participants or abstracts; `Abstract.participant` is required and cascades, and `ParticipantAdmin` deletion must unpublish linked submissions first.
 - NEVER delete or allow deleting a Conference that still has related rows: every domain model cascades from `Conference`, so `ConferenceAdmin` gates deletion on `Conference.is_referenced()`, keeps bulk actions off (`actions = None`), and re-checks in `delete_model`/`delete_queryset`. Do not bypass or weaken this guard.
 - The frontend conference-slug singleton (`utils/conferenceSlug.js`) must NOT use react-router hooks — `useLocation` is hash-based and never sees the `/<slug>/` path prefix. It parses `window.location.pathname` once at startup; keep it that way.
 - NEVER commit `.venv/`, `db.sqlite3`, `media/`, `staticfiles/` (a venv was once committed: 4c321da).

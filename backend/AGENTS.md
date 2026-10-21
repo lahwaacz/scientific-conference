@@ -42,13 +42,13 @@ backend/
 | Auth config | `backend/settings.py` | SIMPLE_JWT: 1h access / 7d refresh |
 | Conference model / admin policies | `core/models.py`, `core/admin.py` | slug reserved words in `clean()`; deletion gated by `Conference.is_referenced()` |
 | PDF generation | `core/views.py` | `generate_program_pdf`, `generate_badges_pdf`; per-conference, reportlab + `core/fonts/*.ttf` |
-| Publish workflow | `core/models.py` | `ParticipantSubmission.publish()`, `.delete()`; dedup scoped to `conference` |
+| Publish workflow | `core/models.py` | `ParticipantSubmission.publish()`, `.unpublish()`, `.delete()`; dedup scoped to `conference`; `ParticipantAdmin` deletion unpublishes linked submissions first |
 | Email on publish | `core/signals.py` | fires via `CoreConfig.ready()` |
 | Env config | `backend/settings.py` | DJANGO_SECRET_KEY / DJANGO_DEBUG / DJANGO_ALLOWED_HOSTS / DJANGO_DB_PATH / DJANGO_STATIC_URL / DJANGO_STATIC_ROOT / DJANGO_MEDIA_ROOT / DJANGO_USE_HTTPS / DJANGO_CSRF_TRUSTED_ORIGINS, plus unprefixed RELATIVE_URL_ROOT |
 
 ## CONVENTIONS
 
-- Views: `generics.APIView`/generic classes mixed with `@api_view` functions (`generate_*`, `publish_submission`, `update_session`, `delete_session`); named `<Noun><Action>View`.
+- Views: `generics.APIView`/generic classes mixed with `@api_view` functions (`generate_*`, `publish_submission`, `unpublish_submission`, `update_session`, `delete_session`); named `<Noun><Action>View`.
 - Conference scoping: every view in `core/urls.py` is served under `/api/<slug>/…` and must resolve its conference. Class views inherit `ConferenceScopedMixin` (views.py: eager 404 on unknown slug in `initial()`, queryset filter, `perform_create` assignment, serializer context); function views call `get_conference_or_404(conference_slug)`. The only unscoped views are auth + `ConferenceListView`, registered globally in `backend/urls.py` BEFORE the slug include.
 - Serializers: `<Model>Serializer` for read, `...WriteSerializer` split for writes. Serializer field lists are explicit and exclude `conference`; the write path gets the conference via the view's `save(conference=…)`. `TalkSerializer` narrows `session`/`day` querysets via the context conference (cross-conference FK ⇒ 400).
 - URL paths kebab-case with trailing slash; API mounted under `/{RELATIVE_URL_ROOT}api/`, admin tails under the slug prefix (e.g. `/api/<slug>/admin/...`).
@@ -69,7 +69,10 @@ backend/
 - `AccommodationOptionListView` (views.py) is dead code — defined but never routed. Deliberate minimal diff; do not wire it up or delete it casually.
 - `ConferenceDayDeleteView.destroy` calls bare `day.delete()` with no guard; `UnscheduledTalkDeleteView` 400s on scheduled talks. Both deliberate — cascade rules and rationale live in root AGENTS.md; keep guards as they are. Beware: Talk→Abstract FK direction means day/talk deletes orphan the Abstract row.
 - `AccommodationOptionEditView` and `HikingStopEditView` call `objects.get(pk, conference=…)` unguarded in patch/delete: unknown or cross-conference pks surface as 500, never 404. Deliberate security choice — keep; tests pin the 500.
-- `ParticipantListView` and `AbstractListView` are `ListCreateAPIView` under the global `AllowAny`: POST creates rows for ANYONE. Deliberate public surface (admin decision 2026-10-03, may be revisited for security); do not add permission_classes without a fresh decision.
+- `ParticipantListView` and `AbstractListView` are public `ListAPIView`s: reads are anonymous, writes are not exposed. Do not reintroduce public POSTs; only registration (`/submit/`) and token-based tracking edits (`/track/<token>/`) are public writes.
+- `Abstract.participant` is required with `CASCADE`; null-participant abstracts are deleted by migration `0037`. Do not make it nullable again.
+- `ParticipantAdmin.delete_model`/`delete_queryset` call `ParticipantSubmission.unpublish()` first. Do not bypass this with a raw participant `QuerySet.delete()`, or linked submissions keep stale public links.
+- Shared `published_participant`/`published_abstract` links are possible through Django admin, raw ORM, legacy rows, or a concurrent publish race, even though the frontend publish flow guards against them. The ownership branches in `unpublish()` and `delete()` must stay until a decision is made: either deny sharing and harden the model (unique constraints/locking) or allow it and add frontend controls.
 - Deleting a conference day or an unscheduled talk orphans the linked `Abstract` (FK sits on Talk). Deliberate admin choice (2026-10-03); do not add delete cascades.
 - PDF generators (`generate_program_pdf`, `generate_badges_pdf`) build into `io.BytesIO`, then write bytes into the response — do not pass the HttpResponse to canvas directly (pyright compatibility, bytes unchanged). Both filter every queryset by conference; badges header is `badge_title or title`, footer is `location`.
 - `traceback.print_exc()` debug calls and Russian comments exist in models/views/settings — leave them.
