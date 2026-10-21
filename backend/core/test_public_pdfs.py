@@ -87,7 +87,7 @@ class TestPublicLists(TestCase):
         dates = [d["date"] for d in response.data]
         self.assertEqual(dates, sorted(dates))
 
-    def test_participants_list_and_public_post(self):
+    def test_participants_list_is_read_only(self):
         conference = wsc_conference()
         Participant.objects.create(conference=conference, name="Zed")
         Participant.objects.create(conference=conference, name="Ann")
@@ -98,15 +98,12 @@ class TestPublicLists(TestCase):
         names = [p["name"] for p in response.data]
         self.assertEqual(names, ["Ann", "Zed"])
 
-        # Public writes are deliberate (backend/AGENTS.md); may be
-        # revisited for security later, but do not restrict without a
-        # fresh admin decision.
         response = self.client.post(
             api("participants/"), {"name": "Newcomer"}, format="json"
         )
-        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.status_code, 405)
 
-    def test_abstracts_list_and_public_post(self):
+    def test_abstracts_list_is_read_only(self):
         conference = wsc_conference()
         participant = Participant.objects.create(conference=conference, name="Author")
         Abstract.objects.create(
@@ -117,13 +114,12 @@ class TestPublicLists(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
 
-        # Deliberate public write path, same as /api/participants/.
         response = self.client.post(
             api("abstracts/"),
             {"title": "Gamma", "authors_string": "A. Uthor"},
             format="json",
         )
-        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.status_code, 405)
 
     def test_abstracts_expose_contribution_type_and_session(self):
         conference = wsc_conference()
@@ -187,30 +183,6 @@ class TestPublicLists(TestCase):
         self.assertEqual(
             [row["authors_string"] for row in response.data],
             ["Zoe Adams", "Amy Baker", "Mia Clarke"],
-        )
-
-    def test_abstracts_put_missing_presenters_last(self):
-        conference = wsc_conference()
-        participant = Participant.objects.create(
-            conference=conference, name="Amy Baker", contribution_type="talk"
-        )
-        Abstract.objects.create(
-            conference=conference,
-            title="With presenter",
-            authors="Amy Baker",
-            participant=participant,
-        )
-        Abstract.objects.create(
-            conference=conference,
-            title="Without presenter",
-            authors="Unknown",
-        )
-
-        response = self.client.get(api("abstracts/"))
-
-        self.assertEqual(
-            [row["title"] for row in response.data],
-            ["With presenter", "Without presenter"],
         )
 
     def test_abstracts_exclude_attend_participants(self):

@@ -105,8 +105,6 @@ class AbstractSerializer(serializers.ModelSerializer):
         ]
 
     def get_contribution_type(self, obj):
-        if obj.participant_id is None:
-            return None
         return obj.participant.contribution_type
 
     def get_session_id(self, obj):

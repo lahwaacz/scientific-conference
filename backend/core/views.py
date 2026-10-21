@@ -4,7 +4,6 @@ import os
 import traceback
 
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db.models import F, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils.functional import cached_property
@@ -533,7 +532,7 @@ class ProgramView(ConferenceScopedMixin, generics.ListAPIView):
 
 
 # Participants
-class ParticipantListView(ConferenceScopedMixin, generics.ListCreateAPIView):
+class ParticipantListView(ConferenceScopedMixin, generics.ListAPIView):
     queryset = Participant.objects.all().order_by("sort_key", "name")
     serializer_class = ParticipantSerializer
 
@@ -544,36 +543,20 @@ class ParticipantDetailView(ConferenceScopedMixin, generics.RetrieveAPIView):
 
 
 # Abstracts
-class AbstractListView(ConferenceScopedMixin, generics.ListCreateAPIView):
-    queryset = Abstract.objects.select_related("participant", "talk").order_by(
-        F("participant__sort_key").asc(nulls_last=True), "title"
+class AbstractListView(ConferenceScopedMixin, generics.ListAPIView):
+    queryset = (
+        Abstract.objects.select_related("participant", "talk")
+        .filter(participant__contribution_type__in=("talk", "poster"))
+        .order_by("participant__sort_key", "title")
     )
     serializer_class = AbstractSerializer
 
-    def get_queryset(self):
-        return (
-            super()
-            .get_queryset()
-            .filter(
-                Q(participant__isnull=True)
-                | Q(participant__contribution_type__in=("talk", "poster"))
-            )
-        )
-
 
 class AbstractDetailView(ConferenceScopedMixin, generics.RetrieveAPIView):
-    queryset = Abstract.objects.all()
+    queryset = Abstract.objects.filter(
+        participant__contribution_type__in=("talk", "poster")
+    )
     serializer_class = AbstractSerializer
-
-    def get_queryset(self):
-        return (
-            super()
-            .get_queryset()
-            .filter(
-                Q(participant__isnull=True)
-                | Q(participant__contribution_type__in=("talk", "poster"))
-            )
-        )
 
 
 # Talks (optional endpoints)

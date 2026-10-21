@@ -169,7 +169,11 @@ class TestIsReferenced(TestCase):
                 conference=c, name="Participant"
             ),
             "Abstract": lambda c: Abstract.objects.create(
-                conference=c, title="Abstract"
+                conference=c,
+                title="Abstract",
+                participant=Participant.objects.create(
+                    conference=c, name="Abstract Participant"
+                ),
             ),
             "Person": lambda c: Person.objects.create(conference=c, name="Person"),
             "ParticipantSubmission": lambda c: ParticipantSubmission.objects.create(
@@ -211,6 +215,36 @@ class TestIsReferenced(TestCase):
                 create_row(conference)
 
                 self.assertTrue(conference.is_referenced())
+
+
+class TestAbstractParticipant(TestCase):
+    def setUp(self):
+        self.conference = Conference.objects.create(slug="abstract-participant")
+
+    def test_abstract_requires_a_participant(self):
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            Abstract.objects.create(conference=self.conference, title="Orphan")
+
+    def test_deleting_participant_cascades_to_abstract_and_talk(self):
+        participant = Participant.objects.create(
+            conference=self.conference, name="Presenter"
+        )
+        abstract = Abstract.objects.create(
+            conference=self.conference,
+            title="Linked abstract",
+            participant=participant,
+        )
+        talk = Talk.objects.create(
+            conference=self.conference,
+            title="Linked talk",
+            participant=participant,
+            abstract=abstract,
+        )
+
+        participant.delete()
+
+        self.assertFalse(Abstract.objects.filter(pk=abstract.pk).exists())
+        self.assertFalse(Talk.objects.filter(pk=talk.pk).exists())
 
 
 class TestReferenceForeignKeyBackstop(TransactionTestCase):

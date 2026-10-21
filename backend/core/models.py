@@ -275,9 +275,7 @@ class Abstract(models.Model):
     participant = models.OneToOneField(
         Participant,
         related_name="abstract",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+        on_delete=models.CASCADE,
     )
 
     def __str__(self):

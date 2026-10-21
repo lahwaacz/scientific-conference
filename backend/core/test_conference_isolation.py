@@ -276,10 +276,8 @@ class TestGetRouteMatrix(ConferencePairTestCase):
 UNKNOWN_SLUG_MATRIX = [
     ("get", "program/", None),
     ("get", "participants/", None),
-    ("post", "participants/", {"name": "X"}),
     ("get", "participants/1/", None),
     ("get", "abstracts/", None),
-    ("post", "abstracts/", {"title": "X", "authors_string": "Y"}),
     ("get", "abstracts/1/", None),
     ("get", "talks/", None),
     ("get", "talks/1/", None),
