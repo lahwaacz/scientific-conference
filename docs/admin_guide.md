@@ -197,19 +197,19 @@ After publication:
 
 - The participant appears in the public part of the website.
 - A **Talk** creates an abstract and an unpublished schedule item without an assigned presentation time.
-- A **Poster** creates an abstract but no schedule item.
-- **Just attend** creates only the participant; no abstract or talk is created.
+- A **Poster** creates an abstract and an unpublished poster schedule item. Schedule it into a poster session in **Edit Program**.
+- **Just attend** creates only the participant; no abstract or schedule item is created.
 
-After publishing a talk, the presentation time is still not set. To assign the time, continue to **Edit Program**.
+After publishing a talk or poster, the presentation time is still not set. To assign the time, continue to **Edit Program**.
 
 Changing a published submission's participation type updates the public records:
 
-- **Talk → Poster** removes the unscheduled talk but keeps the abstract.
-- **Talk or Poster → Just attend** removes the abstract and the unscheduled talk.
-- **Poster → Talk** creates an unscheduled talk.
+- **Talk → Poster** keeps the abstract and turns the unscheduled talk into a poster item.
+- **Poster → Talk** keeps the abstract and turns the poster item into a talk. If the poster was placed in a poster session, it is detached and becomes unscheduled, so schedule it again.
+- **Talk or Poster → Just attend** removes the abstract and the schedule item.
 - A talk that is already scheduled must be unscheduled before the submission can be changed to a poster or to just attend.
 
-Each abstract shown on the public abstracts page carries a **TO THE PROGRAM** button that jumps to the corresponding talk in the program. This button is hidden while the program is not ready (the conference has no scheduled days yet) and appears once at least one conference day has been created.
+Create a **Poster session** in **Edit Program** with its own shared time slot; all posters in that session use the same slot, and the chair is optional. It is shown as a **Poster session** in the program. A session's type cannot be changed after creation; create a new session of the required type instead. Each abstract shown on the public abstracts page carries a **TO THE PROGRAM** button. Talks jump to and highlight their program row; posters jump to and highlight their poster session. The button is hidden while the program is not ready (the conference has no scheduled days yet) and appears once at least one conference day has been created.
 
 ### Edit an Already Published Submission
 
@@ -658,7 +658,7 @@ Make sure all talks are assigned to the correct days, chairs, and times, because
 
 Publication alone is not enough. After publication, the talk still has no assigned time. Open **Edit Program** and assign the talk in **Unscheduled Talks**.
 
-A **Poster** or **Just attend** participant never appears in the program: posters have an abstract but no schedule item, and just-attend participants have no contribution at all.
+A **Poster** appears in the program only after its poster schedule item is placed in a session; that session is shown as a **Poster session**. A **Just attend** participant never appears in the program and has no contribution at all.
 
 ### A Just attend Participant Is Not in the Abstracts
 

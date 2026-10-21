@@ -88,6 +88,8 @@ class ParticipantSerializer(serializers.ModelSerializer):
 class AbstractSerializer(serializers.ModelSerializer):
     authors_string = serializers.CharField(source="authors")
     talk_id = serializers.IntegerField(source="talk.id", read_only=True)
+    session_id = serializers.SerializerMethodField()
+    contribution_type = serializers.SerializerMethodField()
 
     class Meta:
         model = Abstract
@@ -98,7 +100,18 @@ class AbstractSerializer(serializers.ModelSerializer):
             "authors_string",
             "department",
             "talk_id",
+            "session_id",
+            "contribution_type",
         ]
+
+    def get_contribution_type(self, obj):
+        if obj.participant_id is None:
+            return None
+        return obj.participant.contribution_type
+
+    def get_session_id(self, obj):
+        talk = getattr(obj, "talk", None)
+        return talk.session_id if talk is not None else None
 
 
 class TalkSerializer(serializers.ModelSerializer):
@@ -145,7 +158,15 @@ class SessionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Session
-        fields = ["id", "day", "chair", "start_time", "end_time", "talks"]
+        fields = [
+            "id",
+            "day",
+            "kind",
+            "chair",
+            "start_time",
+            "end_time",
+            "talks",
+        ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -154,6 +175,26 @@ class SessionSerializer(serializers.ModelSerializer):
             self.fields["day"].queryset = ConferenceDay.objects.filter(
                 conference=conference
             )
+
+    def validate(self, attrs):
+        instance = self.instance
+        kind = attrs.get("kind", instance.kind if instance else "talk")
+        start = attrs.get("start_time", instance.start_time if instance else None)
+        end = attrs.get("end_time", instance.end_time if instance else None)
+
+        if instance is not None and "kind" in attrs and attrs["kind"] != instance.kind:
+            raise serializers.ValidationError(
+                {"kind": "Session kind cannot be changed."}
+            )
+        if kind == "poster" and (start is None or end is None):
+            raise serializers.ValidationError(
+                {"start_time": "Poster sessions require a shared start and end time."}
+            )
+        if start is not None and end is not None and end <= start:
+            raise serializers.ValidationError(
+                {"end_time": "End time must be after start time."}
+            )
+        return attrs
 
     def get_talks(self, session):
         qs = session.talks.all().order_by("start_time")
@@ -184,7 +225,10 @@ class ConferenceDaySerializer(serializers.ModelSerializer):
 
         for session in day.sessions.all():
             talks = session.talks.all().order_by("start_time")
-            if talks.exists():
+            if session.kind == "poster":
+                start = session.start_time
+                end = session.end_time
+            elif talks.exists():
                 start = talks.first().start_time
                 end = talks.last().end_time
             else:

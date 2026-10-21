@@ -8,6 +8,41 @@
   overflow-x: hidden;
 }
 
+.filterGroup {
+  border: 0;
+  padding: 0;
+  margin: 0 0 clamp(18px, 3vw, 28px);
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.filterButton {
+  padding: 10px 20px;
+  border: 2px solid var(--secondary-color);
+  background: #fff;
+  color: var(--secondary-color);
+  cursor: pointer;
+  font-weight: 500;
+  font-family: var(--font-title);
+  text-transform: uppercase;
+  transition: all 0.3s;
+}
+
+.filterButton:hover {
+  background: var(--hover-color);
+  border-color: var(--hover-color);
+  color: #fff;
+}
+
+.filterButtonActive {
+  background: var(--secondary-color);
+  color: #fff;
+}
+
 .container {
   display: flex;
   flex-direction: column;

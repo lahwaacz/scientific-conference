@@ -5,6 +5,20 @@
   box-sizing: border-box;
   align-items: center;
   text-align: left;
+  position: relative;
+}
+
+.posterBadge {
+  position: absolute;
+  top: clamp(12px, 2.5vw, 18px);
+  right: clamp(12px, 2.5vw, 18px);
+  background-color: var(--secondary-color);
+  color: #fff;
+  padding: 4px 10px;
+  font-family: "Metrophobic", sans-serif;
+  font-size: clamp(11px, 1.4vw, 13px);
+  letter-spacing: 1px;
+  text-transform: uppercase;
 }
 
 .title {
@@ -13,6 +27,10 @@
   font-weight: 400;
   margin-bottom: clamp(16px, 3vw, 30px);
   line-height: 1.4;
+}
+
+.posterCard .title {
+  padding-right: clamp(76px, 12vw, 104px);
 }
 
 .authors {

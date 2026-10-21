@@ -55,6 +55,29 @@ class TestTimelineSerializer(TestCase):
         self.assertEqual(items[0]["start_time"], time(10, 0))
         self.assertEqual(items[0]["end_time"], time(10, 40))
 
+    def test_poster_session_uses_the_session_time_slot(self):
+        session = Session.objects.create(
+            conference=self.conference,
+            day=self.day,
+            kind="poster",
+            start_time=time(14, 0),
+            end_time=time(15, 0),
+        )
+        Talk.objects.create(
+            conference=self.conference,
+            title="Poster",
+            talk_type="poster",
+            is_scheduled=True,
+            day=self.day,
+            session=session,
+        )
+
+        items = self.timeline()
+
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0]["start_time"], time(14, 0))
+        self.assertEqual(items[0]["end_time"], time(15, 0))
+
     def test_standalone_talk_and_session_sorted_by_start_time(self):
         Talk.objects.create(
             conference=self.conference,

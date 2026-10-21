@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import { setTestLocation } from "react-router-dom";
 import Program from "./Program";
 
 const { holder } = vi.hoisted(() => ({
@@ -10,7 +11,12 @@ vi.mock("./../hooks/useConferenceInfo", () => ({
 }));
 
 vi.mock("./ProgramDay", () => ({
-  default: ({ day }) => <div>day:{day.date}</div>,
+  default: ({ day, highlightTalkId, highlightSessionId }) => (
+    <div>
+      day:{day.date}|talk:{highlightTalkId ?? "none"}|session:
+      {highlightSessionId ?? "none"}
+    </div>
+  ),
 }));
 
 function programResponse(days) {
@@ -20,6 +26,7 @@ function programResponse(days) {
 describe("Program", () => {
   beforeEach(() => {
     holder.info = { program_text: "" };
+    setTestLocation({ pathname: "/", search: "" });
     globalThis.fetch = vi.fn(() => Promise.resolve(programResponse([])));
   });
 
@@ -37,10 +44,21 @@ describe("Program", () => {
     );
     render(<Program />);
 
-    expect(await screen.findByText("day:2027-05-29")).toBeInTheDocument();
+    expect(await screen.findByText(/day:2027-05-29/)).toBeInTheDocument();
     expect(
       screen.queryByText("The program is not ready yet.")
     ).not.toBeInTheDocument();
+  });
+
+  test("passes session and talk highlight targets to the day", async () => {
+    setTestLocation({ pathname: "/", search: "?session=8" });
+    globalThis.fetch = vi.fn(() =>
+      Promise.resolve(programResponse([{ id: 1, date: "2027-05-29" }]))
+    );
+    render(<Program />);
+
+    expect(await screen.findByText(/session:8/)).toBeInTheDocument();
+    expect(screen.getByText(/talk:none/)).toBeInTheDocument();
   });
 
   test("renders the program text as markdown above the schedule", async () => {

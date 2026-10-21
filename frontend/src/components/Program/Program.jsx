@@ -13,6 +13,9 @@ export default function Program() {
   const [loading, setLoading] = useState(true);
   const location = useLocation();
   const info = useConferenceInfo();
+  const params = new URLSearchParams(location.search);
+  const highlightTalkId = params.get("talk");
+  const highlightSessionId = params.get("session");
 
   useEffect(() => {
     fetch(buildApiUrl("/api/program/"))
@@ -25,16 +28,19 @@ export default function Program() {
 
   useEffect(() => {
     if (loading) return;
-    const params = new URLSearchParams(location.search);
-    const talkId = params.get("talk");
+    const targetId = highlightSessionId
+      ? `session-${highlightSessionId}`
+      : highlightTalkId
+        ? `talk-${highlightTalkId}`
+        : null;
 
-    if (talkId) {
+    if (targetId) {
       setTimeout(() => {
-        const el = document.getElementById(`talk-${talkId}`);
+        const el = document.getElementById(targetId);
         if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
       }, 300);
     }
-  }, [location, data]);
+  }, [loading, highlightSessionId, highlightTalkId]);
 
   return (
     <section className={styles.programSection}>
@@ -51,7 +57,12 @@ export default function Program() {
           <div className={styles.scheduleContainer}>
             <div className={styles.program}>
               {data.map((day) => (
-                <ProgramDay key={day.id} day={day} />
+                <ProgramDay
+                  key={day.id}
+                  day={day}
+                  highlightTalkId={highlightTalkId}
+                  highlightSessionId={highlightSessionId}
+                />
               ))}
             </div>
           </div>

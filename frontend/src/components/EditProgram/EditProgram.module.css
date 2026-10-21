@@ -157,6 +157,13 @@
   border-color: #007bff;
 }
 
+.posterScheduleHint {
+  margin: 0;
+  font-family: var(--font-main);
+  font-size: 14px;
+  color: #555;
+}
+
 .schedulerActions {
   display: flex;
   gap: 8px;

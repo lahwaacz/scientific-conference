@@ -125,6 +125,46 @@ class TestPublicLists(TestCase):
         )
         self.assertEqual(response.status_code, 201)
 
+    def test_abstracts_expose_contribution_type_and_session(self):
+        conference = wsc_conference()
+        talk_participant = Participant.objects.create(
+            conference=conference, name="Talker", contribution_type="talk"
+        )
+        poster_participant = Participant.objects.create(
+            conference=conference, name="Poster", contribution_type="poster"
+        )
+        Abstract.objects.create(
+            conference=conference, title="Talk abstract", participant=talk_participant
+        )
+        poster_abstract = Abstract.objects.create(
+            conference=conference,
+            title="Poster abstract",
+            participant=poster_participant,
+        )
+        day = ConferenceDay.objects.create(
+            conference=conference, date=date(2027, 5, 29)
+        )
+        session = Session.objects.create(
+            conference=conference, day=day, chair="Poster Chair"
+        )
+        Talk.objects.create(
+            conference=conference,
+            title="Poster abstract",
+            participant=poster_participant,
+            abstract=poster_abstract,
+            session=session,
+            talk_type="poster",
+            is_scheduled=True,
+        )
+
+        response = self.client.get(api("abstracts/"))
+
+        self.assertEqual(response.status_code, 200)
+        by_title = {row["title"]: row for row in response.data}
+        self.assertEqual(by_title["Talk abstract"]["contribution_type"], "talk")
+        self.assertEqual(by_title["Poster abstract"]["contribution_type"], "poster")
+        self.assertEqual(by_title["Poster abstract"]["session_id"], session.id)
+
     def test_abstracts_are_ordered_by_presenter_surname(self):
         conference = wsc_conference()
         for name, title in (
@@ -265,6 +305,43 @@ class TestPdfDownloads(TestCase):
         self.assertEqual(staff.status_code, 200)
         self.assertEqual(staff.headers["Content-Type"], "application/pdf")
         self.assertTrue(staff.content.startswith(b"%PDF"))
+
+    @pytest.mark.skipif(
+        shutil.which("pdftotext") is None, reason="pdftotext not available"
+    )
+    def test_program_pdf_renders_poster_session_as_a_shared_slot(self):
+        conference = wsc_conference()
+        day = ConferenceDay.objects.create(
+            conference=conference, date=date(2026, 9, 10)
+        )
+        session = Session.objects.create(
+            conference=conference,
+            day=day,
+            kind="poster",
+            chair="Poster Chair",
+            start_time=time(14, 0),
+            end_time=time(15, 0),
+        )
+        participant = Participant.objects.create(
+            conference=conference, name="Poster Presenter"
+        )
+        Talk.objects.create(
+            conference=conference,
+            title="Poster One",
+            talk_type="poster",
+            is_scheduled=True,
+            day=day,
+            session=session,
+            participant=participant,
+        )
+
+        response = self._client(is_staff=True).get(api("admin/program/download/"))
+
+        text = pdf_text(response.content)
+        self.assertIn("Poster session", text)
+        self.assertIn("14:00", text)
+        self.assertIn("15:00", text)
+        self.assertLess(text.index("Poster session"), text.index("Poster One"))
 
     def test_badges_pdf_gates(self):
         self.assertEqual(

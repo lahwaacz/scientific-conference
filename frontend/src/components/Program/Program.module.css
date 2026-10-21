@@ -1,9 +1,8 @@
 .description {
-  font-size: clamp(14px, 1.8vw, 18px);
-  color: #222;
+  font-size: clamp(15px, 1.4vw, 17px);
+  color: var(--text-color);
   margin: 0;
   font-weight: 400;
-  letter-spacing: 0.5px;
   margin-bottom: 20px;
 }
 
@@ -31,74 +30,106 @@
 }
 
 .day {
-  letter-spacing: 0.5px;
-  font-size: clamp(15px, 1.8vw, 18px);
+  font-size: clamp(15px, 1.4vw, 17px);
   color: var(--text-color);
-  margin-bottom: clamp(16px, 3vw, 30px);
+  margin-bottom: clamp(20px, 3vw, 30px);
   font-family: var(--font-main);
   font-weight: 400;
-  border: 1px solid #1e73be;
-  padding: clamp(12px, 3vw, 20px);
+  border: 1px solid #dde2e7;
+  border-radius: 6px;
+  padding: clamp(16px, 3vw, 28px);
   box-sizing: border-box;
+}
+
+.day > :last-child {
+  margin-bottom: 0;
 }
 
 .date {
   font-family: var(--font-title);
-  font-size: clamp(22px, 4vw, 36px);
+  font-size: clamp(20px, 2.5vw, 28px);
   color: var(--primary-color);
-  margin-bottom: clamp(24px, 5vw, 50px);
+  margin-bottom: clamp(16px, 2.5vw, 24px);
   text-transform: uppercase;
-  font-weight: 200;
+  font-weight: 400;
+  letter-spacing: 0.04em;
 }
 
 .session {
-  margin-bottom: 25px;
+  margin-bottom: clamp(20px, 3vw, 28px);
 }
 
 .sessionHeader {
-  margin-bottom: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  padding: 0 10px;
+  margin-bottom: 12px;
+  font-size: clamp(13px, 1.1vw, 14px);
+  color: #555;
+}
+
+.sessionTime {
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.sessionBadge {
+  font-size: clamp(11px, 1vw, 12px);
+  font-weight: 400;
+  color: #444;
+  background: #eef1f4;
+  border: 1px solid #dde2e7;
+  border-radius: 999px;
+  padding: 1px 9px;
 }
 
 .chair {
-  font-size: clamp(16px, 1.8vw, 20px);
-  font-weight: 600;
-  color: var(--text-color);
+  font-weight: 400;
   font-family: var(--font-main);
-  margin-bottom: clamp(16px, 3vw, 30px);
-  margin-left: 10px;
+  color: #555;
+}
+
+.highlighted {
+  background-color: #fff8c5;
+  border-radius: 4px;
+  box-shadow: 0 0 0 6px #fff8c5;
 }
 
 .talk {
   display: flex;
-  margin-bottom: 18px;
-  padding: 0px 10px;
-  gap: 12px;
+  margin-bottom: 12px;
+  padding: 0 10px;
+  gap: 16px;
 }
 
 .time {
-  width: 130px;
+  width: 120px;
   flex-shrink: 0;
   font-weight: 400;
-  font-size: clamp(13px, 1.5vw, 16px);
+  font-size: clamp(13px, 1.1vw, 14px);
+  color: #555;
+  font-variant-numeric: tabular-nums;
 }
 
 .abstractInfo {
   display: flex;
   flex-direction: row;
-  gap: 12px;
+  gap: 16px;
   flex: 1;
   min-width: 0;
 }
 
 .speaker {
   font-weight: 400;
-  width: 150px;
+  width: 160px;
   flex-shrink: 0;
-  font-size: clamp(13px, 1.5vw, 16px);
+  font-size: clamp(13px, 1.1vw, 14px);
 }
 
 .title {
-  font-size: clamp(14px, 1.6vw, 18px);
+  font-size: clamp(15px, 1.4vw, 17px);
   font-family: var(--font-main);
   flex: 1;
   min-width: 0;
@@ -108,7 +139,7 @@
   all: unset;
   cursor: pointer;
   display: inline;
-  font-size: clamp(14px, 1.6vw, 18px);
+  font-size: clamp(15px, 1.4vw, 17px);
   font-family: var(--font-main);
   flex: 1;
   min-width: 0;
@@ -121,13 +152,20 @@
   opacity: 0.8;
 }
 
+.linkTitle:focus-visible {
+  color: var(--hover-color);
+  outline: 2px solid var(--secondary-color);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 .break {
   display: flex;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   background: #f5f5f5;
-  padding: 10px 10px;
+  padding: 8px 10px;
   border-radius: 4px;
-  gap: 12px;
+  gap: 16px;
 }
 
 .fadeIn {
@@ -145,12 +183,15 @@
   .talk,
   .break {
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
   }
 
   .time {
     width: auto;
-    font-weight: 600;
+  }
+
+  .timePlaceholder {
+    display: none;
   }
 
   .abstractInfo {
@@ -160,9 +201,5 @@
 
   .speaker {
     width: auto;
-  }
-
-  .chair {
-    margin-left: 0;
   }
 }

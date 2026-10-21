@@ -323,11 +323,17 @@ export default function EditProgram() {
     }
   }
 
-  async function createSession(dayId, chair) {
+  async function createSession(dayId, chair, kind, startTime, endTime) {
     try {
       const res = await fetchWithAuth("/api/admin/sessions/create/", {
         method: "POST",
-        body: JSON.stringify({ day: dayId, chair }),
+        body: JSON.stringify({
+          day: dayId,
+          chair,
+          kind,
+          start_time: startTime,
+          end_time: endTime,
+        }),
       });
       if (res.ok) {
         await showAlert("Session created successfully!", "Success");
@@ -511,17 +517,26 @@ function TalkCard({ talk, days, onSchedule, onDelete, sessions, showAlert }) {
 
   const daySessions =
     sessions?.filter((s) => String(s.day) === String(selectedDay)) || [];
+  const compatibleSessions = daySessions.filter((session) =>
+    talk.talk_type === "poster"
+      ? session.kind === "poster"
+      : session.kind === "talk"
+  );
+  const selectedSessionData = compatibleSessions.find(
+    (session) => String(session.id) === String(selectedSession)
+  );
+  const isPosterSession = selectedSessionData?.kind === "poster";
 
   async function handleSchedule() {
-    if (!selectedDay || !startTime || !endTime) {
+    if (!selectedDay || (!isPosterSession && (!startTime || !endTime))) {
       await showAlert("Please fill all fields", "Error");
       return;
     }
     onSchedule(
       talk.id,
       selectedDay,
-      startTime,
-      endTime,
+      isPosterSession ? null : startTime,
+      isPosterSession ? null : endTime,
       selectedSession || null
     );
   }
@@ -577,28 +592,37 @@ function TalkCard({ talk, days, onSchedule, onDelete, sessions, showAlert }) {
               ))}
             </select>
           </label>
-          {daySessions.length > 0 && (
+          {compatibleSessions.length > 0 && (
             <label>
-              Chair (optional):
+              {talk.talk_type === "poster" ? "Poster session:" : "Session:"}
               <select
                 value={selectedSession}
                 onChange={(e) => setSelectedSession(e.target.value)}
               >
-                <option value="">No chair</option>
-                {daySessions.map((s) => (
+                <option value="">No session</option>
+                {compatibleSessions.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.chair ? `Chair: ${s.chair}` : `Chair #${s.id}`}
+                    {s.kind === "poster" ? "Poster session" : "Session"}
+                    {s.chair ? ` — Chair: ${s.chair}` : ` #${s.id}`}
                   </option>
                 ))}
               </select>
             </label>
           )}
-          <label>
-            Start Time: <TimeSelect onChange={setStartTime} />
-          </label>
-          <label>
-            End Time: <TimeSelect onChange={setEndTime} />
-          </label>
+          {isPosterSession ? (
+            <p className={styles.posterScheduleHint}>
+              This poster uses the session’s shared time slot.
+            </p>
+          ) : (
+            <>
+              <label>
+                Start Time: <TimeSelect onChange={setStartTime} />
+              </label>
+              <label>
+                End Time: <TimeSelect onChange={setEndTime} />
+              </label>
+            </>
+          )}
           <div className={styles.schedulerActions}>
             <button className={styles.saveBtn} onClick={handleSchedule}>
               Save
@@ -638,7 +662,10 @@ function DaySchedule({
   const [breakStart, setBreakStart] = useState("");
   const [breakEnd, setBreakEnd] = useState("");
   const [showSessionForm, setShowSessionForm] = useState(false);
+  const [sessionKind, setSessionKind] = useState("talk");
   const [sessionChair, setSessionChair] = useState("");
+  const [sessionStart, setSessionStart] = useState("");
+  const [sessionEnd, setSessionEnd] = useState("");
   const [editingItem, setEditingItem] = useState(null);
   const [editStart, setEditStart] = useState("");
   const [editEnd, setEditEnd] = useState("");
@@ -651,6 +678,15 @@ function DaySchedule({
 
   const daySessions =
     sessions?.filter((s) => String(s.day) === String(day.id)) || [];
+  const editTalkKind =
+    editingTalk?.talk.talk_type === "poster" ? "poster" : "talk";
+  const editTalkSessions = daySessions.filter(
+    (session) => session.kind === editTalkKind
+  );
+  const editTalkSessionData = editTalkSessions.find(
+    (session) => String(session.id) === String(editTalkSession)
+  );
+  const editTalkUsesPosterSession = editTalkSessionData?.kind === "poster";
 
   function closeAllEdits() {
     setEditingItem(null);
@@ -677,13 +713,26 @@ function DaySchedule({
   }
 
   async function handleAddSession() {
-    if (!sessionChair.trim()) {
+    if (sessionKind === "talk" && !sessionChair.trim()) {
       await showAlert("Please enter chair name", "Error");
       return;
     }
-    onCreateSession(day.id, sessionChair);
+    if (sessionKind === "poster" && (!sessionStart || !sessionEnd)) {
+      await showAlert("Please set the poster session time slot", "Error");
+      return;
+    }
+    onCreateSession(
+      day.id,
+      sessionChair,
+      sessionKind,
+      sessionKind === "poster" ? sessionStart : null,
+      sessionKind === "poster" ? sessionEnd : null
+    );
     setShowSessionForm(false);
+    setSessionKind("talk");
     setSessionChair("");
+    setSessionStart("");
+    setSessionEnd("");
   }
 
   function handleStartEdit(type, data) {
@@ -709,7 +758,7 @@ function DaySchedule({
   }
 
   async function handleSaveChair() {
-    if (!editChairName.trim()) {
+    if (editingChair.kind !== "poster" && !editChairName.trim()) {
       await showAlert("Chair name cannot be empty", "Error");
       return;
     }
@@ -791,14 +840,14 @@ function DaySchedule({
   }
 
   async function handleSaveTalk() {
-    if (!editTalkStart || !editTalkEnd) {
+    if (!editTalkUsesPosterSession && (!editTalkStart || !editTalkEnd)) {
       await showAlert("Please set both times", "Error");
       return;
     }
 
     const res = await onUpdateTalk(editingTalk.talk.id, {
-      start_time: editTalkStart,
-      end_time: editTalkEnd,
+      start_time: editTalkUsesPosterSession ? null : editTalkStart,
+      end_time: editTalkUsesPosterSession ? null : editTalkEnd,
       session: editTalkSession || null,
     });
 
@@ -855,8 +904,23 @@ function DaySchedule({
                       {formatTime(item.end_time)}
                     </span>
                     <span className={styles.sessionTitle}>
-                      Chair: {item.data.chair}
+                      {item.data.kind === "poster"
+                        ? "Poster session"
+                        : `Chair: ${item.data.chair}`}
+                      {item.data.kind === "poster" && item.data.chair
+                        ? ` — Chair: ${item.data.chair}`
+                        : ""}
                     </span>
+                    {item.data.kind === "poster" && (
+                      <button
+                        className={styles.editTimeBtn}
+                        onClick={() => handleStartEdit("session", item.data)}
+                        aria-label="Edit poster session time"
+                        title="Edit poster session time"
+                      >
+                        <FontAwesomeIcon icon={faPenToSquare} />
+                      </button>
+                    )}
                     <button
                       className={styles.editTimeBtn}
                       onClick={() => handleEditChair(item.data)}
@@ -868,10 +932,12 @@ function DaySchedule({
                     <div className={styles.sessionTalks}>
                       {item.data.talks.map((talk, tIdx) => (
                         <div key={tIdx} className={styles.sessionTalkItem}>
-                          <span className={styles.time}>
-                            {formatTime(talk.start_time)} -{" "}
-                            {formatTime(talk.end_time)}
-                          </span>
+                          {item.data.kind !== "poster" && (
+                            <span className={styles.time}>
+                              {formatTime(talk.start_time)} -{" "}
+                              {formatTime(talk.end_time)}
+                            </span>
+                          )}
                           <span className={styles.itemTitle}>
                             <span className={styles.speakerName}>
                               {talk.participant?.name || ""}
@@ -937,7 +1003,7 @@ function DaySchedule({
             className={styles.addSessionBtn}
             onClick={() => setShowSessionForm(true)}
           >
-            + Add Chair
+            + Add Session
           </button>
         </div>
       )}
@@ -1011,22 +1077,33 @@ function DaySchedule({
           <p className={styles.editLabel}>
             Edit: <strong>{editingTalk.talk.title}</strong>
           </p>
+          {editTalkUsesPosterSession ? (
+            <p className={styles.posterScheduleHint}>
+              This poster uses the session’s shared time slot.
+            </p>
+          ) : (
+            <>
+              <label>
+                Start Time: <TimeSelect onChange={setEditTalkStart} />
+              </label>
+              <label>
+                End Time: <TimeSelect onChange={setEditTalkEnd} />
+              </label>
+            </>
+          )}
           <label>
-            Start Time: <TimeSelect onChange={setEditTalkStart} />
-          </label>
-          <label>
-            End Time: <TimeSelect onChange={setEditTalkEnd} />
-          </label>
-          <label>
-            Chair:
+            {editingTalk?.talk.talk_type === "poster"
+              ? "Poster session:"
+              : "Session:"}
             <select
               value={editTalkSession}
               onChange={(e) => setEditTalkSession(e.target.value)}
             >
-              <option value="">No chair</option>
-              {daySessions.map((s) => (
+              <option value="">No session</option>
+              {editTalkSessions.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.chair ? `Chair: ${s.chair}` : `Chair #${s.id}`}
+                  {s.kind === "poster" ? "Poster session" : "Session"}
+                  {s.chair ? ` — Chair: ${s.chair}` : ` #${s.id}`}
                 </option>
               ))}
             </select>
@@ -1085,7 +1162,17 @@ function DaySchedule({
       {showSessionForm && (
         <div className={styles.breakForm}>
           <label>
-            Chair:{" "}
+            Type:{" "}
+            <select
+              value={sessionKind}
+              onChange={(e) => setSessionKind(e.target.value)}
+            >
+              <option value="talk">Talk session</option>
+              <option value="poster">Poster session</option>
+            </select>
+          </label>
+          <label>
+            Chair{sessionKind === "poster" ? " (optional)" : ""}:{" "}
             <input
               type="text"
               value={sessionChair}
@@ -1093,6 +1180,16 @@ function DaySchedule({
               placeholder="Prof. Smith"
             />
           </label>
+          {sessionKind === "poster" && (
+            <>
+              <label>
+                Start Time: <TimeSelect onChange={setSessionStart} />
+              </label>
+              <label>
+                End Time: <TimeSelect onChange={setSessionEnd} />
+              </label>
+            </>
+          )}
           <div className={styles.schedulerActions}>
             <button className={styles.saveBtn} onClick={handleAddSession}>
               Save

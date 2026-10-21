@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import styles from "./Program.module.css";
 
-export default function Talk({ talk }) {
+export default function Talk({ talk, highlighted = false, showTime = true }) {
   const isBreak = talk.talk_type === "break" || talk.talk_type === "event";
 
   function formatTime(t) {
@@ -12,11 +12,20 @@ export default function Talk({ talk }) {
   return (
     <div
       id={`talk-${talk.id}`}
-      className={isBreak ? styles.break : styles.talk}
+      className={`${isBreak ? styles.break : styles.talk} ${
+        highlighted ? styles.highlighted : ""
+      }`}
     >
-      <div className={styles.time}>
-        {formatTime(talk.start_time)} – {formatTime(talk.end_time)}
-      </div>
+      {showTime ? (
+        <div className={styles.time}>
+          {formatTime(talk.start_time)} – {formatTime(talk.end_time)}
+        </div>
+      ) : (
+        <div
+          className={`${styles.time} ${styles.timePlaceholder}`}
+          aria-hidden="true"
+        />
+      )}
 
       <div className={styles.abstractInfo}>
         <div className={styles.speaker}>{talk.participant?.name}</div>

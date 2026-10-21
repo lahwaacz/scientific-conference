@@ -1,6 +1,6 @@
 """Tests for admin program-structure endpoints (days, sessions, talk guards)."""
 
-from datetime import date
+from datetime import date, time
 
 from django.contrib.auth.models import User
 from django.test import TestCase
@@ -89,6 +89,166 @@ class TestSessionAdmin(AdminTestCase):
         )
         self.assertEqual(response.status_code, 201)
 
+    def test_create_poster_session_requires_a_shared_time_slot(self):
+        response = self.client.post(
+            api("admin/sessions/create/"),
+            {
+                "day": self.day.id,
+                "kind": "poster",
+                "chair": "",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+
+        response = self.client.post(
+            api("admin/sessions/create/"),
+            {
+                "day": self.day.id,
+                "kind": "poster",
+                "chair": "",
+                "start_time": "14:00",
+                "end_time": "15:00",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 201)
+        session = Session.objects.get(pk=response.data["id"])
+        self.assertEqual(session.kind, "poster")
+        self.assertEqual(session.chair, "")
+        self.assertEqual(session.start_time, time(14, 0))
+        self.assertEqual(session.end_time, time(15, 0))
+
+    def test_schedule_poster_talk_into_poster_session_without_individual_times(self):
+        session = Session.objects.create(
+            conference=self.conference,
+            day=self.day,
+            kind="poster",
+            start_time=time(14, 0),
+            end_time=time(15, 0),
+        )
+        talk = self.make_talk(talk_type="poster")
+
+        response = self.client.patch(
+            api(f"admin/talks/{talk.id}/schedule/"),
+            {"day": self.day.id, "session": session.id},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        talk.refresh_from_db()
+        self.assertTrue(talk.is_scheduled)
+        self.assertIsNone(talk.start_time)
+        self.assertIsNone(talk.end_time)
+
+    def test_talk_cannot_be_scheduled_into_poster_session(self):
+        session = Session.objects.create(
+            conference=self.conference,
+            day=self.day,
+            kind="poster",
+            start_time=time(14, 0),
+            end_time=time(15, 0),
+        )
+        talk = self.make_talk()
+
+        response = self.client.patch(
+            api(f"admin/talks/{talk.id}/schedule/"),
+            {"day": self.day.id, "session": session.id},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        talk.refresh_from_db()
+        self.assertIsNone(talk.session)
+        self.assertFalse(talk.is_scheduled)
+
+    def test_poster_cannot_be_scheduled_into_talk_session(self):
+        session = Session.objects.create(
+            conference=self.conference, day=self.day, chair="Talk Chair"
+        )
+        talk = self.make_talk(talk_type="poster")
+
+        response = self.client.patch(
+            api(f"admin/talks/{talk.id}/schedule/"),
+            {"day": self.day.id, "session": session.id},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        talk.refresh_from_db()
+        self.assertIsNone(talk.session)
+        self.assertFalse(talk.is_scheduled)
+
+    def test_poster_session_clears_individual_times(self):
+        session = Session.objects.create(
+            conference=self.conference,
+            day=self.day,
+            kind="poster",
+            start_time=time(14, 0),
+            end_time=time(15, 0),
+        )
+        talk = self.make_talk(talk_type="poster")
+
+        response = self.client.patch(
+            api(f"admin/talks/{talk.id}/schedule/"),
+            {
+                "day": self.day.id,
+                "session": session.id,
+                "start_time": "14:10",
+                "end_time": "14:20",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        talk.refresh_from_db()
+        self.assertTrue(talk.is_scheduled)
+        self.assertIsNone(talk.start_time)
+        self.assertIsNone(talk.end_time)
+
+    def test_create_session_rejects_malformed_time(self):
+        response = self.client.post(
+            api("admin/sessions/create/"),
+            {
+                "day": self.day.id,
+                "kind": "poster",
+                "start_time": "25:99",
+                "end_time": "15:00",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_create_session_rejects_reversed_time(self):
+        response = self.client.post(
+            api("admin/sessions/create/"),
+            {
+                "day": self.day.id,
+                "kind": "poster",
+                "start_time": "16:00",
+                "end_time": "15:00",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_session_kind_cannot_change(self):
+        session = Session.objects.create(
+            conference=self.conference, day=self.day, chair="Talk Chair"
+        )
+
+        response = self.client.patch(
+            api(f"admin/sessions/{session.id}/update-time/"),
+            {"kind": "poster"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        session.refresh_from_db()
+        self.assertEqual(session.kind, "talk")
+
     def test_list_filters_by_day(self):
         other_day = ConferenceDay.objects.create(
             conference=self.conference, date=date(2026, 9, 11)
@@ -136,6 +296,8 @@ class TestSessionAdmin(AdminTestCase):
         self.assertEqual(Session.objects.count(), 0)
         talk.refresh_from_db()
         self.assertIsNone(talk.session)
+        self.assertIsNone(talk.day)
+        self.assertFalse(talk.is_scheduled)
 
 
 class TestTalkAdminGuards(AdminTestCase):

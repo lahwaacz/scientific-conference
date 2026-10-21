@@ -207,12 +207,18 @@ class ConferenceDay(models.Model):
 
 
 class Session(models.Model):
+    KIND_CHOICES = [
+        ("talk", "Talk"),
+        ("poster", "Poster"),
+    ]
+
     conference = models.ForeignKey(
         Conference, related_name="sessions", on_delete=models.CASCADE
     )
     day = models.ForeignKey(
         ConferenceDay, related_name="sessions", on_delete=models.CASCADE
     )
+    kind = models.CharField(max_length=20, choices=KIND_CHOICES, default="talk")
     chair = models.CharField(max_length=255, blank=True)
     start_time = models.TimeField(null=True, blank=True)
     end_time = models.TimeField(null=True, blank=True)
@@ -281,6 +287,7 @@ class Abstract(models.Model):
 class Talk(models.Model):
     TALK_TYPES = [
         ("talk", "Talk"),
+        ("poster", "Poster"),
         ("break", "Break"),
         ("event", "Event"),
     ]
@@ -624,16 +631,37 @@ class ParticipantSubmission(models.Model):
         return abstract
 
     def _sync_talk(self, participant, abstract):
-        if abstract is None:
-            return None
-        if self.contribution_type != "talk":
-            self._delete_publication_talk(abstract)
+        if abstract is None or self.contribution_type not in ("talk", "poster"):
             return None
 
         talk = getattr(abstract, "talk", None)
+        if (
+            talk is not None
+            and talk.is_scheduled
+            and talk.talk_type == "talk"
+            and self.contribution_type == "poster"
+        ):
+            raise ValidationError(
+                {
+                    "contribution_type": (
+                        "Unschedule the talk before changing this submission "
+                        "to poster or just attend."
+                    )
+                }
+            )
         if talk is not None:
+            if talk.talk_type != self.contribution_type:
+                # A poster moved to talk (or vice versa) may still be attached
+                # to a session that no longer fits. Never leave it scheduled
+                # with NULL times inside the wrong kind of session.
+                talk.session = None
+                talk.day = None
+                talk.start_time = None
+                talk.end_time = None
+                talk.is_scheduled = False
             talk.title = abstract.title
             talk.participant = participant
+            talk.talk_type = self.contribution_type
             talk.save()
             return talk
         return Talk.objects.create(
@@ -641,7 +669,7 @@ class ParticipantSubmission(models.Model):
             title=abstract.title,
             participant=participant,
             abstract=abstract,
-            talk_type="talk",
+            talk_type=self.contribution_type,
             is_scheduled=False,
         )
 

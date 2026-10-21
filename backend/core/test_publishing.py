@@ -2,7 +2,7 @@
 
 import shutil
 import tempfile
-from datetime import date
+from datetime import date, time
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -15,8 +15,10 @@ from .conftest import api
 from .models import (
     Abstract,
     Conference,
+    ConferenceDay,
     Participant,
     ParticipantSubmission,
+    Session,
     Talk,
 )
 
@@ -148,18 +150,53 @@ class TestPublishBranches(TestCase):
         self.assertEqual(abstract2.title, "Better Title")
         self.assertEqual(talk2.title, "Better Title")
 
-    def test_poster_creates_abstract_without_talk(self):
+    def test_poster_creates_abstract_and_poster_talk(self):
         submission = make_submission(contribution_type="poster")
 
         participant, abstract, talk = submission.publish()
 
         self.assertIsNotNone(abstract)
-        self.assertIsNone(talk)
+        assert talk is not None
         participant.refresh_from_db()
+        talk.refresh_from_db()
         self.assertEqual(participant.contribution_type, "poster")
-        self.assertEqual(Talk.objects.count(), 0)
+        self.assertEqual(talk.talk_type, "poster")
+        self.assertEqual(Talk.objects.count(), 1)
 
-    def test_talk_to_poster_removes_unscheduled_talk(self):
+    def test_scheduled_poster_to_talk_detaches_session_and_times(self):
+        submission = make_submission(contribution_type="poster")
+        _, _, talk = submission.publish()
+        assert talk is not None
+        day = ConferenceDay.objects.create(
+            conference=wsc_conference(), date=date(2026, 9, 10)
+        )
+        session = Session.objects.create(
+            conference=wsc_conference(),
+            day=day,
+            kind="poster",
+            start_time=time(14, 0),
+            end_time=time(15, 0),
+        )
+        talk.session = session
+        talk.day = day
+        talk.is_scheduled = True
+        talk.save()
+
+        submission.refresh_from_db()
+        submission.contribution_type = "talk"
+        submission.save()
+        _, _, updated_talk = submission.publish()
+
+        assert updated_talk is not None
+        updated_talk.refresh_from_db()
+        self.assertEqual(updated_talk.talk_type, "talk")
+        self.assertIsNone(updated_talk.session)
+        self.assertIsNone(updated_talk.day)
+        self.assertFalse(updated_talk.is_scheduled)
+        self.assertIsNone(updated_talk.start_time)
+        self.assertIsNone(updated_talk.end_time)
+
+    def test_talk_to_poster_keeps_unscheduled_talk_and_changes_type(self):
         submission = make_submission()
         _, abstract, talk = submission.publish()
         assert abstract is not None
@@ -171,8 +208,10 @@ class TestPublishBranches(TestCase):
         _, abstract2, talk2 = submission.publish()
 
         self.assertEqual(abstract2, abstract)
-        self.assertIsNone(talk2)
-        self.assertFalse(Talk.objects.filter(pk=talk.pk).exists())
+        self.assertEqual(talk2, talk)
+        talk.refresh_from_db()
+        self.assertEqual(talk.talk_type, "poster")
+        self.assertTrue(Talk.objects.filter(pk=talk.pk).exists())
 
     def test_talk_to_attend_removes_abstract_and_talk(self):
         submission = make_submission()
@@ -240,11 +279,13 @@ class TestPublishBranches(TestCase):
         poster_participant, poster_abstract, poster_talk = poster_submission.publish()
 
         self.assertIsNotNone(poster_abstract)
-        self.assertIsNone(poster_talk)
+        assert poster_talk is not None
         self.assertNotEqual(poster_abstract, abstract)
         abstract.refresh_from_db()
+        poster_talk.refresh_from_db()
         self.assertEqual(abstract.title, "Numerical Methods")
         self.assertTrue(Talk.objects.filter(pk=talk.pk).exists())
+        self.assertEqual(poster_talk.talk_type, "poster")
         self.assertEqual(Abstract.objects.count(), 2)
         self.assertEqual(
             poster_participant.contribution_type,

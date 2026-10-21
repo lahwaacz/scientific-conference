@@ -246,66 +246,87 @@ def generate_program_pdf(request, conference_slug):
         c.line(margin_left, y, margin_left + content_width, y)
         y -= 4 * mm
 
-        timeline = []
-        for session in day.sessions.all().order_by("start_time"):
-            timeline.append(("session", session))
-            for talk in session.talks.all().order_by("start_time"):
-                timeline.append(("talk", talk))
-        for item in day.items.filter(session__isnull=True).order_by("start_time"):
-            timeline.append(("item", item))
+        def draw_talk_row(obj, show_time):
+            nonlocal y
+            check_space(12 * mm)
 
-        timeline.sort(key=lambda e: e[1].start_time or datetime.time(0, 0))
+            title = obj.title or ""
+            c.setFont("DejaVu", 9)
+            words = title.split()
+            lines_count = 1
+            line = ""
+            for word in words:
+                test = (line + " " + word).strip()
+                if c.stringWidth(test, "DejaVu", 9) <= col_title_w:
+                    line = test
+                else:
+                    lines_count += 1
+                    line = word
+            row_h = max(ROW_HEIGHT, lines_count * 4.5 * mm + 2 * mm)
 
-        for entry_type, obj in timeline:
-            if entry_type == "session":
-                check_space(12 * mm)
-                y -= CHAIR_BEFORE
+            check_space(row_h + 4 * mm)
 
-                c.setFillColor(DARK)
-                c.setFont("DejaVu-Bold", 10)
-                chair_text = f"Chair: {obj.chair}" if obj.chair else "Session"
-                c.drawString(margin_left, y, chair_text)
-                y -= CHAIR_AFTER + 5 * mm
-
-            elif entry_type in ("talk", "item"):
-                check_space(12 * mm)
-
-                title = obj.title or ""
-                c.setFont("DejaVu", 9)
-                words = title.split()
-                lines_count = 1
-                line = ""
-                for word in words:
-                    test = (line + " " + word).strip()
-                    if c.stringWidth(test, "DejaVu", 9) <= col_title_w:
-                        line = test
-                    else:
-                        lines_count += 1
-                        line = word
-                row_h = max(ROW_HEIGHT, lines_count * 4.5 * mm + 2 * mm)
-
-                check_space(row_h + 4 * mm)
-
+            if show_time:
                 time_str = f"{fmt_time(obj.start_time)} – {fmt_time(obj.end_time)}"
                 c.setFillColor(DARK)
                 c.setFont("DejaVu-Bold", 9)
                 c.drawString(margin_left, y, time_str)
 
-                if hasattr(obj, "participant") and obj.participant:
-                    c.setFillColor(DARK)
-                    c.setFont("DejaVu", 9)
-                    name = obj.participant.name
-                    while (
-                        c.stringWidth(name, "DejaVu", 9) > col_name - 3 * mm
-                        and len(name) > 4
-                    ):
-                        name = name[:-2] + "."
-                    c.drawString(margin_left + col_time, y, name)
+            if hasattr(obj, "participant") and obj.participant:
+                c.setFillColor(DARK)
+                c.setFont("DejaVu", 9)
+                name = obj.participant.name
+                while (
+                    c.stringWidth(name, "DejaVu", 9) > col_name - 3 * mm
+                    and len(name) > 4
+                ):
+                    name = name[:-2] + "."
+                c.drawString(margin_left + col_time, y, name)
+
+            c.setFillColor(DARK)
+            draw_wrapped(title, col_title_x, y, col_title_w, "DejaVu", 9, 4.5 * mm)
+
+            y -= row_h
+
+        timeline = []
+        for session in day.sessions.all().order_by("start_time"):
+            talks = list(session.talks.all().order_by("start_time"))
+            if session.kind == "poster":
+                start = session.start_time
+                end = session.end_time
+            elif talks:
+                start = talks[0].start_time or session.start_time
+                end = talks[-1].end_time or session.end_time
+            else:
+                start = session.start_time
+                end = session.end_time
+            timeline.append((session, talks, start, end))
+
+        for item in day.items.filter(session__isnull=True).order_by("start_time"):
+            timeline.append((item, [], item.start_time, item.end_time))
+
+        timeline.sort(key=lambda entry: entry[2] or datetime.time(0, 0))
+
+        for obj, talks, start, end in timeline:
+            if isinstance(obj, Session):
+                check_space(12 * mm)
+                y -= CHAIR_BEFORE
 
                 c.setFillColor(DARK)
-                draw_wrapped(title, col_title_x, y, col_title_w, "DejaVu", 9, 4.5 * mm)
+                c.setFont("DejaVu-Bold", 10)
+                if obj.kind == "poster":
+                    label = f"{fmt_time(start)} – {fmt_time(end)}  Poster session"
+                    if obj.chair:
+                        label += f"  |  Chair: {obj.chair}"
+                else:
+                    label = f"Chair: {obj.chair}" if obj.chair else "Session"
+                c.drawString(margin_left, y, label)
+                y -= CHAIR_AFTER + 5 * mm
 
-                y -= row_h
+                for talk in talks:
+                    draw_talk_row(talk, show_time=obj.kind != "poster")
+            else:
+                draw_talk_row(obj, show_time=True)
 
         y -= DAY_AFTER
 
@@ -711,19 +732,44 @@ class TalkScheduleUpdateView(ConferenceScopedMixin, generics.UpdateAPIView):
         talk = self.get_object()
 
         serializer = self.get_serializer(talk, data=request.data, partial=True)
-        if serializer.is_valid():
-            updated_talk = serializer.save()
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            if updated_talk.day and updated_talk.start_time and updated_talk.end_time:
-                updated_talk.is_scheduled = True
-            else:
-                updated_talk.is_scheduled = False
+        target_session = serializer.validated_data.get("session", talk.session)
+        target_type = serializer.validated_data.get("talk_type", talk.talk_type)
+        if target_session is not None:
+            if target_session.kind == "poster" and target_type != "poster":
+                return Response(
+                    {
+                        "session": "Only poster items can be assigned to a poster session."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if target_session.kind == "talk" and target_type == "poster":
+                return Response(
+                    {"session": "Poster items require a poster session."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
-            updated_talk.save()
+        updated_talk = serializer.save()
 
-            return Response(self.get_serializer(updated_talk).data)
+        poster_session = (
+            updated_talk.session is not None and updated_talk.session.kind == "poster"
+        )
+        if poster_session:
+            updated_talk.start_time = None
+            updated_talk.end_time = None
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if updated_talk.day and (
+            poster_session or (updated_talk.start_time and updated_talk.end_time)
+        ):
+            updated_talk.is_scheduled = True
+        else:
+            updated_talk.is_scheduled = False
+
+        updated_talk.save()
+
+        return Response(self.get_serializer(updated_talk).data)
 
 
 # Admin: publish submission
@@ -873,29 +919,12 @@ class SessionCreateView(ConferenceScopedMixin, generics.CreateAPIView):
     permission_classes = [IsAdminUser]
 
     def create(self, request, *args, **kwargs):
-        day_id = request.data.get("day")
-        chair = request.data.get("chair", "")
-
-        if not day_id:
-            return Response(
-                {"error": "day is required"}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        day = _get_scoped_day(day_id, self.conference)
-        if day is None:
-            return Response(
-                {"error": "day does not belong to this conference"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        session = Session.objects.create(
-            conference=self.conference,
-            day=day,
-            chair=chair,
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        session = serializer.save(conference=self.conference)
+        return Response(
+            self.get_serializer(session).data, status=status.HTTP_201_CREATED
         )
-
-        serializer = self.get_serializer(session)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class SessionListView(ConferenceScopedMixin, generics.ListAPIView):
@@ -1033,7 +1062,13 @@ def delete_session(request, conference_slug, pk):
     conference = get_conference_or_404(conference_slug)
     try:
         session = Session.objects.get(pk=pk, conference=conference)
-        session.talks.all().update(session=None)
+        session.talks.all().update(
+            session=None,
+            day=None,
+            start_time=None,
+            end_time=None,
+            is_scheduled=False,
+        )
         session.delete()
         return Response(status=204)
     except Session.DoesNotExist:
