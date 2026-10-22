@@ -345,8 +345,9 @@ export default function Tracking() {
   }
 
   const isApproved = submission.status === "approved";
+  const isRejected = submission.status === "rejected";
   const editWindowStatus = info ? submissionEditWindowStatus(info) : null;
-  const editLocked = editWindowStatus === "closed";
+  const editLocked = editWindowStatus === "closed" && !isRejected;
 
   const rows = [
     ["Name", submission.name],
@@ -386,10 +387,18 @@ export default function Tracking() {
             </p>
             <span
               className={
-                isApproved ? styles.badgePublished : styles.badgePending
+                isApproved
+                  ? styles.badgePublished
+                  : isRejected
+                    ? styles.badgeRejected
+                    : styles.badgePending
               }
             >
-              {isApproved ? "Published" : "Pending review"}
+              {isApproved
+                ? "Published"
+                : isRejected
+                  ? "Rejected"
+                  : "Pending review"}
             </span>
           </div>
 
@@ -400,6 +409,18 @@ export default function Tracking() {
             <p className={styles.timestamp}>
               Reviewed: {formatTimestamp(submission.reviewed_at)}
             </p>
+          )}
+
+          {isRejected && (
+            <div className={styles.rejectionNotice}>
+              <p>
+                This registration was rejected and can no longer be edited
+                online. Contact the organizers for changes.
+              </p>
+              {submission.rejection_message && (
+                <p>{submission.rejection_message}</p>
+              )}
+            </div>
           )}
 
           {editing ? (
@@ -466,7 +487,7 @@ export default function Tracking() {
                 )}
               </dl>
 
-              {editWindowStatus === "open" && (
+              {!isRejected && editWindowStatus === "open" && (
                 <button
                   type="button"
                   className={styles.button}

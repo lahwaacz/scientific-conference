@@ -30,6 +30,14 @@ const approvedSubmission = {
   status: "approved",
 };
 
+const rejectedSubmission = {
+  ...pendingSubmission,
+  id: 13,
+  name: "Rejected Person",
+  status: "rejected",
+  rejection_message: "Please contact the organizers.",
+};
+
 function listResponse(items) {
   return { ok: true, json: async () => items };
 }
@@ -49,6 +57,9 @@ describe("EditParticipants workflows", () => {
     render(<EditParticipants />);
 
     expect(await screen.findByText("Pending Person")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Delete" })
+    ).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Published" }));
 
     await waitFor(() => expect(fetchWithAuth).toHaveBeenCalledTimes(2));
@@ -79,30 +90,97 @@ describe("EditParticipants workflows", () => {
     expect(fetchWithAuth).toHaveBeenCalledTimes(3);
   });
 
-  test("deleting an approved submission marks the program dirty and warns", async () => {
+  test("rejects a pending submission with an optional participant message", async () => {
     fetchWithAuth
-      .mockResolvedValueOnce(listResponse([approvedSubmission]))
-      .mockResolvedValueOnce({ ok: true, status: 204 })
+      .mockResolvedValueOnce(listResponse([pendingSubmission]))
+      .mockResolvedValueOnce({ ok: true })
       .mockResolvedValueOnce(listResponse([]));
 
     render(<EditParticipants />);
-    fireEvent.click(await screen.findByRole("button", { name: "Delete" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Reject registration" })
+    );
 
     expect(
-      await screen.findByText(/will also remove the published Participant/i)
+      await screen.findByRole("heading", { name: "Reject registration" })
     ).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Confirm" }));
+    fireEvent.change(screen.getByLabelText(/message for participant/i), {
+      target: { value: "Please provide a longer abstract." },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Reject" }));
 
     expect(
-      await screen.findByText(/removed from the public site/i)
+      await screen.findByText("Registration rejected")
+    ).toBeInTheDocument();
+    expect(
+      fetchWithAuth.mock.calls.some(([url, opts]) => {
+        if (url !== "/api/admin/submissions/11/reject/") return false;
+        return (
+          opts.method === "POST" &&
+          JSON.parse(opts.body).message === "Please provide a longer abstract."
+        );
+      })
+    ).toBe(true);
+    expect(fetchWithAuth).toHaveBeenCalledTimes(3);
+  });
+
+  test("allows rejecting without a participant message", async () => {
+    fetchWithAuth
+      .mockResolvedValueOnce(listResponse([pendingSubmission]))
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce(listResponse([]));
+
+    render(<EditParticipants />);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Reject registration" })
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Reject" }));
+
+    expect(
+      await screen.findByText("Registration rejected")
     ).toBeInTheDocument();
     expect(
       fetchWithAuth.mock.calls.some(
         ([url, opts]) =>
-          url === "/api/admin/submissions/12/" && opts.method === "DELETE"
+          url === "/api/admin/submissions/11/reject/" &&
+          opts.method === "POST" &&
+          JSON.parse(opts.body).message === ""
       )
     ).toBe(true);
-    expect(isProgramDirty()).toBe(true);
+  });
+
+  test("shows rejected submissions in their own tab and restores one", async () => {
+    fetchWithAuth
+      .mockResolvedValueOnce(listResponse([]))
+      .mockResolvedValueOnce(listResponse([rejectedSubmission]))
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce(listResponse([]));
+
+    render(<EditParticipants />);
+    fireEvent.click(await screen.findByRole("button", { name: "Rejected" }));
+
+    expect(await screen.findByText("Rejected Person")).toBeInTheDocument();
+    expect(
+      screen.getByText("Please contact the organizers.")
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Edit" })
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Restore" }));
+    expect(await screen.findByText("Restore submission")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(await screen.findByText("Submission restored")).toBeInTheDocument();
+    expect(
+      fetchWithAuth.mock.calls.some(
+        ([url, opts]) =>
+          url === "/api/admin/submissions/13/restore/" && opts.method === "POST"
+      )
+    ).toBe(true);
+    expect(fetchWithAuth.mock.calls[1][0]).toBe(
+      "/api/admin/submissions/?status=rejected"
+    );
   });
 
   test("unpublishing an approved submission keeps it and marks the program dirty", async () => {

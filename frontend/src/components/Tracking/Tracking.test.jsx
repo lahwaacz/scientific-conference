@@ -154,6 +154,26 @@ describe("Tracking", () => {
     expect(document.querySelector('input[name="is_student"]')).toBeChecked();
   });
 
+  test("renders a rejected submission with its message and no edit control", async () => {
+    await renderWithSubmission({
+      ...pendingSubmission,
+      status: "rejected",
+      reviewed_at: "2026-02-01T09:00:00Z",
+      rejection_message: "Please contact the organizers for details.",
+    });
+
+    expect(screen.getByText("Rejected")).toBeInTheDocument();
+    expect(
+      screen.getByText("Please contact the organizers for details.")
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/can no longer be edited online/i)
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /edit submission/i })
+    ).not.toBeInTheDocument();
+  });
+
   test("edit submit with a new photo PATCHes multipart FormData with all field keys", async () => {
     // Without an existing photo the field renders the upload input (with
     // one, it renders the preview + Remove instead).

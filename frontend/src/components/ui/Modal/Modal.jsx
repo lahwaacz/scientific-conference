@@ -11,6 +11,7 @@ export default function Modal({
   onConfirm,
   onCancel,
   type = "default",
+  children,
 }) {
   const isNotification = !onCancel;
   const confirmLabel = confirmText ?? (isNotification ? "OK" : "Confirm");
@@ -35,7 +36,8 @@ export default function Modal({
     <div className={styles.overlay}>
       <div className={`${styles.modal} ${styles[type]}`}>
         {title && <h3 className={styles.title}>{title}</h3>}
-        <p className={styles.message}>{message}</p>
+        {message && <p className={styles.message}>{message}</p>}
+        {children}
 
         <div className={styles.actions}>
           {onCancel && (

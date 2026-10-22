@@ -34,6 +34,8 @@ export default function EditParticipants() {
     onConfirm: null,
     type: "default",
   });
+  const [rejectingSubmission, setRejectingSubmission] = useState(null);
+  const [rejectionMessage, setRejectionMessage] = useState("");
 
   function openModal(config) {
     setModal({ isOpen: true, onCancel: null, ...config });
@@ -179,51 +181,93 @@ export default function EditParticipants() {
     });
   }
 
-  async function deleteSubmission(id) {
-    const submission = submissions.find((s) => s.id === id);
-    const isApproved = submission?.status === "approved";
+  async function rejectSubmission(id, message) {
     try {
-      const res = await fetchWithAuth(`/api/admin/submissions/${id}/`, {
-        method: "DELETE",
+      const res = await fetchWithAuth(`/api/admin/submissions/${id}/reject/`, {
+        method: "POST",
+        body: JSON.stringify({ message }),
       });
 
-      if (res.ok || res.status === 204) {
-        markProgramDirty();
+      if (res.ok) {
         openModal({
-          title: "Success",
-          message: isApproved
-            ? "Deleted successfully\n\nThe Participant and Abstract have been removed from the public site."
-            : "Deleted successfully",
+          title: "Registration rejected",
+          message:
+            "The submission stays stored but is hidden from the review workflow. The participant can read your message on their tracking page.",
+          type: "success",
           onConfirm: closeModal,
         });
         fetchSubmissions();
       } else {
-        const errorText = await res.text();
+        const error = await res.json();
         openModal({
-          title: "Delete failed",
-          message: errorText,
+          title: "Reject failed",
+          message: error.error || "Unknown error",
+          type: "danger",
           onConfirm: closeModal,
         });
       }
     } catch (error) {
       openModal({
         title: "Connection error",
-        message: error.message,
+        message: error.message || "Server is unreachable.",
+        type: "danger",
         onConfirm: closeModal,
       });
     }
   }
 
-  function confirmDelete(id, isApproved) {
+  function openRejectModal(submission) {
+    setRejectionMessage("");
+    setRejectingSubmission(submission);
+  }
+
+  function closeRejectModal() {
+    setRejectingSubmission(null);
+    setRejectionMessage("");
+  }
+
+  async function restoreSubmission(id) {
+    try {
+      const res = await fetchWithAuth(`/api/admin/submissions/${id}/restore/`, {
+        method: "POST",
+      });
+
+      if (res.ok) {
+        openModal({
+          title: "Submission restored",
+          message: "The submission is back in the pending review queue.",
+          type: "success",
+          onConfirm: closeModal,
+        });
+        fetchSubmissions();
+      } else {
+        const error = await res.json();
+        openModal({
+          title: "Restore failed",
+          message: error.error || "Unknown error",
+          type: "danger",
+          onConfirm: closeModal,
+        });
+      }
+    } catch (error) {
+      openModal({
+        title: "Connection error",
+        message: error.message || "Server is unreachable.",
+        type: "danger",
+        onConfirm: closeModal,
+      });
+    }
+  }
+
+  function confirmRestore(id) {
     openModal({
-      title: "Delete submission",
-      message: isApproved
-        ? "WARNING: This permanently deletes the submission and cannot be undone. It will also remove the published Participant, Abstract, and any scheduled talk from the public site!"
-        : "Delete this submission permanently? This cannot be undone.",
+      title: "Restore submission",
+      message:
+        "Move this rejected submission back to the pending review queue?",
       onCancel: closeModal,
       onConfirm: async () => {
         closeModal();
-        await deleteSubmission(id, isApproved);
+        await restoreSubmission(id);
       },
     });
   }
@@ -300,6 +344,12 @@ export default function EditParticipants() {
         onClick={() => setFilter("approved")}
       >
         Published
+      </button>
+      <button
+        className={filter === "rejected" ? styles.active : ""}
+        onClick={() => setFilter("rejected")}
+      >
+        Rejected
       </button>
       <button
         className={filter === "" ? styles.active : ""}
@@ -405,6 +455,13 @@ export default function EditParticipants() {
                     )}
                   </div>
 
+                  {sub.status === "rejected" && sub.rejection_message && (
+                    <div className={styles.rejectionNote}>
+                      <strong>Participant message:</strong>
+                      <p>{sub.rejection_message}</p>
+                    </div>
+                  )}
+
                   <div className={styles.cardFooter}>
                     <div className={styles.datesSection}>
                       <div className={styles.dateInfo}>
@@ -425,12 +482,20 @@ export default function EditParticipants() {
                     </div>
                     <div className={styles.cardActions}>
                       {sub.status === "pending" && (
-                        <button
-                          className={styles.publishBtn}
-                          onClick={() => confirmPublish(sub.id)}
-                        >
-                          Publish
-                        </button>
+                        <>
+                          <button
+                            className={styles.publishBtn}
+                            onClick={() => confirmPublish(sub.id)}
+                          >
+                            Publish
+                          </button>
+                          <button
+                            className={styles.rejectBtn}
+                            onClick={() => openRejectModal(sub)}
+                          >
+                            Reject registration
+                          </button>
+                        </>
                       )}
                       {sub.status === "approved" && (
                         <button
@@ -440,12 +505,22 @@ export default function EditParticipants() {
                           Unpublish
                         </button>
                       )}
-                      <button
-                        className={styles.editBtn}
-                        onClick={() => setEditingSubmission(sub)}
-                      >
-                        Edit
-                      </button>
+                      {sub.status === "rejected" && (
+                        <button
+                          className={styles.restoreBtn}
+                          onClick={() => confirmRestore(sub.id)}
+                        >
+                          Restore
+                        </button>
+                      )}
+                      {sub.status !== "rejected" && (
+                        <button
+                          className={styles.editBtn}
+                          onClick={() => setEditingSubmission(sub)}
+                        >
+                          Edit
+                        </button>
+                      )}
                       {sub.tracking_token && (
                         <button
                           className={styles.copyBtn}
@@ -456,14 +531,6 @@ export default function EditParticipants() {
                             : "Copy tracking link"}
                         </button>
                       )}
-                      <button
-                        className={styles.deleteBtn}
-                        onClick={() =>
-                          confirmDelete(sub.id, sub.status === "approved")
-                        }
-                      >
-                        Delete
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -479,6 +546,35 @@ export default function EditParticipants() {
           onClose={() => setEditingSubmission(null)}
           onSave={handleSaveSubmission}
         />
+      )}
+      {rejectingSubmission && (
+        <Modal
+          isOpen
+          title="Reject registration"
+          message="This keeps the submission stored but removes it from the review workflow. The participant will see your message on their tracking page and can no longer edit the submission."
+          confirmText="Reject"
+          onCancel={closeRejectModal}
+          onConfirm={async () => {
+            const id = rejectingSubmission.id;
+            const message = rejectionMessage;
+            closeRejectModal();
+            await rejectSubmission(id, message);
+          }}
+        >
+          <label
+            className={styles.rejectMessageLabel}
+            htmlFor="rejection-message"
+          >
+            Message for participant (optional)
+          </label>
+          <textarea
+            id="rejection-message"
+            className={styles.rejectMessageInput}
+            value={rejectionMessage}
+            onChange={(event) => setRejectionMessage(event.target.value)}
+            rows={4}
+          />
+        </Modal>
       )}
       <Modal
         isOpen={modal.isOpen}
