@@ -152,9 +152,7 @@ describe("Landing", () => {
     await renderLanding();
 
     // Both dates → full range.
-    expect(
-      await screen.findByText("29 May 2026 – 30 May 2026")
-    ).toBeInTheDocument();
+    expect(await screen.findByText("29–30 May 2026")).toBeInTheDocument();
     // One date missing → the year only.
     expect(screen.getByText("2027")).toBeInTheDocument();
     // Both dates missing → TBA.

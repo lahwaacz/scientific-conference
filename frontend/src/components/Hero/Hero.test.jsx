@@ -16,6 +16,18 @@ const INFO_WITH_PHOTO = {
   hero_photo: "/media/conferences/wsc2026-hero.jpg",
 };
 
+const INFO_CROSS_MONTH = {
+  ...INFO,
+  date_start: "2027-05-31",
+  date_end: "2027-06-02",
+};
+
+const INFO_SAME_DAY = {
+  ...INFO,
+  date_start: "2027-05-25",
+  date_end: "2027-05-25",
+};
+
 describe("Hero", () => {
   beforeEach(() => {
     document.title = "";
@@ -42,7 +54,29 @@ describe("Hero", () => {
     );
     expect(screen.getByText("An annual colloquium.")).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent(
-      "25 May 2027 - 27 May 2027. Prague."
+      "25–27 May 2027, Prague"
+    );
+  });
+
+  it("renders both full dates when the conference spans two months", async () => {
+    globalThis.fetch = vi.fn(() =>
+      Promise.resolve({ ok: true, json: async () => INFO_CROSS_MONTH })
+    );
+    render(<Hero />);
+
+    expect(await screen.findByRole("heading", { level: 2 })).toHaveTextContent(
+      "31 May 2027 – 2 June 2027, Prague"
+    );
+  });
+
+  it("renders a single date when the conference starts and ends the same day", async () => {
+    globalThis.fetch = vi.fn(() =>
+      Promise.resolve({ ok: true, json: async () => INFO_SAME_DAY })
+    );
+    render(<Hero />);
+
+    expect(await screen.findByRole("heading", { level: 2 })).toHaveTextContent(
+      "25 May 2027, Prague"
     );
   });
 

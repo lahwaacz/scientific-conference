@@ -1,5 +1,6 @@
 import { buildMediaUrl } from "../../utils/api";
 import { conferenceUrl } from "../../utils/conferenceSlug";
+import { formatDateRange } from "../../utils/dateRange";
 import styles from "./Landing.module.css";
 
 // The whole card is a plain anchor: full navigation to the conference site
@@ -40,17 +41,9 @@ export default function ConferenceCard({ conference }) {
   );
 }
 
-function formatDate(dateStr) {
-  return new Date(dateStr).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-}
-
 function dateRangeText(dateStart, dateEnd, year) {
   if (dateStart && dateEnd) {
-    return `${formatDate(dateStart)} – ${formatDate(dateEnd)}`;
+    return formatDateRange(dateStart, dateEnd);
   }
   if (!dateStart && !dateEnd) {
     return "Dates TBA";

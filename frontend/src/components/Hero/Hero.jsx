@@ -1,5 +1,6 @@
 import { buildMediaUrl } from "../../utils/api";
 import { conferenceTitle } from "../../utils/conferenceTitle";
+import { formatDateRange } from "../../utils/dateRange";
 import { useConferenceInfo } from "./../hooks/useConferenceInfo";
 import styles from "./Hero.module.css";
 
@@ -8,7 +9,9 @@ export default function Hero() {
 
   const dateStr =
     info?.date_start && info?.date_end
-      ? `${formatDate(info.date_start)} - ${formatDate(info.date_end)}. ${info.location}.`
+      ? [formatDateRange(info.date_start, info.date_end), info.location]
+          .filter(Boolean)
+          .join(", ")
       : "";
 
   const title = conferenceTitle(info);
@@ -47,13 +50,4 @@ export default function Hero() {
       ) : null}
     </section>
   );
-}
-
-function formatDate(dateStr) {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("en-GB", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
 }
