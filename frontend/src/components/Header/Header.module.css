@@ -115,9 +115,9 @@
 .navItem:not(:last-child)::after {
   content: "";
   position: absolute;
-  right: clamp(-40px, -3vw, -32px);
+  left: calc(100% + clamp(10px, 2vw, 30px));
   top: 50%;
-  transform: translateY(-50%);
+  transform: translate(-50%, -50%);
   width: 1px;
   height: 30px;
   background-color: var(--secondary-color);
