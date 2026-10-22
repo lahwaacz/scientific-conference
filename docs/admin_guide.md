@@ -155,7 +155,7 @@ This page is not interactive. It is intended only for reading information. To mo
 
 ### Purpose
 
-The **Edit Participants and Abstracts** section contains the complete information about participant submissions and their abstracts. This section is used for reviewing, editing, publishing, filtering, and deleting submissions. Submissions are listed alphabetically by participant surname.
+The **Edit Participants and Abstracts** section contains the complete information about participant submissions and their abstracts. This section is used for reviewing, editing, publishing, rejecting, filtering, and restoring submissions. Submissions are listed alphabetically by participant surname.
 
 ![Participant submissions](./assets/participantssubmissions.png)
 
@@ -227,25 +227,38 @@ Changes made to an already published submission are reflected immediately in the
 
 ### Unpublish a Submission
 
-Published submissions have an **Unpublish** action. It removes the public Participant and Abstract, together with any scheduled program item, but keeps the submission in **Pending** state so it can be edited and published again. Use **Delete** only when the submission itself should be removed permanently.
+Published submissions have an **Unpublish** action. It removes the public Participant and Abstract, together with any scheduled program item, but keeps the submission in **Pending** state so it can be edited and published again. To reject a pending registration instead, use **Reject registration**.
 
 Deleting a **participant** in the Django administration also unpublishes every linked submission. Those submissions stay in **Edit Participants and Abstracts** as **Pending**, while the public participant, abstract, and any linked talk — including scheduled program items — are removed. Use **Unpublish** from Edit Participants when you want to do this for one submission; use Django admin deletion when you are removing the participant record itself.
 
-### Delete a Submission
+### Reject a Registration
 
-To delete a submission:
+Rejecting keeps the submission stored but removes it from the review workflow. It is intended for registrations that should not be published; it does not delete the participant data.
 
-1. Find the required submission.
-2. Select **Delete**.
-3. Confirm the deletion if the system asks for confirmation.
+1. Open **Edit Participants and Abstracts**.
+2. Find the required pending submission.
+3. Select **Reject registration**.
+4. Optionally enter a message for the participant.
+5. Confirm the action.
 
-### Warning
+Rejected submissions appear only under the **Rejected** tab. They are excluded from **Pending**, **Published**, and **All**, so they no longer appear in the normal review queue.
 
-Deletion is irreversible.
+The participant can still open the tracking link and see the **Rejected** status and the optional message. Rejected submissions cannot be edited through the tracking link. Administrators can still edit them in the Django administration.
 
-Deleting a submission removes the participant information permanently. To restore the removed submission, the registration form must be filled in again from the beginning. The public registration form itself asks for confirmation when the page is left with unsubmitted input, so an accidental navigation or tab close does not discard a partially filled form.
+### Restore a Rejected Registration
 
-If the deleted submission has already been published, the corresponding participant and abstract are also removed from the public website.
+1. Open the **Rejected** tab.
+2. Find the required submission.
+3. Select **Restore**.
+4. Confirm the action.
+
+The submission returns to **Pending** and the rejection message is cleared.
+
+### Permanently Delete a Submission
+
+Permanent deletion is available only in the Django administration. Open **Participant submissions**, select the record, and use the Django admin delete action.
+
+Deletion is irreversible. Deleting a published submission also removes its public Participant, Abstract, and any linked talk. To keep the data but remove a registration from the review workflow, use **Reject registration** instead.
 
 ### Participant Tracking Links and Self-Service Edits
 
@@ -256,7 +269,9 @@ Every submission carries two identifiers that connect the participant with their
 
 When a participant submits the registration form, the confirmation screen shows the reference and the tracking link, together with a **Copy link** button and a warning to save the link. The link is the only way for the participant to reach their submission again, so participants are asked to keep it.
 
-Opening the tracking link shows the participant their own submission: the reference, the current status (**Pending review** or **Published**), the submitted details, and, while submission editing is open, an **Edit submission** button. Through this form, participants correct their own details (name, affiliation, email, abstract, arrival and departure dates, photo) without contacting the organizers. Editing is governed by the **Submission Editing Deadline** (see the **Registration** subsection), which is independent of the registration window: participants can keep editing after registration has closed, up to that date.
+Opening the tracking link shows the participant their own submission: the reference, the current status (**Pending review**, **Published**, or **Rejected**), the submitted details, and, while submission editing is open and the submission is not rejected, an **Edit submission** button. Through this form, participants correct their own details (name, affiliation, email, abstract, arrival and departure dates, photo) without contacting the organizers. Editing is governed by the **Submission Editing Deadline** (see the **Registration** subsection), which is independent of the registration window: participants can keep editing after registration has closed, up to that date.
+
+A rejected submission still shows its details, status, and the organizer's optional message, but the edit form is never available. This is enforced by the backend as well as by the hidden button.
 
 For administrators, participant self-service edits have the following consequences:
 
