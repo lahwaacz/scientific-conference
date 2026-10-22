@@ -3,6 +3,7 @@
 import shutil
 import tempfile
 from datetime import date, time
+from unittest.mock import patch
 
 from django.contrib import admin as django_admin
 from django.contrib.auth.models import User
@@ -12,7 +13,7 @@ from django.test import RequestFactory, TestCase, override_settings
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .admin import ParticipantAdmin
+from .admin import ParticipantAdmin, ParticipantSubmissionAdmin
 from .conftest import api
 from .models import (
     Abstract,
@@ -410,6 +411,88 @@ class TestSubmissionUnpublish(TestCase):
         self.assertEqual(Talk.objects.count(), 0)
 
 
+class TestSubmissionRejectRestore(TestCase):
+    def test_reject_pending_sets_message_and_review_timestamp(self):
+        submission = make_submission()
+
+        submission.reject("Please provide a longer abstract.")
+
+        submission.refresh_from_db()
+        self.assertEqual(submission.status, "rejected")
+        self.assertEqual(
+            submission.rejection_message, "Please provide a longer abstract."
+        )
+        self.assertIsNotNone(submission.reviewed_at)
+        self.assertEqual(Participant.objects.count(), 0)
+        self.assertEqual(Abstract.objects.count(), 0)
+
+    def test_reject_approved_raises(self):
+        submission = make_submission()
+        submission.publish()
+
+        with self.assertRaises(ValidationError):
+            submission.reject("not allowed")
+
+        submission.refresh_from_db()
+        self.assertEqual(submission.status, "approved")
+
+    def test_restore_rejected_clears_message_and_review_timestamp(self):
+        submission = make_submission()
+        submission.reject("Not accepted")
+
+        submission.restore()
+
+        submission.refresh_from_db()
+        self.assertEqual(submission.status, "pending")
+        self.assertEqual(submission.rejection_message, "")
+        self.assertIsNone(submission.reviewed_at)
+
+    def test_restore_pending_raises(self):
+        submission = make_submission()
+
+        with self.assertRaises(ValidationError):
+            submission.restore()
+
+        submission.refresh_from_db()
+        self.assertEqual(submission.status, "pending")
+
+    def test_publish_rejected_raises(self):
+        submission = make_submission()
+        submission.reject("Not accepted")
+
+        with self.assertRaises(ValidationError):
+            submission.publish()
+
+        submission.refresh_from_db()
+        self.assertEqual(submission.status, "rejected")
+
+
+class TestSubmissionAdminBulkPublish(TestCase):
+    def test_publish_selected_skips_rejected(self):
+        pending = make_submission(name="Pending", email="pending@example.com")
+        approved = make_submission(name="Approved", email="approved@example.com")
+        approved.publish()
+        rejected = make_submission(name="Rejected", email="rejected@example.com")
+        rejected.reject("Not accepted")
+
+        model_admin = ParticipantSubmissionAdmin(
+            ParticipantSubmission, django_admin.site
+        )
+        request = RequestFactory().get("/")
+        with patch.object(model_admin, "message_user") as message_user:
+            model_admin.publish_selected(request, ParticipantSubmission.objects.all())
+
+        message_user.assert_called_once()
+        summary = message_user.call_args.args[1]
+        self.assertIn("1 published", summary)
+        self.assertIn("1 already published", summary)
+        self.assertIn("1 rejected (restore first)", summary)
+        pending.refresh_from_db()
+        rejected.refresh_from_db()
+        self.assertEqual(pending.status, "approved")
+        self.assertEqual(rejected.status, "rejected")
+
+
 class TestSubmissionDelete(TestCase):
     def test_delete_approved_cascades_published_records(self):
         submission = make_submission()
@@ -608,17 +691,143 @@ class TestSubmissionAdminAPI(TestCase):
         talk = Talk.objects.get(abstract=abstract)
         self.assertEqual(talk.conference, other_conference())
 
-    def test_delete_approved_via_api_cascades(self):
+    def test_delete_via_api_is_not_allowed(self):
         submission = make_submission()
         submission.publish()
 
         response = self.client.delete(SUBMISSION_URL.format(submission.id))
 
-        self.assertEqual(response.status_code, 204)
-        self.assertEqual(ParticipantSubmission.objects.count(), 0)
+        self.assertEqual(response.status_code, 405)
+        self.assertTrue(ParticipantSubmission.objects.filter(pk=submission.pk).exists())
+        self.assertEqual(Participant.objects.count(), 1)
+        self.assertEqual(Abstract.objects.count(), 1)
+        self.assertEqual(Talk.objects.count(), 1)
+
+    def test_reject_pending_sets_message_and_removes_from_review(self):
+        submission = make_submission()
+
+        response = self.client.post(
+            api(f"admin/submissions/{submission.id}/reject/"),
+            {"message": "Please provide a longer abstract."},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        submission.refresh_from_db()
+        self.assertEqual(submission.status, "rejected")
+        self.assertEqual(
+            submission.rejection_message, "Please provide a longer abstract."
+        )
+        self.assertIsNotNone(submission.reviewed_at)
         self.assertEqual(Participant.objects.count(), 0)
         self.assertEqual(Abstract.objects.count(), 0)
-        self.assertEqual(Talk.objects.count(), 0)
+
+    def test_reject_without_message_is_allowed(self):
+        submission = make_submission()
+
+        response = self.client.post(
+            api(f"admin/submissions/{submission.id}/reject/"),
+            {},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        submission.refresh_from_db()
+        self.assertEqual(submission.status, "rejected")
+        self.assertEqual(submission.rejection_message, "")
+
+    def test_reject_approved_returns_400(self):
+        submission = make_submission()
+        submission.publish()
+
+        response = self.client.post(
+            api(f"admin/submissions/{submission.id}/reject/"),
+            {"message": "no"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        submission.refresh_from_db()
+        self.assertEqual(submission.status, "approved")
+
+    def test_restore_rejected_returns_to_pending(self):
+        submission = make_submission()
+        submission.reject("Not accepted")
+
+        response = self.client.post(api(f"admin/submissions/{submission.id}/restore/"))
+
+        self.assertEqual(response.status_code, 200)
+        submission.refresh_from_db()
+        self.assertEqual(submission.status, "pending")
+        self.assertEqual(submission.rejection_message, "")
+        self.assertIsNone(submission.reviewed_at)
+
+    def test_restore_pending_returns_400(self):
+        submission = make_submission()
+
+        response = self.client.post(api(f"admin/submissions/{submission.id}/restore/"))
+
+        self.assertEqual(response.status_code, 400)
+        submission.refresh_from_db()
+        self.assertEqual(submission.status, "pending")
+
+    def test_publish_rejected_returns_400(self):
+        submission = make_submission()
+        submission.reject("Not accepted")
+
+        response = self.client.post(api(f"admin/submissions/{submission.id}/publish/"))
+
+        self.assertEqual(response.status_code, 400)
+        submission.refresh_from_db()
+        self.assertEqual(submission.status, "rejected")
+
+    def test_list_excludes_rejected_by_default_and_filters_rejected(self):
+        pending = make_submission(name="Pending Person", email="pending@example.com")
+        approved = make_submission(name="Approved Person", email="approved@example.com")
+        approved.publish()
+        rejected = make_submission(name="Rejected Person", email="rejected@example.com")
+        rejected.reject("No")
+
+        default_response = self.client.get(api("admin/submissions/"))
+        rejected_response = self.client.get(
+            api("admin/submissions/"), {"status": "rejected"}
+        )
+
+        self.assertEqual(default_response.status_code, 200)
+        self.assertEqual(
+            {row["name"] for row in default_response.data},
+            {"Pending Person", "Approved Person"},
+        )
+        self.assertEqual(rejected_response.status_code, 200)
+        self.assertEqual(
+            [row["name"] for row in rejected_response.data],
+            ["Rejected Person"],
+        )
+        self.assertNotIn(pending.name, {row["name"] for row in rejected_response.data})
+
+    def test_list_empty_status_excludes_rejected(self):
+        make_submission(name="Pending Person", email="pending2@example.com")
+        rejected = make_submission(
+            name="Rejected Person", email="rejected2@example.com"
+        )
+        rejected.reject("No")
+
+        response = self.client.get(api("admin/submissions/"), {"status": ""})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [row["name"] for row in response.data],
+            ["Pending Person"],
+        )
+
+    def test_list_invalid_status_returns_400(self):
+        make_submission()
+
+        response = self.client.get(
+            api("admin/submissions/"), {"status": "not-a-status"}
+        )
+
+        self.assertEqual(response.status_code, 400)
 
     def test_unpublish_keeps_submission_and_resets_public_state(self):
         submission = make_submission()
@@ -647,6 +856,18 @@ class TestSubmissionAdminAPI(TestCase):
         self.assertEqual(response.status_code, 400)
         submission.refresh_from_db()
         self.assertEqual(submission.status, "pending")
+
+    def test_unpublish_rejects_rejected_submission(self):
+        submission = make_submission()
+        submission.reject("Not accepted")
+
+        response = self.client.post(
+            api(f"admin/submissions/{submission.id}/unpublish/")
+        )
+
+        self.assertEqual(response.status_code, 400)
+        submission.refresh_from_db()
+        self.assertEqual(submission.status, "rejected")
 
     def test_patch_to_attend_removes_published_abstract(self):
         submission = make_submission()

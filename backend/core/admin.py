@@ -299,9 +299,13 @@ class ParticipantSubmissionAdmin(admin.ModelAdmin):
         published = 0
         failed = 0
         skipped = 0
+        rejected = 0
         for submission in queryset:
             if submission.status == "approved":
                 skipped += 1
+                continue
+            if submission.status == "rejected":
+                rejected += 1
                 continue
             try:
                 submission.publish()
@@ -318,6 +322,8 @@ class ParticipantSubmissionAdmin(admin.ModelAdmin):
             summary += f", {failed} failed"
         if skipped:
             summary += f", {skipped} already published"
+        if rejected:
+            summary += f", {rejected} rejected (restore first)"
         self.message_user(
             request,
             summary,

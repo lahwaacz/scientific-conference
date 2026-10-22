@@ -15,7 +15,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
@@ -659,6 +659,11 @@ class SubmissionTrackingView(ConferenceScopedMixin, generics.RetrieveUpdateAPIVi
             raise ValidationError(
                 {"detail": "Editing submissions is not open for this conference."}
             )
+        submission = self.get_object()
+        if submission.status == "rejected":
+            raise PermissionDenied(
+                "This submission has been rejected and can no longer be edited."
+            )
         return super().patch(request, *args, **kwargs)
 
 
@@ -671,14 +676,17 @@ class SubmissionListView(ConferenceScopedMixin, generics.ListAPIView):
     def get_queryset(self):
         qs = super().get_queryset()
         status_filter = self.request.query_params.get("status", None)
+        valid_statuses = {value for value, _ in ParticipantSubmission.STATUS_CHOICES}
         if status_filter:
+            if status_filter not in valid_statuses:
+                raise ValidationError({"status": "Unknown submission status."})
             qs = qs.filter(status=status_filter)
+        else:
+            qs = qs.exclude(status="rejected")
         return qs.order_by("sort_key", "name")
 
 
-class SubmissionDetailView(
-    ConferenceScopedMixin, generics.RetrieveUpdateDestroyAPIView
-):
+class SubmissionDetailView(ConferenceScopedMixin, generics.RetrieveUpdateAPIView):
     queryset = ParticipantSubmission.objects.all()
     serializer_class = ParticipantSubmissionSerializer
     authentication_classes = [JWTAuthentication]
@@ -775,6 +783,52 @@ def unpublish_submission(request, conference_slug, pk):
 
     submission.unpublish()
     return Response({"message": "Unpublished successfully"})
+
+
+@api_view(["POST"])
+def reject_submission(request, conference_slug, pk):
+    if not request.user.is_staff:
+        return Response({"error": "Admin only"}, status=403)
+
+    conference = get_conference_or_404(conference_slug)
+
+    try:
+        submission = ParticipantSubmission.objects.get(pk=pk, conference=conference)
+    except ParticipantSubmission.DoesNotExist:
+        return Response({"error": "Submission not found"}, status=404)
+
+    message = request.data.get("message", "") if hasattr(request.data, "get") else ""
+    if not isinstance(message, str):
+        return Response(
+            {"error": "Message must be a string"}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        submission.reject(message)
+    except DjangoValidationError as e:
+        return Response({"error": e.messages[0]}, status=400)
+
+    return Response({"message": "Rejected successfully"})
+
+
+@api_view(["POST"])
+def restore_submission(request, conference_slug, pk):
+    if not request.user.is_staff:
+        return Response({"error": "Admin only"}, status=403)
+
+    conference = get_conference_or_404(conference_slug)
+
+    try:
+        submission = ParticipantSubmission.objects.get(pk=pk, conference=conference)
+    except ParticipantSubmission.DoesNotExist:
+        return Response({"error": "Submission not found"}, status=404)
+
+    try:
+        submission.restore()
+    except DjangoValidationError as e:
+        return Response({"error": e.messages[0]}, status=400)
+
+    return Response({"message": "Restored to pending"})
 
 
 # Admin: publish submission

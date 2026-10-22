@@ -394,6 +394,7 @@ class ParticipantSubmission(models.Model):
     STATUS_CHOICES = [
         ("pending", "Pending Review"),
         ("approved", "Published"),
+        ("rejected", "Rejected"),
     ]
 
     conference = models.ForeignKey(
@@ -425,6 +426,9 @@ class ParticipantSubmission(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     submitted_at = models.DateTimeField(auto_now_add=True)
     reviewed_at = models.DateTimeField(blank=True, null=True)
+    rejection_message = models.TextField(
+        blank=True, help_text="Optional message shown to the participant"
+    )
     admin_notes = models.TextField(blank=True, help_text="Internal notes for admins")
     info = models.TextField(blank=True, help_text="Additional info from participant")
     is_student = models.BooleanField(default=False)
@@ -673,7 +677,10 @@ class ParticipantSubmission(models.Model):
 
     @transaction.atomic
     def publish(self):
-        from django.utils import timezone
+        if self.status == "rejected":
+            raise ValidationError(
+                "Rejected submissions cannot be published; restore them first."
+            )
 
         participant, _ = self._sync_participant()
         abstract = self._sync_abstract(participant)
@@ -682,9 +689,36 @@ class ParticipantSubmission(models.Model):
         self.published_abstract = abstract
         self.status = "approved"
         self.reviewed_at = timezone.now()
+        self.rejection_message = ""
         self.save()
 
         return participant, abstract, talk
+
+    @transaction.atomic
+    def reject(self, message=""):
+        if self.status != "pending":
+            raise ValidationError("Only pending submissions can be rejected.")
+
+        if (
+            self.published_participant is not None
+            or self.published_abstract is not None
+        ):
+            self.unpublish()
+
+        self.status = "rejected"
+        self.reviewed_at = timezone.now()
+        self.rejection_message = message.strip()
+        self.save(update_fields=["status", "reviewed_at", "rejection_message"])
+
+    @transaction.atomic
+    def restore(self):
+        if self.status != "rejected":
+            raise ValidationError("Only rejected submissions can be restored.")
+
+        self.status = "pending"
+        self.reviewed_at = None
+        self.rejection_message = ""
+        self.save(update_fields=["status", "reviewed_at", "rejection_message"])
 
     @transaction.atomic
     def unpublish(self):
@@ -702,12 +736,14 @@ class ParticipantSubmission(models.Model):
         self.published_participant = None
         self.status = "pending"
         self.reviewed_at = None
+        self.rejection_message = ""
         self.save(
             update_fields=[
                 "published_abstract",
                 "published_participant",
                 "status",
                 "reviewed_at",
+                "rejection_message",
             ]
         )
 

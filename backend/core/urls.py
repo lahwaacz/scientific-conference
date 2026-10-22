@@ -36,6 +36,8 @@ from .views import (
     generate_badges_pdf,
     generate_program_pdf,
     publish_submission,
+    reject_submission,
+    restore_submission,
     unpublish_submission,
     update_session,
 )
@@ -91,6 +93,16 @@ urlpatterns = [
         "admin/submissions/<int:pk>/unpublish/",
         unpublish_submission,
         name="submission-unpublish",
+    ),
+    path(
+        "admin/submissions/<int:pk>/reject/",
+        reject_submission,
+        name="submission-reject",
+    ),
+    path(
+        "admin/submissions/<int:pk>/restore/",
+        restore_submission,
+        name="submission-restore",
     ),
     path("hiking/", HikingRouteListView.as_view()),
     path("hiking/admin/", HikingRouteEditView.as_view()),

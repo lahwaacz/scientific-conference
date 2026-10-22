@@ -51,6 +51,7 @@ _EXCLUDED_FIELDS = frozenset(
         "status",
         "submitted_at",
         "reviewed_at",
+        "rejection_message",
         "published_participant",
         "published_abstract",
         "tracking_token",

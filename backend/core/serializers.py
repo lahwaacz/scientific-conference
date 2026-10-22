@@ -329,6 +329,7 @@ class ParticipantSubmissionSerializer(serializers.ModelSerializer):
             "status",
             "submitted_at",
             "reviewed_at",
+            "rejection_message",
             "admin_notes",
             "published_participant",
             "published_abstract",
@@ -339,8 +340,10 @@ class ParticipantSubmissionSerializer(serializers.ModelSerializer):
             "linked_user",
         ]
         read_only_fields = [
+            "status",
             "submitted_at",
             "reviewed_at",
+            "rejection_message",
             "published_participant",
             "published_abstract",
             "stay_duration",
@@ -417,9 +420,10 @@ class ParticipantSubmissionSerializer(serializers.ModelSerializer):
 
 
 class ParticipantSubmissionCreateSerializer(ParticipantSubmissionSerializer):
-    """Anonymous create view: `status`, `admin_notes` and `linked_user` are
-    read-only so an unauthenticated poster cannot pre-approve a submission,
-    inject internal notes or claim someone else's account."""
+    """Anonymous create view: `status`, `rejection_message`, `admin_notes`
+    and `linked_user` are read-only so an unauthenticated poster cannot
+    pre-approve a submission, inject an organizer message, inject internal
+    notes or claim someone else's account."""
 
     # The child MUST redeclare the field: read_only_fields only feed
     # extra_kwargs, and extra_kwargs are applied solely to auto-built fields
@@ -431,7 +435,6 @@ class ParticipantSubmissionCreateSerializer(ParticipantSubmissionSerializer):
         fields = [*ParticipantSubmissionSerializer.Meta.fields]
         read_only_fields = [
             *ParticipantSubmissionSerializer.Meta.read_only_fields,
-            "status",
             "admin_notes",
         ]
 
@@ -461,6 +464,7 @@ class ParticipantTrackingSerializer(serializers.ModelSerializer):
             "status",
             "submitted_at",
             "reviewed_at",
+            "rejection_message",
             "info",
             "is_student",
         ]
@@ -492,6 +496,7 @@ class ParticipantTrackingUpdateSerializer(serializers.ModelSerializer):
             "status",
             "submitted_at",
             "reviewed_at",
+            "rejection_message",
             "info",
             "is_student",
         ]
@@ -500,6 +505,7 @@ class ParticipantTrackingUpdateSerializer(serializers.ModelSerializer):
             "status",
             "submitted_at",
             "reviewed_at",
+            "rejection_message",
         ]
 
     def validate(self, data):

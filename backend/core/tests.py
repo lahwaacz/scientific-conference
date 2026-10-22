@@ -355,10 +355,7 @@ class TestPublishSubmissionAPI(APITestCase):
         self.assertIsNotNone(self.submission.published_abstract)
         self.assertEqual(Talk.objects.count(), 1)
 
-    def test_admin_edit_endpoint_sets_admin_controlled_fields(self):
-        # the admin review workflow (EditSubmissionModal) PATCHes these
-        # through SubmissionDetailView; the read-only split only applies
-        # to the anonymous create view
+    def test_admin_edit_endpoint_ignores_status_and_sets_admin_notes(self):
         url = api(f"admin/submissions/{self.submission.id}/")
         response = self.client.patch(
             url,
@@ -368,7 +365,7 @@ class TestPublishSubmissionAPI(APITestCase):
 
         self.assertEqual(response.status_code, 200)
         self.submission.refresh_from_db()
-        self.assertEqual(self.submission.status, "approved")
+        self.assertEqual(self.submission.status, "pending")
         self.assertEqual(self.submission.admin_notes, "verified by phone")
 
     def test_publish_endpoint_rejects_non_staff(self):

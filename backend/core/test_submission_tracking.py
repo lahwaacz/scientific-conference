@@ -16,7 +16,7 @@ from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .conftest import api
-from .models import ParticipantSubmission
+from .models import Abstract, Participant, ParticipantSubmission, Talk
 from .serializers import (
     ParticipantSubmissionCreateSerializer,
     ParticipantSubmissionSerializer,
@@ -166,6 +166,21 @@ class TestAdminSerializerTrackingFields:
         assert submission.tracking_token == original_token
         assert submission.participant_reference == (f"{wsc.slug}-{submission.pk:04d}")
 
+    def test_status_and_rejection_message_are_read_only_on_update(self, wsc):
+        submission = make_submission(wsc)
+
+        serializer = ParticipantSubmissionSerializer(
+            submission,
+            data={"status": "rejected", "rejection_message": "forged"},
+            partial=True,
+        )
+        assert serializer.is_valid(), serializer.errors
+        serializer.save()
+        submission.refresh_from_db()
+
+        assert submission.status == "pending"
+        assert submission.rejection_message == ""
+
     def test_linked_user_settable_by_pk_and_nullable(self, wsc):
         staff = User.objects.create_user(username="linkme", password="x")
         submission = make_submission(wsc)
@@ -307,6 +322,7 @@ class TestTrackingReadSerializer:
             "status",
             "submitted_at",
             "reviewed_at",
+            "rejection_message",
             "info",
             "is_student",
         }
@@ -426,6 +442,7 @@ class TestTrackingUpdateSerializer:
             "name": "New Name",
             "status": "approved",
             "admin_notes": "hack",
+            "rejection_message": "hack",
             "tracking_token": "forged",
             "linked_user": staff.pk,
             "reviewed_at": "2026-01-01T00:00:00Z",
@@ -442,6 +459,7 @@ class TestTrackingUpdateSerializer:
         assert submission.name == "New Name"
         assert submission.status == "pending"
         assert submission.admin_notes == ""
+        assert submission.rejection_message == ""
         assert submission.tracking_token == original_token
         assert submission.linked_user is None
         assert submission.reviewed_at is None
@@ -665,6 +683,35 @@ class TestTrackingEndpoint:
         assert body["participant_reference"] == submission.participant_reference
         assert "admin_notes" not in body
 
+    def test_get_rejected_includes_message_and_status(self, wsc):
+        submission = make_submission(wsc)
+        submission.reject("Please provide a longer abstract.")
+
+        response = self.client.get(api(f"track/{submission.tracking_token}/"))
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["status"] == "rejected"
+        assert body["rejection_message"] == "Please provide a longer abstract."
+
+    def test_patch_rejected_submission_is_forbidden(self, wsc):
+        submission = make_submission(wsc)
+        submission.reject("Not accepted")
+
+        response = self.client.patch(
+            api(f"track/{submission.tracking_token}/"),
+            {"affiliation": "MIT"},
+            format="json",
+        )
+
+        assert response.status_code == 403
+        assert response.json()["detail"] == (
+            "This submission has been rejected and can no longer be edited."
+        )
+        submission.refresh_from_db()
+        assert submission.affiliation == "CTU"
+        assert submission.status == "rejected"
+
     def test_patch_approved_reverts_to_pending_and_leaves_published_rows(self, wsc):
         submission = make_submission(wsc)
         submission.publish()
@@ -687,6 +734,40 @@ class TestTrackingEndpoint:
         assert submission.reviewed_at is None
         participant.refresh_from_db()
         assert participant.name == "Jane Doe"
+
+    def test_reject_after_participant_edit_removes_public_rows(self, wsc):
+        submission = make_submission(wsc)
+        submission.publish()
+        submission.refresh_from_db()
+        assert submission.status == "approved"
+
+        response = self.client.patch(
+            api(f"track/{submission.tracking_token}/"),
+            {"abstract_text": "Participant-edited text"},
+            format="json",
+        )
+        assert response.status_code == 200
+
+        submission.refresh_from_db()
+        assert submission.status == "pending"
+        assert submission.published_participant is not None
+        assert submission.published_abstract is not None
+
+        staff = make_staff_client()
+        response = staff.post(
+            api(f"admin/submissions/{submission.id}/reject/"),
+            {"message": "Not accepted"},
+            format="json",
+        )
+
+        assert response.status_code == 200
+        submission.refresh_from_db()
+        assert submission.status == "rejected"
+        assert submission.published_participant is None
+        assert submission.published_abstract is None
+        assert Participant.objects.count() == 0
+        assert Abstract.objects.count() == 0
+        assert Talk.objects.count() == 0
 
     def test_patch_allowed_when_registration_closed_and_no_edit_deadline(self, wsc):
         submission = make_submission(wsc)

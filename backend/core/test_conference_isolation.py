@@ -183,6 +183,8 @@ EXPECTED_ROUTE_TAILS = frozenset(
         "admin/submissions/<int:pk>/",
         "admin/submissions/<int:pk>/publish/",
         "admin/submissions/<int:pk>/unpublish/",
+        "admin/submissions/<int:pk>/reject/",
+        "admin/submissions/<int:pk>/restore/",
         "hiking/",
         "hiking/admin/",
         "hiking/stops/",
@@ -314,6 +316,8 @@ UNKNOWN_SLUG_MATRIX = [
     ("delete", "admin/submissions/1/", None),
     ("post", "admin/submissions/1/publish/", None),
     ("post", "admin/submissions/1/unpublish/", None),
+    ("post", "admin/submissions/1/reject/", {"message": "x"}),
+    ("post", "admin/submissions/1/restore/", None),
     ("get", "hiking/", None),
     ("post", "hiking/admin/", {"name": "X"}),
     ("patch", "hiking/admin/", {"id": 1}),
@@ -383,6 +387,11 @@ class TestCrossConferencePkAccess(ConferencePairTestCase):
             api(f"admin/submissions/{sub_pk}/publish/", slug=SLUG_B)
         )
         self.assertEqual(response.status_code, 404)
+        for action in ("reject", "restore"):
+            response = self.client.post(
+                api(f"admin/submissions/{sub_pk}/{action}/", slug=SLUG_B)
+            )
+            self.assertEqual(response.status_code, 404)
         self.a.submission.refresh_from_db()
         self.assertEqual(self.a.submission.status, "approved")
 
