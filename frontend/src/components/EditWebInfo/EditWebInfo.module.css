@@ -1,11 +1,3 @@
-.editWebInfo {
-  padding: 20px 80px 40px 80px;
-  max-width: 1400px;
-  margin: 0 auto;
-  min-height: 60vh;
-  background-color: var(--accent-color);
-}
-
 .backBtn {
   background-color: var(--secondary-color);
   color: white;
@@ -19,8 +11,6 @@
 }
 
 .container {
-  padding: 35px 80px;
-  max-width: 1200px;
   margin: 0 auto;
   background-color: var(--accent-color);
 }

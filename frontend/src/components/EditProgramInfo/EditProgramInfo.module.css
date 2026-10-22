@@ -16,8 +16,6 @@
 }
 
 .container {
-  padding: 35px 80px;
-  max-width: 1200px;
   margin: 0 auto;
   background-color: var(--accent-color);
 }

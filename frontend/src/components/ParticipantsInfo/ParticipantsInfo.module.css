@@ -1,8 +1,5 @@
 .container {
-  padding: 20px 80px 40px 80px;
-  max-width: 1400px;
   margin: 0 auto;
-  min-height: 60vh;
   background-color: var(--accent-color);
 }
 

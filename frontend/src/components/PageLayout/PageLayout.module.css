@@ -1,0 +1,12 @@
+.page,
+.home {
+  width: 100%;
+  box-sizing: border-box;
+  background-color: var(--accent-color);
+  overflow-x: clip;
+  flex: 1;
+}
+
+.page {
+  padding: clamp(24px, 6vw, 50px) clamp(16px, 8vw, 80px);
+}

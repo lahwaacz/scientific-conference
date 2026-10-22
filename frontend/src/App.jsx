@@ -18,6 +18,8 @@ import Header from "./components/Header/Header";
 import Hiking from "./components/Hiking/Hiking";
 import { useConferenceExists } from "./components/hooks/useConferenceExists";
 import Landing from "./components/Landing/Landing";
+import NotFound from "./components/NotFound/NotFound";
+import PageLayout from "./components/PageLayout/PageLayout";
 import ParticipantsInfo from "./components/ParticipantsInfo/ParticipantsInfo";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import Loader from "./components/ui/Loader/Loader";
@@ -57,114 +59,118 @@ function App() {
       <ScrollToTop />
       <Container>
         <Header />
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/participants" element={<Participants />} />
-          <Route path="/abstracts" element={<AbstractsPage />} />
-          <Route path="/registration" element={<RegistrationPage />} />
-          <Route path="/track/:trackingToken" element={<TrackingPage />} />
-          <Route path="/program" element={<ProgramPage />} />
-          <Route path="/venue" element={<Venue />} />
-          <Route path="/accommodation" element={<Accommodation />} />
-          <Route path="/hiking" element={<Hiking />} />
-          {/* Protected Admin Routes */}
-          <Route
-            path="/admin-panel"
-            element={
-              <ProtectedRoute>
-                <AdminPanel />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin-panel/participants-info"
-            element={
-              <ProtectedRoute>
-                <ParticipantsInfo />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin-panel/edit-participants"
-            element={
-              <ProtectedRoute>
-                <EditParticipants />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin-panel/edit-program"
-            element={
-              <ProtectedRoute>
-                <EditProgram />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin-panel/edit-program/info"
-            element={
-              <ProtectedRoute>
-                <EditProgramInfo />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin-panel/edit-web-info"
-            element={
-              <ProtectedRoute>
-                <EditWebInfo />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin-panel/edit-web-info/home"
-            element={
-              <ProtectedRoute>
-                <EditWebInfoHome />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin-panel/edit-web-info/registration"
-            element={
-              <ProtectedRoute>
-                <EditWebInfoRegistration />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin-panel/edit-web-info/venue"
-            element={
-              <ProtectedRoute>
-                <EditWebInfoVenue />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin-panel/edit-web-info/accommodation"
-            element={
-              <ProtectedRoute>
-                <EditWebInfoAccommodation />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin-panel/edit-web-info/hiking"
-            element={
-              <ProtectedRoute>
-                <EditWebInfoHiking />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin-panel/edit-web-info/footer"
-            element={
-              <ProtectedRoute>
-                <EditWebInfoFooter />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
+        <PageLayout>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/participants" element={<Participants />} />
+            <Route path="/abstracts" element={<AbstractsPage />} />
+            <Route path="/registration" element={<RegistrationPage />} />
+            <Route path="/track/:trackingToken" element={<TrackingPage />} />
+            <Route path="/program" element={<ProgramPage />} />
+            <Route path="/venue" element={<Venue />} />
+            <Route path="/accommodation" element={<Accommodation />} />
+            <Route path="/hiking" element={<Hiking />} />
+            {/* Protected Admin Routes */}
+            <Route
+              path="/admin-panel"
+              element={
+                <ProtectedRoute>
+                  <AdminPanel />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin-panel/participants-info"
+              element={
+                <ProtectedRoute>
+                  <ParticipantsInfo />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin-panel/edit-participants"
+              element={
+                <ProtectedRoute>
+                  <EditParticipants />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin-panel/edit-program"
+              element={
+                <ProtectedRoute>
+                  <EditProgram />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin-panel/edit-program/info"
+              element={
+                <ProtectedRoute>
+                  <EditProgramInfo />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin-panel/edit-web-info"
+              element={
+                <ProtectedRoute>
+                  <EditWebInfo />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin-panel/edit-web-info/home"
+              element={
+                <ProtectedRoute>
+                  <EditWebInfoHome />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin-panel/edit-web-info/registration"
+              element={
+                <ProtectedRoute>
+                  <EditWebInfoRegistration />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin-panel/edit-web-info/venue"
+              element={
+                <ProtectedRoute>
+                  <EditWebInfoVenue />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin-panel/edit-web-info/accommodation"
+              element={
+                <ProtectedRoute>
+                  <EditWebInfoAccommodation />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin-panel/edit-web-info/hiking"
+              element={
+                <ProtectedRoute>
+                  <EditWebInfoHiking />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin-panel/edit-web-info/footer"
+              element={
+                <ProtectedRoute>
+                  <EditWebInfoFooter />
+                </ProtectedRoute>
+              }
+            />
+            {/* Catch-all: unmatched conference hash routes */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </PageLayout>
         <Footer />
       </Container>
     </Router>

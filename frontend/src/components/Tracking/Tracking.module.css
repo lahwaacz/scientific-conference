@@ -1,6 +1,5 @@
 .section {
   background-color: var(--accent-color);
-  padding: clamp(24px, 6vw, 60px) clamp(16px, 8vw, 80px);
   box-sizing: border-box;
   width: 100%;
   overflow-x: hidden;
