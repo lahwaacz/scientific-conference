@@ -78,6 +78,15 @@ To create a production build, run:
 npm run build
 ```
 
+## Admin Authentication
+
+The admin panel is protected by a JWT login. The login window (`AdminLoginModal`) first asks the backend which methods are enabled (`GET /api/auth/config/`) and renders only those:
+
+- **Sign in with GitLab** redirects the browser to the university GitLab. GitLab redirects back to the `/oauth/callback` page of the deployment, which exchanges the authorization code; the backend sets HttpOnly `conference-jwt-access` and `conference-jwt-refresh` cookies and the page forwards to the admin panel of the conference the sign-in started from. That page (`OAuthCallback`) is a path-level route outside the hash router, because the callback URL is a real path, not a hash fragment.
+- The password form (username and password) posts directly to the login endpoint; it appears only while the deployment keeps password sign-in enabled. When GitLab sign-in is enabled as well, the form is collapsed under the **Special account** section; in a password-only deployment (GitLab sign-in disabled), the login window shows the form directly.
+
+JWTs are kept in HttpOnly cookies and are never read or stored by the SPA. `fetchWithAuth` sends `credentials: "include"`, adds `X-CSRFToken` from the non-HttpOnly `csrftoken` cookie for unsafe methods, and refreshes on 401 through the refresh cookie. Logout posts to the backend with cookies only; the backend blacklists the refresh cookie, clears both JWT cookies and ends the Django session.
+
 ## Testing
 
 To run the frontend test suite, use:

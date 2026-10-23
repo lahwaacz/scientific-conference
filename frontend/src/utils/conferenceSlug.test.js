@@ -196,3 +196,37 @@ describe("conferenceUrl", () => {
     );
   });
 });
+
+// isOAuthCallbackPath reads the live window.location.pathname (no init)
+// and must hold regardless of the configured deployment base.
+describe("isOAuthCallbackPath", () => {
+  test("true for the deployed callback path", async () => {
+    await loadSlugModule(DEPLOYED_BASE);
+    setLocation({ pathname: "/conference/oauth/callback" });
+    expect(slugModule.isOAuthCallbackPath()).toBe(true);
+  });
+
+  test("true for the deployed callback path with a trailing slash", async () => {
+    await loadSlugModule(DEPLOYED_BASE);
+    setLocation({ pathname: "/conference/oauth/callback/" });
+    expect(slugModule.isOAuthCallbackPath()).toBe(true);
+  });
+
+  test("true for the bare dev callback path", async () => {
+    await loadSlugModule();
+    setLocation({ pathname: "/oauth/callback" });
+    expect(slugModule.isOAuthCallbackPath()).toBe(true);
+  });
+
+  test("false for a conference path", async () => {
+    await loadSlugModule(DEPLOYED_BASE);
+    setLocation({ pathname: "/conference/wsc2026/" });
+    expect(slugModule.isOAuthCallbackPath()).toBe(false);
+  });
+
+  test("tolerates a pathname-less location object", async () => {
+    await loadSlugModule();
+    setLocation({ hash: "#/", reload: vi.fn() });
+    expect(slugModule.isOAuthCallbackPath()).toBe(false);
+  });
+});

@@ -306,14 +306,15 @@ class TestGlobalEndpoints(TestCase):
             format="json",
         )
         self.assertEqual(response.status_code, 200)
-        self.assertIn("access", response.json())
-        refresh = response.json()["refresh"]
+        body = response.json()
+        self.assertNotIn("access", body)
+        self.assertNotIn("refresh", body)
+        self.assertTrue(response.cookies["conference-jwt-access"]["httponly"])
 
-        response = self.client.post(
-            "/api/auth/refresh/", {"refresh": refresh}, format="json"
-        )
+        response = self.client.post("/api/auth/refresh/", {}, format="json")
         self.assertEqual(response.status_code, 200)
-        self.assertIn("access", response.json())
+        self.assertNotIn("access", response.json())
+        self.assertIn("conference-jwt-access", response.cookies)
 
     def test_slug_prefix_does_not_shadow_auth(self):
         alpha_conference()

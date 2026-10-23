@@ -3,6 +3,7 @@ import io
 import os
 import traceback
 
+from dj_rest_auth.jwt_auth import JWTCookieAuthentication
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -20,7 +21,6 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from .models import (
     Abstract,
@@ -129,7 +129,7 @@ class ConferenceListView(generics.ListAPIView):
 
 def generate_program_pdf(request, conference_slug):
     try:
-        auth = JWTAuthentication()
+        auth = JWTCookieAuthentication()
         result = auth.authenticate(request)
         if result is None or not result[0].is_staff:
             return HttpResponse(status=403)
@@ -390,7 +390,7 @@ accommodation_info_view = AccommodationInfoView.as_view()
 
 def generate_badges_pdf(request, conference_slug):
     try:
-        auth = JWTAuthentication()
+        auth = JWTCookieAuthentication()
         result = auth.authenticate(request)
         if result is None or not result[0].is_staff:
             return HttpResponse(status=403)
@@ -591,7 +591,7 @@ class PersonListAPIView(ConferenceScopedMixin, generics.ListCreateAPIView):
     def get_authenticators(self):
         if self.request.method == "GET":
             return []
-        return [JWTAuthentication()]
+        return [JWTCookieAuthentication()]
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -604,14 +604,14 @@ class PersonListAPIView(ConferenceScopedMixin, generics.ListCreateAPIView):
 class PersonDetailView(ConferenceScopedMixin, generics.RetrieveUpdateDestroyAPIView):
     queryset = Person.objects.all()
     serializer_class = PersonAdminSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTCookieAuthentication]
     permission_classes = [IsAdminUser]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
 
 # Admin Panel - JWT
 class AdminPanelView(ConferenceScopedMixin, APIView):
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTCookieAuthentication]
     permission_classes = [IsAdminUser]
 
     def get(self, request, *args, **kwargs):
@@ -670,7 +670,7 @@ class SubmissionTrackingView(ConferenceScopedMixin, generics.RetrieveUpdateAPIVi
 class SubmissionListView(ConferenceScopedMixin, generics.ListAPIView):
     queryset = ParticipantSubmission.objects.all()
     serializer_class = ParticipantSubmissionSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTCookieAuthentication]
     permission_classes = [IsAdminUser]
 
     def get_queryset(self):
@@ -689,7 +689,7 @@ class SubmissionListView(ConferenceScopedMixin, generics.ListAPIView):
 class SubmissionDetailView(ConferenceScopedMixin, generics.RetrieveUpdateAPIView):
     queryset = ParticipantSubmission.objects.all()
     serializer_class = ParticipantSubmissionSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTCookieAuthentication]
     permission_classes = [IsAdminUser]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
@@ -698,7 +698,7 @@ class SubmissionDetailView(ConferenceScopedMixin, generics.RetrieveUpdateAPIView
 class UnscheduledTalksView(ConferenceScopedMixin, generics.ListAPIView):
     queryset = Talk.objects.all()
     serializer_class = TalkSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTCookieAuthentication]
     permission_classes = [IsAdminUser]
 
     def get_queryset(self):
@@ -715,7 +715,7 @@ class UnscheduledTalksView(ConferenceScopedMixin, generics.ListAPIView):
 class TalkScheduleUpdateView(ConferenceScopedMixin, generics.UpdateAPIView):
     queryset = Talk.objects.all()
     serializer_class = TalkSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTCookieAuthentication]
     permission_classes = [IsAdminUser]
     http_method_names = ["patch"]
 
@@ -883,7 +883,7 @@ def publish_submission(request, conference_slug, pk):
 class UnscheduledTalkDeleteView(ConferenceScopedMixin, generics.DestroyAPIView):
     queryset = Talk.objects.all()
     serializer_class = TalkSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTCookieAuthentication]
     permission_classes = [IsAdminUser]
 
     def destroy(self, request, *args, **kwargs):
@@ -911,7 +911,7 @@ class UnscheduledTalkDeleteView(ConferenceScopedMixin, generics.DestroyAPIView):
 class ConferenceDayDeleteView(ConferenceScopedMixin, generics.DestroyAPIView):
     queryset = ConferenceDay.objects.all()
     serializer_class = ConferenceDaySerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTCookieAuthentication]
     permission_classes = [IsAdminUser]
 
     def destroy(self, request, *args, **kwargs):
@@ -933,7 +933,7 @@ def _get_scoped_day(day_id, conference):
 class ScheduleBreakCreateView(ConferenceScopedMixin, generics.CreateAPIView):
     queryset = Talk.objects.all()
     serializer_class = TalkSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTCookieAuthentication]
     permission_classes = [IsAdminUser]
 
     def create(self, request, *args, **kwargs):
@@ -974,7 +974,7 @@ class ScheduleBreakCreateView(ConferenceScopedMixin, generics.CreateAPIView):
 class SessionCreateView(ConferenceScopedMixin, generics.CreateAPIView):
     queryset = Session.objects.all()
     serializer_class = SessionSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTCookieAuthentication]
     permission_classes = [IsAdminUser]
 
     def create(self, request, *args, **kwargs):
@@ -989,7 +989,7 @@ class SessionCreateView(ConferenceScopedMixin, generics.CreateAPIView):
 class SessionListView(ConferenceScopedMixin, generics.ListAPIView):
     queryset = Session.objects.all()
     serializer_class = SessionSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTCookieAuthentication]
     permission_classes = [IsAdminUser]
 
     def get_queryset(self):
@@ -1003,14 +1003,14 @@ class SessionListView(ConferenceScopedMixin, generics.ListAPIView):
 class ConferenceDayCreateView(ConferenceScopedMixin, generics.CreateAPIView):
     queryset = ConferenceDay.objects.all()
     serializer_class = ConferenceDaySerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTCookieAuthentication]
     permission_classes = [IsAdminUser]
 
 
 class SessionUpdateTimeView(ConferenceScopedMixin, generics.UpdateAPIView):
     queryset = Session.objects.all()
     serializer_class = SessionSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTCookieAuthentication]
     permission_classes = [IsAdminUser]
     http_method_names = ["patch"]
 
@@ -1021,7 +1021,7 @@ class HikingRouteListView(ConferenceScopedMixin, generics.ListAPIView):
 
 
 class HikingRouteEditView(ConferenceScopedMixin, APIView):
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTCookieAuthentication]
     permission_classes = [IsAdminUser]
 
     def post(self, request, *args, **kwargs):
@@ -1062,7 +1062,7 @@ class HikingRouteEditView(ConferenceScopedMixin, APIView):
 
 
 class HikingStopEditView(ConferenceScopedMixin, APIView):
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTCookieAuthentication]
     permission_classes = [IsAdminUser]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
@@ -1099,7 +1099,7 @@ class ConferenceInfoView(ConferenceScopedMixin, APIView):
 
 
 class ConferenceInfoEditView(ConferenceScopedMixin, APIView):
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTCookieAuthentication]
     permission_classes = [IsAdminUser]
     # Multipart so the SPA can PATCH FormData with optional photo files
     # (card_photo / hero_photo).

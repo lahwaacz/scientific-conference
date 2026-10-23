@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { buildApiUrl } from "../../utils/api";
+import { fetchWithAuth } from "../../utils/api";
 import {
   allowedContributionTypes,
   defaultContributionType,
@@ -203,7 +203,7 @@ export default function RegistrationForm() {
           submitData.append("photo", photo);
         }
 
-        const response = await fetch(buildApiUrl("/api/submit/"), {
+        const response = await fetchWithAuth("/api/submit/", {
           method: "POST",
           body: submitData,
         });

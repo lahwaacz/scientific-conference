@@ -128,10 +128,27 @@ export default function AdminPanel() {
     fetchAdminData();
   }, []);
 
-  function handleLogout() {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    navigate("/");
+  async function handleLogout() {
+    try {
+      const res = await fetchWithAuth("/api/auth/logout/", { method: "POST" });
+      if (!res.ok) {
+        openModal({
+          title: "Logout failed",
+          message: "The server could not end the session. Please try again.",
+          type: "danger",
+          onConfirm: closeModal,
+        });
+        return;
+      }
+      navigate("/");
+    } catch (error) {
+      openModal({
+        title: "Connection error",
+        message: error.message || "Server is unreachable.",
+        type: "danger",
+        onConfirm: closeModal,
+      });
+    }
   }
 
   if (error) {

@@ -10,18 +10,29 @@ const RAW_API_BASE_URL =
 export const API_BASE_URL = RAW_API_BASE_URL.replace(/\/$/, "");
 
 const GLOBAL_API_PREFIXES = ["/api/auth/", "/api/conferences/"];
+const CSRF_COOKIE_NAME = "csrftoken";
+const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+function readCookie(name) {
+  const prefix = `${name}=`;
+  const match = document.cookie
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(prefix));
+  return match ? decodeURIComponent(match.slice(prefix.length)) : "";
+}
 
 function reloadAppAtHomePage() {
   window.location.hash = "/";
   window.location.reload();
 }
 
-const processQueue = (error, token = null) => {
+const processQueue = (error) => {
   failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
     } else {
-      prom.resolve(token);
+      prom.resolve();
     }
   });
 
@@ -42,19 +53,23 @@ export function buildApiUrl(path) {
   return `${API_BASE_URL}${normalized}`;
 }
 
-function buildHeaders(options, token) {
+function buildHeaders(options) {
   const isFormData = options.body instanceof FormData;
+  const headers = { ...options.headers };
+  const method = (options.method || "GET").toUpperCase();
+  const csrfToken = UNSAFE_METHODS.has(method)
+    ? readCookie(CSRF_COOKIE_NAME)
+    : "";
 
-  return {
-    ...options.headers,
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...(isFormData
-      ? {}
-      : {
-          "Content-Type":
-            options.headers?.["Content-Type"] || "application/json",
-        }),
-  };
+  if (csrfToken && !headers["X-CSRFToken"] && !headers["x-csrftoken"]) {
+    headers["X-CSRFToken"] = csrfToken;
+  }
+
+  if (!isFormData) {
+    headers["Content-Type"] = headers["Content-Type"] || "application/json";
+  }
+
+  return headers;
 }
 
 // Path part of the API base without the origin or surrounding slashes
@@ -82,80 +97,57 @@ export function buildMediaUrl(path) {
 }
 
 export async function refreshAccessToken() {
-  const refreshToken = localStorage.getItem("refresh_token");
-
-  if (!refreshToken) {
-    return null;
-  }
-
   try {
     const response = await fetch(buildApiUrl("/api/auth/refresh/"), {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        refresh: refreshToken,
-      }),
+      credentials: "include",
+      headers: buildHeaders({ method: "POST" }),
     });
 
     if (!response.ok) {
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
       reloadAppAtHomePage();
-      return null;
+      return false;
     }
 
-    const data = await response.json();
-    localStorage.setItem("access_token", data.access);
-    return data.access;
+    return true;
   } catch (error) {
     console.error("Token refresh failed:", error);
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
     reloadAppAtHomePage();
-    return null;
+    return false;
   }
 }
 
-export async function fetchWithAuth(url, options = {}) {
-  const token = localStorage.getItem("access_token");
-  const finalUrl = buildApiUrl(url);
-
-  const response = await fetch(finalUrl, {
+function fetchWithCookies(url, options) {
+  return fetch(url, {
+    credentials: "include",
     ...options,
-    headers: buildHeaders(options, token),
+    headers: buildHeaders(options),
   });
+}
+
+export async function fetchWithAuth(url, options = {}) {
+  const finalUrl = buildApiUrl(url);
+  const response = await fetchWithCookies(finalUrl, options);
 
   if (response.status === 401) {
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
         failedQueue.push({ resolve, reject });
-      }).then((newToken) => {
-        return fetch(finalUrl, {
-          ...options,
-          headers: buildHeaders(options, newToken),
-        });
-      });
+      }).then(() => fetchWithCookies(finalUrl, options));
     }
 
     isRefreshing = true;
 
     try {
-      const newToken = await refreshAccessToken();
+      const refreshed = await refreshAccessToken();
 
-      if (newToken) {
-        processQueue(null, newToken);
-
-        return fetch(finalUrl, {
-          ...options,
-          headers: buildHeaders(options, newToken),
-        });
-      } else {
-        processQueue(new Error("Token refresh failed"), null);
-        reloadAppAtHomePage();
-        return response;
+      if (refreshed) {
+        processQueue(null);
+        return fetchWithCookies(finalUrl, options);
       }
+
+      processQueue(new Error("Token refresh failed"));
+      return response;
     } finally {
       isRefreshing = false;
     }

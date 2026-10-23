@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { buildApiUrl, buildMediaUrl } from "../../utils/api";
+import { buildApiUrl, buildMediaUrl, fetchWithAuth } from "../../utils/api";
 import {
   allowedContributionTypes,
   contributionTypeLabel,
@@ -231,7 +231,7 @@ export default function Tracking() {
     }
     setSaving(true);
     try {
-      const response = await fetch(trackUrl, {
+      const response = await fetchWithAuth(trackUrl, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ photo: null }),
@@ -275,9 +275,12 @@ export default function Tracking() {
           submitData.append(key, value);
         });
         submitData.append("photo", photo);
-        response = await fetch(trackUrl, { method: "PATCH", body: submitData });
+        response = await fetchWithAuth(trackUrl, {
+          method: "PATCH",
+          body: submitData,
+        });
       } else {
-        response = await fetch(trackUrl, {
+        response = await fetchWithAuth(trackUrl, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),

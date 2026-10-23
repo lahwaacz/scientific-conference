@@ -1,0 +1,70 @@
+/*
+ * Standalone page rendered outside the conference Header/Footer shell, so it
+ * centers its own card on a plain backdrop (mirrors AdminLoginModal's card
+ * language: radius, shadow, error block).
+ */
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background-color: #f5f5f5;
+  box-sizing: border-box;
+}
+
+.card {
+  background: white;
+  border-radius: 16px;
+  padding: 40px;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+.title {
+  font-family: var(--font-title);
+  font-size: 28px;
+  font-weight: 500;
+  text-transform: uppercase;
+  color: var(--primary-color);
+}
+
+.error {
+  color: #dc3545;
+  font-size: 14px;
+  padding: 8px 12px;
+  background-color: #ffe6e6;
+  border-radius: 6px;
+  border-left: 3px solid #dc3545;
+  text-align: left;
+}
+
+.homeLink {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 14px;
+  font-family: var(--font-title);
+  font-size: 16px;
+  font-weight: 500;
+  text-transform: uppercase;
+  color: white;
+  background: var(--secondary-color);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.homeLink:hover {
+  background: var(--hover-color);
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: 30px 24px;
+  }
+
+  .title {
+    font-size: 20px;
+  }
+}

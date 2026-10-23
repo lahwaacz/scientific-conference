@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
+from django.urls import reverse_lazy
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -49,11 +50,20 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sites",  # required by allauth.socialaccount
     "rest_framework",  # DRF
     "rest_framework_simplejwt.token_blacklist",  # refresh-token blacklist (BLACKLIST_AFTER_ROTATION)
     "core.apps.CoreConfig",  # core app
     "corsheaders",  # for CORS
+    "allauth",  # social login (GitLab) + allauth login page for Django admin
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.gitlab",
+    "dj_rest_auth",  # JWT social login endpoint
+    "dj_rest_auth.registration",  # SocialLoginView/Serializer for GitLab
 ]
+
+SITE_ID = 1
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",  # add for CORS
@@ -64,6 +74,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "allauth.account.middleware.AccountMiddleware",  # after session/auth
 ]
 
 ROOT_URLCONF = "backend.urls"
@@ -71,13 +82,15 @@ ROOT_URLCONF = "backend.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                # Login-method flags for the Django admin sign-in page.
+                "core.context_processors.auth_config",
             ],
         },
     },
@@ -153,27 +166,111 @@ from datetime import timedelta
 
 # JWT settings
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),  # Токен живет 1 час
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),  # Refresh токен 7 дней
+    # 15-minute access token.
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    # 3-day refresh token; rotated and blacklisted on use.
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=3),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
-    "UPDATE_LAST_LOGIN": False,
+    "UPDATE_LAST_LOGIN": True,
     "ALGORITHM": "HS256",
     "SIGNING_KEY": SECRET_KEY,
     "VERIFYING_KEY": None,
     "AUDIENCE": None,
     "ISSUER": None,
-    "AUTH_HEADER_TYPES": ("Bearer",),
     "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
     "USER_ID_FIELD": "id",
     "USER_ID_CLAIM": "user_id",
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
     "TOKEN_TYPE_CLAIM": "token_type",
     "JTI_CLAIM": "jti",
-    "SLIDING_TOKEN_REFRESH_EXP_CLAIM": "refresh_exp",
-    "SLIDING_TOKEN_LIFETIME": timedelta(hours=1),
-    "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=7),
+    "LEEWAY": timedelta(seconds=5),
+    # Invalidate existing tokens after a password change.
+    "CHECK_REVOKE_TOKEN": True,
 }
+
+
+# Admin login methods; at least one must stay usable or admins lock out.
+AUTH_PASSWORD_LOGIN_ENABLED = os.getenv("AUTH_PASSWORD_LOGIN_ENABLED", "True") == "True"
+GITLAB_URL = os.getenv("GITLAB_URL", "https://gitlab.fjfi.cvut.cz")
+GITLAB_CLIENT_ID = os.getenv("GITLAB_CLIENT_ID", "")
+GITLAB_CLIENT_SECRET = os.getenv("GITLAB_CLIENT_SECRET", "")
+GITLAB_OAUTH_CALLBACK_URL = os.getenv("GITLAB_OAUTH_CALLBACK_URL", "")
+AUTH_GITLAB_LOGIN_ENABLED = (
+    os.getenv("AUTH_GITLAB_LOGIN_ENABLED", "True") == "True"
+    and bool(GITLAB_CLIENT_ID)
+    and bool(GITLAB_CLIENT_SECRET)
+)
+if not (AUTH_PASSWORD_LOGIN_ENABLED or AUTH_GITLAB_LOGIN_ENABLED):
+    raise ImproperlyConfigured("At least one admin login method must be enabled")
+if AUTH_GITLAB_LOGIN_ENABLED and not GITLAB_OAUTH_CALLBACK_URL:
+    raise ImproperlyConfigured(
+        "GITLAB_OAUTH_CALLBACK_URL is required when GitLab login is enabled"
+    )
+
+# The flag is enforced by the backends at call time (allauth's backend
+# subclasses ModelBackend, so a list-level condition cannot disable password
+# authentication through /api/auth/allauth/).
+AUTHENTICATION_BACKENDS = [
+    "core.auth.backends.FlagAwareModelBackend",
+    "core.auth.backends.FlagAwareAllauthBackend",
+]
+
+# No provider app when the login method is off: an APPS entry with None
+# credentials would still accept OAuth redirects on the allauth routes.
+GITLAB_PROVIDER_APPS = []
+if AUTH_GITLAB_LOGIN_ENABLED:
+    GITLAB_PROVIDER_APPS = [
+        {
+            "client_id": GITLAB_CLIENT_ID or None,
+            "secret": GITLAB_CLIENT_SECRET or None,
+            "settings": {"gitlab_url": GITLAB_URL},
+        }
+    ]
+SOCIALACCOUNT_PROVIDERS = {
+    "gitlab": {
+        "APPS": GITLAB_PROVIDER_APPS,
+        "SCOPE": ["read_user"],
+        "VERIFIED_EMAIL": True,
+    }
+}
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_EMAIL_AUTHENTICATION = False
+SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = False
+ACCOUNT_EMAIL_VERIFICATION = "none"
+SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
+
+ACCOUNT_ADAPTER = "core.auth.adapters.NoSignupAccountAdapter"
+SOCIALACCOUNT_ADAPTER = "core.auth.adapters.ConferenceSocialAccountAdapter"
+
+REST_AUTH = {
+    "USE_JWT": True,
+    "SESSION_LOGIN": True,
+    "TOKEN_MODEL": None,
+    "JWT_AUTH_COOKIE": "conference-jwt-access",
+    "JWT_AUTH_REFRESH_COOKIE": "conference-jwt-refresh",
+    "JWT_AUTH_REFRESH_COOKIE_PATH": "/" + RELATIVE_URL_ROOT,
+    "JWT_AUTH_COOKIE_USE_CSRF": True,
+    "JWT_AUTH_HTTPONLY": True,
+    "JWT_AUTH_RETURN_EXPIRATION": True,
+    "JWT_AUTH_SAMESITE": "Lax",
+    "JWT_AUTH_SECURE": not DEBUG,
+    # The stock login serializers include the access token in JSON (plus a
+    # refresh field), which defeats HttpOnly. These custom serializers
+    # return only the user and optional expiration times.
+    "JWT_SERIALIZER": "core.auth.serializers.CookieJWTSerializer",
+    # Selected when JWT_AUTH_RETURN_EXPIRATION=True; it must stay token-free.
+    "JWT_SERIALIZER_WITH_EXPIRATION": (
+        "core.auth.serializers.CookieJWTSerializerWithExpiration"
+    ),
+    "USER_DETAILS_SERIALIZER": "core.auth.serializers.AuthUserSerializer",
+}
+
+# secure_admin_login (urls.py) redirects anonymous admin hits to this page.
+LOGIN_URL = reverse_lazy("account_login")
+FRONTEND_ROOT = "/" + RELATIVE_URL_ROOT  # "/" or "/conference/"
+LOGIN_REDIRECT_URL = FRONTEND_ROOT
+ACCOUNT_LOGOUT_REDIRECT_URL = FRONTEND_ROOT
 
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
@@ -183,7 +280,7 @@ DEFAULT_FROM_EMAIL = "noreply@conference.local"
 # CORS settings
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "core.auth.authentication.OptionalJWTCookieAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.AllowAny",
@@ -191,10 +288,13 @@ REST_FRAMEWORK = {
 }
 
 # Security
-CSRF_COOKIE_HTTPONLY = True
+# The SPA must read this token to send it in X-CSRFToken; it is not a secret.
+CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_PATH = "/" + RELATIVE_URL_ROOT
+CSRF_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_PATH = "/" + RELATIVE_URL_ROOT
+SESSION_COOKIE_SAMESITE = "Lax"
 if os.getenv("DJANGO_USE_HTTPS") == "True":
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_SECURE = True

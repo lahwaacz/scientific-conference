@@ -14,6 +14,20 @@ const BASE = "http://localhost:8000";
 let api;
 let reloadMock;
 
+function setCsrfCookie(value = "csrf-token") {
+  Object.defineProperty(document, "cookie", {
+    configurable: true,
+    value: `csrftoken=${value}`,
+  });
+}
+
+function clearCsrfCookie() {
+  Object.defineProperty(document, "cookie", {
+    configurable: true,
+    value: "",
+  });
+}
+
 async function loadApi() {
   vi.resetModules();
   vi.stubEnv("VITE_BACKEND_API_BASE_URL", BASE);
@@ -35,10 +49,12 @@ beforeEach(() => {
     value: { hash: "", reload: reloadMock },
   });
   localStorage.clear();
+  clearCsrfCookie();
 });
 
 afterEach(() => {
   vi.unstubAllEnvs();
+  clearCsrfCookie();
 });
 
 describe("runtime app config (app-config.js)", () => {
@@ -176,14 +192,14 @@ describe("buildMediaUrl", () => {
   });
 });
 
-describe("buildHeaders (exercised via fetchWithAuth)", () => {
+describe("cookie request headers (exercised via fetchWithAuth)", () => {
   beforeEach(async () => {
+    setCsrfCookie();
     await loadApi();
     globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200 });
   });
 
-  test("sends application/json content type and Bearer for a JSON body", async () => {
-    localStorage.setItem("access_token", "tok");
+  test("sends application/json and includes cookies for a JSON body", async () => {
     await api.fetchWithAuth("/api/x", {
       method: "POST",
       body: JSON.stringify({ a: 1 }),
@@ -191,11 +207,11 @@ describe("buildHeaders (exercised via fetchWithAuth)", () => {
 
     const [, opts] = globalThis.fetch.mock.calls[0];
     expect(opts.headers["Content-Type"]).toBe("application/json");
-    expect(opts.headers.Authorization).toBe("Bearer tok");
+    expect(opts.headers["X-CSRFToken"]).toBe("csrf-token");
+    expect(opts.credentials).toBe("include");
   });
 
-  test("omits content type for FormData but keeps the Bearer header", async () => {
-    localStorage.setItem("access_token", "tok");
+  test("omits content type for FormData and includes cookies", async () => {
     const form = new FormData();
     form.append("file", "value");
 
@@ -203,41 +219,39 @@ describe("buildHeaders (exercised via fetchWithAuth)", () => {
 
     const [, opts] = globalThis.fetch.mock.calls[0];
     expect(opts.headers["Content-Type"]).toBeUndefined();
-    expect(opts.headers.Authorization).toBe("Bearer tok");
+    expect(opts.headers["X-CSRFToken"]).toBe("csrf-token");
+    expect(opts.credentials).toBe("include");
   });
 
-  test("omits the Authorization header when no access token is stored", async () => {
+  test("never sends an Authorization header", async () => {
     await api.fetchWithAuth("/api/x", { method: "GET" });
 
     const [, opts] = globalThis.fetch.mock.calls[0];
     expect(opts.headers.Authorization).toBeUndefined();
+    expect(opts.headers["X-CSRFToken"]).toBeUndefined();
     expect(opts.headers["Content-Type"]).toBe("application/json");
   });
 });
 
 describe("fetchWithAuth 401 refresh flow", () => {
   beforeEach(async () => {
+    setCsrfCookie();
     await loadApi();
     globalThis.fetch = vi.fn();
   });
 
   test("serializes concurrent 401s behind a single refresh, then retries the queue", async () => {
-    localStorage.setItem("access_token", "old");
-    localStorage.setItem("refresh_token", "r");
+    let protectedCalls = 0;
 
-    globalThis.fetch = vi.fn((url, opts) => {
+    globalThis.fetch = vi.fn((url) => {
       if (url.includes("/api/auth/refresh/")) {
-        return Promise.resolve({
-          ok: true,
-          status: 200,
-          json: async () => ({ access: "NEW" }),
-        });
-      }
-      // Protected resource: only the refreshed token is accepted.
-      if (opts?.headers?.Authorization === "Bearer NEW") {
         return Promise.resolve({ ok: true, status: 200 });
       }
-      return Promise.resolve({ ok: false, status: 401 });
+      protectedCalls += 1;
+      return Promise.resolve({
+        ok: protectedCalls > 2,
+        status: protectedCalls > 2 ? 200 : 401,
+      });
     });
 
     const p1 = api.fetchWithAuth("/api/data");
@@ -250,18 +264,17 @@ describe("fetchWithAuth 401 refresh flow", () => {
     expect(refreshCallCount()).toBe(1);
     // two initial 401s + one refresh + two retried requests.
     expect(globalThis.fetch).toHaveBeenCalledTimes(5);
+
+    const refreshCall = globalThis.fetch.mock.calls.find(([url]) =>
+      url.includes("/api/auth/refresh/")
+    );
+    expect(refreshCall[1].credentials).toBe("include");
+    expect(refreshCall[1].headers["X-CSRFToken"]).toBe("csrf-token");
+    expect(refreshCall[1].body).toBeUndefined();
   });
 
-  test("clears tokens and reloads home when the refresh request fails", async () => {
-    localStorage.setItem("access_token", "old");
-    localStorage.setItem("refresh_token", "r");
-
-    globalThis.fetch = vi.fn((url) => {
-      if (url.includes("/api/auth/refresh/")) {
-        return Promise.resolve({ ok: false, status: 401 });
-      }
-      return Promise.resolve({ ok: false, status: 401 });
-    });
+  test("reloads home when the refresh request fails", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, status: 401 });
 
     const consoleError = vi
       .spyOn(console, "error")
@@ -270,22 +283,8 @@ describe("fetchWithAuth 401 refresh flow", () => {
     consoleError.mockRestore();
 
     expect(res.status).toBe(401);
-    expect(localStorage.getItem("access_token")).toBeNull();
-    expect(localStorage.getItem("refresh_token")).toBeNull();
     expect(reloadMock).toHaveBeenCalled();
     expect(window.location.hash).toBe("/");
-  });
-
-  test("short-circuits the refresh request when no refresh token exists", async () => {
-    localStorage.setItem("access_token", "old"); // no refresh_token
-
-    globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, status: 401 });
-
-    const res = await api.fetchWithAuth("/api/data");
-
-    expect(res.status).toBe(401);
-    expect(refreshCallCount()).toBe(0);
-    expect(reloadMock).toHaveBeenCalled();
   });
 });
 
@@ -393,21 +392,17 @@ describe("buildApiUrl conference scoping", () => {
     });
 
     test("refresh stays global and the retry hits the scoped URL", async () => {
-      localStorage.setItem("access_token", "old");
-      localStorage.setItem("refresh_token", "r");
+      let protectedCalls = 0;
 
-      globalThis.fetch = vi.fn((url, opts) => {
+      globalThis.fetch = vi.fn((url) => {
         if (url === `${BASE}/api/auth/refresh/`) {
-          return Promise.resolve({
-            ok: true,
-            status: 200,
-            json: async () => ({ access: "NEW" }),
-          });
-        }
-        if (opts?.headers?.Authorization === "Bearer NEW") {
           return Promise.resolve({ ok: true, status: 200 });
         }
-        return Promise.resolve({ ok: false, status: 401 });
+        protectedCalls += 1;
+        return Promise.resolve({
+          ok: protectedCalls > 1,
+          status: protectedCalls > 1 ? 200 : 401,
+        });
       });
 
       const res = await api.fetchWithAuth("/api/data");
@@ -416,7 +411,8 @@ describe("buildApiUrl conference scoping", () => {
       expect(refreshCallCount()).toBe(1);
       const [retriedUrl, retriedOpts] = globalThis.fetch.mock.calls.at(-1);
       expect(retriedUrl).toBe(`${BASE}/api/wsc2026/data`);
-      expect(retriedOpts.headers.Authorization).toBe("Bearer NEW");
+      expect(retriedOpts.credentials).toBe("include");
+      expect(retriedOpts.headers.Authorization).toBeUndefined();
     });
   });
 });

@@ -17,16 +17,63 @@ The entry point to the administrative interface is located in the footer of the 
 1. Open the conference website.
 2. Scroll to the footer.
 3. Select the administration link.
-4. Enter the username and password known to the website administrators.
+4. Sign in with one of the methods offered in the login window (see below).
 
 ![Admin Modal](./assets/adminmodal.png)
+
+### Sign in with GitLab
+
+Select **Sign in with GitLab** to sign in with the university GitLab. The browser redirects to the GitLab website and asks for the GitLab credentials there, and then returns to the conference website. The admin panel of the conference opens automatically after a successful sign-in.
+
+GitLab is the standard way to sign in. Which options the login window offers depends on the deployment: when password sign-in is switched off, the login window shows only the GitLab button, and when GitLab sign-in is switched off, it shows only the username and password form. The optional password method is described in **Special Account Sign-in** below.
+
+A successful GitLab sign-in opens both administrative interfaces at once: the admin panel of the conference website described in this guide, and the Django administration used for creating conferences (see **Managing Multiple Conferences**).
+
+### Special Account Sign-in
+
+When the deployment offers it, the login window shows a username and password form. When GitLab sign-in is enabled as well, the form is available inside the collapsible **Special account** section; when GitLab sign-in is disabled (a password-only deployment), the login window shows the form directly instead. It signs in a local account that was created by an administrator in advance; it never creates new accounts.
+
+This method is kept for testing, for demo deployments, and as a fallback for the case when GitLab is unavailable. It can be disabled on the deployment; when it is disabled, the form does not appear in the login window at all.
 
 ### Leave the Admin Area
 
 You can leave the administrative part of the website in two ways:
 
-- Select **Logout** in the administrative interface.
-- Select any section in the public website header.
+- Select **Logout** in the administrative interface. This also ends the sign-in on the server, so the session cannot be reused; a new sign-in is required to return.
+- Select any section in the public website header. This leaves the admin panel but keeps the sign-in active.
+
+## Administrator Accounts
+
+### How Administrator Access Works
+
+Signing in with GitLab uses the university GitLab account, but the sign-in only proves who the person is. It never decides who is an administrator: administrator rights are always granted manually by an existing administrator, in the Django administration. Membership in GitLab groups or projects has no effect, and matching e-mail addresses never connect accounts automatically.
+
+This has two practical consequences:
+
+- A person who signs in with GitLab for the first time gets a new user account in the system, without administrator rights. An administrator must promote it (see **Give a New Administrator Access** below).
+- An administrator who previously signed in with a username and password, and now signs in with GitLab, gets a separate new account rather than the old one. The GitLab identity can be linked to the existing account (see **Linking a GitLab Account to an Existing Administrator Account** below).
+
+### Give a New Administrator Access
+
+1. Ask the person to open any conference website, enter the admin area, and sign in with GitLab once. This creates their user account.
+2. Open the Django administration at `<root>admin/` (for example, `https://mmg-webapps.fjfi.cvut.cz/conference/admin/`) and sign in.
+3. Open **Users** and find the newly created account (it carries the GitLab username).
+4. Enable **Staff status** and save.
+
+The person can now sign in with GitLab and use the admin panel of every conference.
+
+### Linking a GitLab Account to an Existing Administrator Account
+
+When an existing administrator starts signing in with GitLab, the first GitLab sign-in creates a new, separate account. The system does not merge the two automatically, because a matching e-mail address is not considered proof of identity. The link can be completed by hand in the Django administration:
+
+1. Sign in with GitLab once, so the new account exists.
+2. Open the Django administration and open **Social accounts**. Find the GitLab entry of the new account.
+3. Change the **User** of that GitLab entry to the existing administrator account and save. GitLab sign-ins now open the existing account, with its administrator rights.
+4. Open **Users** and delete the leftover account created by the first GitLab sign-in, if nothing references it.
+
+Alternatively, the server operator can run a linking command on the backend; see the deployment guide.
+
+> **Warning:** Linking only decides which account GitLab sign-ins open. It does not copy or change the administrator rights of either account.
 
 ## Admin Panel Overview
 
@@ -59,14 +106,14 @@ Select a card on the landing page to open the corresponding conference website.
 
 All data of a conference belongs to that conference: its participants, submissions, program, accommodation, hiking routes, and website texts. Nothing is shared between conferences. The admin panel opened on a conference website can only see and change the data of that conference.
 
-Administrator accounts are shared across conferences. A single staff account can administer every conference. This is intended; administrator tokens are not scoped per conference.
+Administrator accounts are shared across conferences. A single staff account can administer every conference. This is intended; administrator sessions and cookies are not scoped per conference. How accounts are created and linked is described in **Administrator Accounts**.
 
 ### Creating a New Conference
 
 Conferences are created in the Django administration. This is a separate interface from the admin panel described in this guide, and it requires a superuser account.
 
 1. Open the Django administration at `<root>admin/` (for example, `https://mmg-webapps.fjfi.cvut.cz/conference/admin/`).
-2. Log in with a superuser account.
+2. Log in with a superuser account. The Django administration has its own sign-in page, which offers the same sign-in methods as the conference admin panel (see **Access to the Administrative Interface**).
 3. Select **Conferences**.
 4. Select **Add Conference**.
 5. Fill in the fields described below.

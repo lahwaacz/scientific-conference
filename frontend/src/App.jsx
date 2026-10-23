@@ -19,6 +19,7 @@ import Hiking from "./components/Hiking/Hiking";
 import { useConferenceExists } from "./components/hooks/useConferenceExists";
 import Landing from "./components/Landing/Landing";
 import NotFound from "./components/NotFound/NotFound";
+import OAuthCallback from "./components/OAuthCallback/OAuthCallback";
 import PageLayout from "./components/PageLayout/PageLayout";
 import ParticipantsInfo from "./components/ParticipantsInfo/ParticipantsInfo";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
@@ -31,9 +32,18 @@ import Participants from "./pages/ParticipantsPage";
 import ProgramPage from "./pages/ProgramPage";
 import RegistrationPage from "./pages/RegistrationPage";
 import TrackingPage from "./pages/TrackingPage";
-import { getConferenceSlug } from "./utils/conferenceSlug";
+import { getConferenceSlug, isOAuthCallbackPath } from "./utils/conferenceSlug";
 
-function App() {
+export default function App() {
+  // The OAuth callback is a bare PATH-level route before the conference
+  // shell: it lives outside HashRouter and carries no conference slug.
+  if (isOAuthCallbackPath()) {
+    return <OAuthCallback />;
+  }
+  return <ConferenceApp />;
+}
+
+function ConferenceApp() {
   const slug = getConferenceSlug();
   const conferenceState = useConferenceExists();
 
@@ -176,5 +186,3 @@ function App() {
     </Router>
   );
 }
-
-export default App;

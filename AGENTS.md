@@ -1,7 +1,7 @@
 # PROJECT KNOWLEDGE BASE
 
 **Generated:** 2026-10-02
-**Updated:** 2026-10-05 — editor UX polish + landing not-found banner
+**Updated:** 2026-10-23 — GitLab OAuth admin login, HttpOnly JWT cookies, CSRF, proxy/WAF rate-limiting note
 **Commit:** b24fa5e
 **Branch:** main
 
@@ -36,6 +36,7 @@ No root Makefile / docker-compose / package.json / requirements.txt. Each app bu
 | Change data model | `backend/core/models.py` | then `makemigrations`; every domain model carries a `conference` FK |
 | Create/edit/delete a conference | Django admin (`Conference` model) | CRUD via admin only; delete gated by `Conference.is_referenced()` (nothing may reference it) |
 | Backend config/env vars | `backend/backend/settings.py` | single env-driven file, no dev/prod split |
+| Admin login / OAuth flow | `backend/core/auth/` (views, adapters, serializers) + flags in `backend/backend/settings.py`; frontend: `AdminLoginModal/`, `OAuthCallback/` | GitLab OAuth primary, password behind `AUTH_PASSWORD_LOGIN_ENABLED`; conditional route registration in `backend/backend/urls.py` (`build_urlpatterns`) |
 | Frontend routing | `frontend/src/App.jsx` | one flat HashRouter route table; renders `Landing` (no router) when no slug in path (or the slug matches no conference — with a not-found banner) |
 | Conference slug resolution | `frontend/src/utils/conferenceSlug.js` | pathname-parsed module singleton; `initConferenceSlug()` in main.jsx |
 | Any backend HTTP call | `frontend/src/utils/api.js` | `buildApiUrl` (slug-scoped, `GLOBAL_API_PREFIXES` allowlist) / `buildMediaUrl` / `fetchWithAuth` |
@@ -62,11 +63,15 @@ Codegraph covers Python only (JS unindexed); refs via pyright LSP.
 | `App` | component | frontend/src/App.jsx | entry | renders `<Landing/>` when no slug (or unknown slug, with a not-found banner), else HashRouter + all routes + layout shell |
 | `Landing` / `ConferenceCard` | components | frontend/src/components/Landing/ | root page | cards grouped Running/Upcoming/Past; whole card is a plain `<a>` to `/<slug>/`; `unknownSlug` prop renders the not-found banner |
 | `fetchWithAuth` / `buildApiUrl` / `buildMediaUrl` | functions | frontend/src/utils/api.js | many files | sole API client; 401-refresh queue; slug scoping via `GLOBAL_API_PREFIXES` allowlist |
+| `GitLabAuthorizeView` / `GitLabLoginView` / `LogoutView` | views | backend/core/auth/views.py | backend/backend/urls.py (global, flag-conditional) | SPA OAuth entry points: signed 10-min state carries the conference slug; code exchange sets HttpOnly JWT cookies + session and returns `next`; logout blacklists the refresh cookie, clears cookies + session |
+| `link_gitlab_account` | mgmt command | backend/core/management/commands/link_gitlab_account.py | operators, admin guide | reassigns a GitLab SocialAccount to a local user, never touches `is_staff`; `--delete-orphan` guarded by Person.user / ParticipantSubmission.linked_user |
+| `OAuthCallback` | component | frontend/src/components/OAuthCallback/ | App.jsx (path-level, before the router) | exchanges the OAuth code at `/api/auth/gitlab/`; the browser stores HttpOnly cookies, then it redirects to `next`; route lives outside HashRouter |
 
 ## CONVENTIONS
 
-- Cross-app contract: REST under `/{RELATIVE_URL_ROOT}api/`, JWT Bearer; frontend base URL from `VITE_BACKEND_API_BASE_URL` (Vite env, inlined at build via import.meta.env).
-- Scoped API contract: only `/api/auth/login|refresh/` and `/api/conferences/` are global (registered in `backend/backend/urls.py` BEFORE the slug include); EVERYTHING else is served under `/api/<slug>/…` via `include("core.urls")` and must filter/assign by conference. New class views use `ConferenceScopedMixin`; new function views use `get_conference_or_404()`. Unknown slug → 404 for every scoped route (enforced in `initial()`).
+- Cross-app contract: REST under `/{RELATIVE_URL_ROOT}api/`, authenticated with HttpOnly JWT cookies (`conference-jwt-access` / `conference-jwt-refresh`); `fetchWithAuth` sends `credentials: "include"` and `X-CSRFToken` for unsafe methods. Cookies are scoped to the deployment subpath. Frontend base URL from `VITE_BACKEND_API_BASE_URL` (Vite env, inlined at build via import.meta.env).
+- Scoped API contract: all `/api/auth/*` routes and `/api/conferences/` are global (registered in `backend/backend/urls.py` BEFORE the slug include); EVERYTHING else is served under `/api/<slug>/…` via `include("core.urls")` and must filter/assign by conference. New class views use `ConferenceScopedMixin`; new function views use `get_conference_or_404()`. Unknown slug → 404 for every scoped route (enforced in `initial()`).
+- Admin auth: GitLab OAuth is the primary sign-in; password login stays behind `AUTH_PASSWORD_LOGIN_ENABLED` (fallback/testing/break-glass). Two admin surfaces share one GitLab login: the React admin panel (HttpOnly JWT cookies) and the Django admin (session, via `SESSION_LOGIN`). JWTs are delivered only as HttpOnly `conference-jwt-access` / `conference-jwt-refresh` cookies; no token is returned in auth JSON or stored in localStorage. The OAuth state nonce is bound to a short-lived HttpOnly, SameSite=Lax cookie and consumed once at the code exchange, so only the browser that started the sign-in can finish it. `is_staff` is always granted manually — no GitLab group sync, no e-mail auto-connect. `GITLAB_OAUTH_CALLBACK_URL` must be the SPA callback and must match the GitLab application registration exactly. Logout (`/api/auth/logout/`) requires a valid access cookie, blacklists the refresh cookie, clears both JWT cookies and the Django session.
 - `Conference` is the single config row: logistics, web texts and the accommodation description live on it. Read endpoints (`/api/conferences/`, `conference-info/`, `accommodation/`) must stay side-effect free — never reintroduce lazy `get_or_create` rows in views.
 - JWT is global across conferences: one staff account administers every conference. Intended; do not scope tokens per conference.
 - Subpath deployment is first-class on BOTH sides. Backend: `RELATIVE_URL_ROOT` env feeds URL prefixes, STATIC_URL, MEDIA_URL, cookie paths. Frontend: `HashRouter` + Vite `base` from `VITE_BASE_PATH` (default `./`, also the `frontend/Dockerfile` ARG default, so built asset URLs stay relative and depth-independent; the actual prefix comes from `BASE_PATH` at runtime). The outer proxy must serve the SPA index.html for any non-file path under the root (esp. `/<root>/<slug>/`) that is not routed to the backend. Any new route/URL must honor all of this.
@@ -84,6 +89,13 @@ Codegraph covers Python only (JS unindexed); refs via pyright LSP.
 - NEVER "fix" the dual fetch-prefixing (`configuredFetch.js` global patch + `buildApiUrl`): they coexist only via `startsWith('http')` guards; touching one side risks double-prefixed URLs.
 - NEVER add an API endpoint outside the `/api/<slug>/` include without conference scoping — the route-table lock in `backend/core/test_conference_isolation.py` fails the suite for any unscoped route.
 - Public writes are limited to registration (`/submit/`) and token-based submission edits (`/track/<token>/`). Never reintroduce anonymous create on participants or abstracts; `Abstract.participant` is required and cascades, and `ParticipantAdmin` deletion must unpublish linked submissions first.
+- Auth routes are global under `/api/auth/` and must stay registered BEFORE the slug include (or `/api/auth/*` is captured as a conference_slug prefix and 404s). NEVER include `dj_rest_auth.urls` wholesale at `/api/auth/` — it shadows the custom login/logout registration.
+- The SPA OAuth callback is a PATH route (`/<root>/oauth/callback`, matched by `isOAuthCallbackPath()` before the slug logic). NEVER move it into a HashRouter fragment and never let the slug singleton treat `oauth` as a conference slug.
+- NEVER auto-provision admin rights from GitLab: no social group authorization, no e-mail auto-connect, no automatic `is_staff`. Promotion and linking are manual (Django admin or `link_gitlab_account`).
+- NEVER bypass `AUTH_PASSWORD_LOGIN_ENABLED` with an always-on password-capable backend — keep the flag-aware backends (`core.auth.backends.FlagAwareModelBackend` / `FlagAwareAllauthBackend`), which enforce the flag at `authenticate()` time.
+- NEVER expose the allauth GitLab provider routes when `AUTH_GITLAB_LOGIN_ENABLED=False` — `SOCIALACCOUNT_PROVIDERS["gitlab"]["APPS"]` must stay empty and the allauth provider 404 guard must stay registered.
+- NEVER put JWTs back into JSON or localStorage — keep them in HttpOnly `conference-jwt-access` / `conference-jwt-refresh` cookies and use the cookie-aware refresh/logout endpoints.
+- NEVER change `GITLAB_OAUTH_CALLBACK_URL` without updating the GitLab application registration: the redirect URI must match exactly (no trailing-slash tolerance), or GitLab rejects the sign-in.
 - NEVER delete or allow deleting a Conference that still has related rows: every domain model cascades from `Conference`, so `ConferenceAdmin` gates deletion on `Conference.is_referenced()`, keeps bulk actions off (`actions = None`), and re-checks in `delete_model`/`delete_queryset`. Do not bypass or weaken this guard.
 - The frontend conference-slug singleton (`utils/conferenceSlug.js`) must NOT use react-router hooks — `useLocation` is hash-based and never sees the `/<slug>/` path prefix. It parses `window.location.pathname` once at startup; keep it that way.
 - NEVER commit `.venv/`, `db.sqlite3`, `media/`, `staticfiles/` (a venv was once committed: 4c321da).
@@ -105,6 +117,7 @@ uv run pytest                         # backend suite (pytest-django;
 uv run ruff check . && uv run ruff format --check .
 uv run pyright                        # type check via django-stubs
 uv run python manage.py loaddata conferences.json participants.json program.json  # seed: demo conferences, participants with abstracts/submissions, organizers/committee, a scheduled program (day + chaired session + talk per participant) for every conference
+uv run python manage.py link_gitlab_account <gitlab-username> <local-username> [--delete-orphan]  # reassign a GitLab social account to a local user (never touches is_staff)
 
 # Frontend (workdir frontend/)
 npm install
@@ -125,7 +138,7 @@ docker build frontend/                # -> ghcr.io/<repo>-frontend (universal im
 - EditProgram.jsx and api.js URL helpers are the highest-churn areas. Both have real tests now (EditProgram lifecycle + api client suites), but the component depth (DaySchedule/TalkCard interactions) is still thin territory — refactor with care.
 - `.env.production` is deliberately absent: the frontend image is universal and carries no deployment values. The Vite ARGs (`VITE_BACKEND_API_BASE_URL`, `VITE_BASE_PATH`, both defaulting to empty/relative) are only build-time fallbacks; deployments configure the running container with `BASE_PATH` (and optionally `API_BASE`), which the image entrypoint writes into `app-config.js` — the app reads that file before the Vite values (see `frontend/src/utils/appConfig.js`).
 - Backend prod image runs gunicorn (WSGI) behind the frontend nginx; it never serves static/media itself (the frontend nginx serves the shared volumes).
-- JWT: 1h access / 7d refresh — lifetimes were a deliberate fix (f064a9e); shortening logs admins out mid-edit. Tokens are global across conferences (no per-conference scoping).
+- JWT cookies: 15m access / 3d refresh; `fetchWithAuth` refreshes transparently on 401 and sends `X-CSRFToken` for unsafe methods. No application-level auth throttle is configured; rate-limit login/admin paths at the proxy/WAF. Cookies are scoped to the deployment subpath and are global across conferences (no per-conference scoping).
 - The prod reverse proxy (mmg-webapps) must map any non-file path under `/conference/` (especially `/conference/<slug>/`) to the SPA index.html; `api/`, `admin/`, `media/` keep routing to the backend. The legacy `/conference-demo/` prefix permanently redirects to `/conference/`. Documented in README.md and docs/deployment.md.
 - Old bookmarks like `/conference/#/program` (or the legacy `/conference-demo/#/program`) now land on the landing page (path, not hash, selects the conference) — deliberate "always render landing"; users click through. An unknown slug (`/typo-in-the-slug/`) also renders the landing, with a static banner naming the slug (`useConferenceExists` tri-state: unknown/exists/absent; fetch failures fail open to the conference shell so a backend hiccup cannot blank the site).
 - Deployed at `https://mmg-webapps.fjfi.cvut.cz/conference/` (root = landing; `wsc2026` = seeded conference)

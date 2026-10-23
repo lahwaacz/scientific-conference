@@ -1,6 +1,10 @@
+import { faGitlab } from "@fortawesome/free-brands-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { fetchWithAuth } from "../../utils/api";
+import { getConferenceSlug } from "../../utils/conferenceSlug";
+import Loader from "../ui/Loader/Loader";
 import styles from "./AdminLoginModal.module.css";
 
 export default function AdminLoginModal({ onSuccess, onClose }) {
@@ -8,12 +12,48 @@ export default function AdminLoginModal({ onSuccess, onClose }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
+  // null = the config has not arrived yet, otherwise the /api/auth/config/
+  // payload; configError is set when that request itself fails.
+  const [config, setConfig] = useState(null);
+  const [configError, setConfigError] = useState("");
 
   const usernameRef = useRef(null);
 
   useEffect(() => {
-    usernameRef.current?.focus();
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const res = await fetchWithAuth("/api/auth/config/");
+        if (!res.ok) {
+          throw new Error(`auth config responded ${res.status}`);
+        }
+        const data = await res.json();
+        if (!cancelled) {
+          setConfig(data);
+        }
+      } catch {
+        if (!cancelled) {
+          setConfigError(
+            "Sign-in options could not be loaded. Please try again later."
+          );
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  // The password inputs may not exist on mount (config pending or GitLab
+  // only), so focus follows the config instead of firing once on mount.
+  useEffect(() => {
+    if (config?.password_login_enabled) {
+      usernameRef.current?.focus();
+    }
+  }, [config]);
 
   async function submit(e) {
     e.preventDefault();
@@ -33,17 +73,72 @@ export default function AdminLoginModal({ onSuccess, onClose }) {
         return;
       }
 
-      const data = await res.json();
-
-      localStorage.setItem("access_token", data.access);
-      localStorage.setItem("refresh_token", data.refresh);
-
       onSuccess();
     } catch {
       setError("Connection error");
       setLoading(false);
     }
   }
+
+  async function signInWithGitLab() {
+    setError("");
+    setRedirecting(true);
+
+    try {
+      const slug = getConferenceSlug();
+      const res = await fetchWithAuth(
+        `/api/auth/gitlab/authorize/?next=${encodeURIComponent(slug ?? "")}`,
+        { credentials: "include" }
+      );
+
+      if (!res.ok) {
+        throw new Error(`gitlab authorize responded ${res.status}`);
+      }
+
+      const data = await res.json();
+      window.location.assign(data.url);
+    } catch {
+      setError("GitLab sign-in could not be started. Please try again.");
+      setRedirecting(false);
+    }
+  }
+
+  const showGitLab = Boolean(config?.gitlab_login_enabled);
+  const showPassword = Boolean(config?.password_login_enabled);
+  // The backend refuses to start with both disabled; stay readable anyway.
+  const showMisconfiguration = config !== null && !showGitLab && !showPassword;
+
+  // One shared form instance: usernameRef must attach to exactly one render.
+  const passwordForm = (
+    <form onSubmit={submit}>
+      <input
+        type="text"
+        placeholder="Enter username"
+        aria-label="Username"
+        autoComplete="username"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+        disabled={loading}
+        className={styles.input}
+        ref={usernameRef}
+      />
+
+      <input
+        type="password"
+        placeholder="Enter password"
+        aria-label="Password"
+        autoComplete="current-password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        disabled={loading}
+        className={styles.input}
+      />
+
+      <button type="submit" disabled={loading} className={styles.submitBtn}>
+        {loading ? "Loading..." : "Login"}
+      </button>
+    </form>
+  );
 
   // biome-ignore-start lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: backdrop close/stopPropagation are redundant with the close button; dialog role carries semantics.
   return createPortal(
@@ -64,38 +159,41 @@ export default function AdminLoginModal({ onSuccess, onClose }) {
           ×
         </button>
 
-        <form onSubmit={submit}>
-          <h3 className={styles.title}>Admin Login</h3>
+        <h3 className={styles.title}>Admin Login</h3>
 
-          <input
-            type="text"
-            placeholder="Enter username"
-            aria-label="Username"
-            autoComplete="username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            disabled={loading}
-            className={styles.input}
-            ref={usernameRef}
-          />
+        {config === null && !configError && <Loader />}
+        {configError && <p className={styles.error}>{configError}</p>}
 
-          <input
-            type="password"
-            placeholder="Enter password"
-            aria-label="Password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={loading}
-            className={styles.input}
-          />
-
-          {error && <p className={styles.error}>{error}</p>}
-
-          <button type="submit" disabled={loading} className={styles.submitBtn}>
-            {loading ? "Loading..." : "Login"}
+        {showGitLab && (
+          <button
+            type="button"
+            className={styles.gitlabBtn}
+            onClick={signInWithGitLab}
+            disabled={redirecting}
+          >
+            <FontAwesomeIcon icon={faGitlab} aria-hidden="true" />
+            {redirecting ? "Redirecting..." : "Sign in with GitLab"}
           </button>
-        </form>
+        )}
+
+        {error && <p className={styles.error}>{error}</p>}
+
+        {showMisconfiguration && (
+          <p className={styles.error}>
+            Sign-in is not configured for this site. Please contact the site
+            administrator.
+          </p>
+        )}
+
+        {showPassword &&
+          (showGitLab ? (
+            <details className={styles.details}>
+              <summary className={styles.summary}>Special account</summary>
+              {passwordForm}
+            </details>
+          ) : (
+            passwordForm
+          ))}
       </div>
     </div>,
     document.body

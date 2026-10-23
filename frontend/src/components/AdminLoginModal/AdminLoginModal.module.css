@@ -30,6 +30,9 @@
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
   position: relative;
   animation: slideUp 0.3s ease-out;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 @keyframes slideUp {
@@ -75,9 +78,11 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
+  margin-top: 16px;
 }
 
 .title {
+  margin: 0;
   font-family: var(--font-title);
   font-size: 28px;
   font-weight: 500;
@@ -146,6 +151,54 @@
   background: #ccc;
   cursor: not-allowed;
   transform: none;
+}
+
+.gitlabBtn {
+  width: 100%;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: 500;
+  color: white;
+  background: var(--secondary-color);
+  text-transform: uppercase;
+  font-family: var(--font-title);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.gitlabBtn:hover:not(:disabled) {
+  background: var(--hover-color);
+}
+
+.gitlabBtn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.details {
+  border-top: 1px solid #e0e0e0;
+  padding-top: 16px;
+}
+
+.summary {
+  cursor: pointer;
+  font-size: 14px;
+  color: #999;
+  text-transform: uppercase;
+  font-family: var(--font-title);
+}
+
+.summary:hover {
+  color: #333;
+}
+
+.modal > .error {
+  margin: 0;
 }
 
 /* mobile */

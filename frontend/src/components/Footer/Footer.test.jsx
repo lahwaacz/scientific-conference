@@ -30,10 +30,18 @@ beforeEach(() => {
 
 describe("Footer", () => {
   test("restores body scrolling after a successful admin login", async () => {
-    fetchWithAuth.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ access: "A", refresh: "R" }),
-    });
+    fetchWithAuth
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          password_login_enabled: true,
+          gitlab_login_enabled: false,
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ access: "A", refresh: "R" }),
+      });
     render(<Footer />);
 
     fireEvent.click(
@@ -42,7 +50,7 @@ describe("Footer", () => {
     expect(document.body.style.position).toBe("fixed");
     expect(document.body.style.overflow).toBe("hidden");
 
-    fireEvent.change(screen.getByPlaceholderText(/enter username/i), {
+    fireEvent.change(await screen.findByPlaceholderText(/enter username/i), {
       target: { value: "admin" },
     });
     fireEvent.change(screen.getByPlaceholderText(/enter password/i), {

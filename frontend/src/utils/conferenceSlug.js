@@ -45,6 +45,19 @@ function parseSlugFromPathname(pathname) {
 }
 
 /**
+ * True when the live pathname is the GitLab OAuth callback ("/oauth/callback"
+ * under the deployment base, optional trailing slash). Read straight from
+ * window.location, not the captured slug singleton: the callback carries no
+ * conference and must be recognized before the slug logic treats "oauth" as
+ * a conference.
+ */
+export function isOAuthCallbackPath() {
+  // undefined-safe pathname, same tolerance as initConferenceSlug.
+  const pathname = window?.location?.pathname ?? "";
+  return /\/oauth\/callback\/?$/.test(pathname);
+}
+
+/**
  * Capture the conference slug from the current URL. Called once in
  * main.jsx (mirrors applyBaseUrlToFetch), before the app renders.
  */
