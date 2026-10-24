@@ -7,6 +7,8 @@ from rest_framework_simplejwt.settings import api_settings as jwt_settings
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.utils import get_md5_hash_password
 
+from core.models import ConferenceManagers
+
 
 class PasswordRevokingCookieTokenRefreshSerializer(CookieTokenRefreshSerializer):
     """Reject a refresh token whose password hash is no longer current."""
@@ -56,7 +58,27 @@ class CookieJWTSerializerWithExpiration(CookieJWTSerializer):
 
 
 class AuthUserSerializer(serializers.ModelSerializer):
+    managed_conferences = serializers.SerializerMethodField()
+
     class Meta:
         model = get_user_model()
-        fields = ["id", "username", "email", "first_name", "last_name", "is_staff"]
+        fields = [
+            "id",
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "is_staff",
+            "is_superuser",
+            "managed_conferences",
+        ]
         read_only_fields = fields
+
+    def get_managed_conferences(self, obj):
+        if obj.is_superuser:
+            return []
+        return list(
+            ConferenceManagers.objects.filter(user=obj)
+            .order_by("conference__slug")
+            .values_list("conference__slug", flat=True)
+        )

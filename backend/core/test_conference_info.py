@@ -69,9 +69,9 @@ class InfoTestCase(TestCase):
         self.conf_a = alpha_conference()
         self.conf_b = beta_conference()
 
-    def staff_client(self):
+    def superuser_client(self):
         user = User.objects.create_user(
-            username="admin-info", password="pw", is_staff=True
+            username="admin-info", password="pw", is_staff=True, is_superuser=True
         )
         token = RefreshToken.for_user(user)
         client = APIClient()
@@ -100,7 +100,7 @@ class TestConferenceInfoEndpoint(InfoTestCase):
                 self.assertEqual(frozenset(response.json().keys()), INFO_PAYLOAD_KEYS)
 
     def test_patch_on_a_does_not_leak_to_b(self):
-        staff = self.staff_client()
+        staff = self.superuser_client()
         response = staff.patch(
             api("conference-info/edit/"),
             {"grant_text": "Only A grant"},
@@ -114,7 +114,7 @@ class TestConferenceInfoEndpoint(InfoTestCase):
         self.assertNotEqual(payload_b["grant_text"], "Only A grant")
 
     def test_footer_venue_text_is_independent_of_venue_text(self):
-        staff = self.staff_client()
+        staff = self.superuser_client()
         response = staff.patch(
             api("conference-info/edit/"),
             {"footer_venue_text": "Footer-only venue blurb"},
@@ -139,7 +139,7 @@ class TestConferenceInfoEndpoint(InfoTestCase):
         self.assertEqual(payload["footer_venue_text"], "Footer-only venue blurb")
 
     def test_write_serializer_persists_logistics_but_ignores_year(self):
-        staff = self.staff_client()
+        staff = self.superuser_client()
         response = staff.patch(
             api("conference-info/edit/"),
             {
@@ -165,7 +165,7 @@ class TestConferenceInfoEndpoint(InfoTestCase):
 
 class TestConferenceInfoEditValidation(InfoTestCase):
     def test_contribution_flags_persist(self):
-        staff = self.staff_client()
+        staff = self.superuser_client()
         response = staff.patch(
             api("conference-info/edit/"),
             {
@@ -184,7 +184,7 @@ class TestConferenceInfoEditValidation(InfoTestCase):
         self.assertEqual(self.conf_a.allowed_contribution_types, ("poster",))
 
     def test_disabling_every_contribution_type_is_rejected(self):
-        staff = self.staff_client()
+        staff = self.superuser_client()
         response = staff.patch(
             api("conference-info/edit/"),
             {
@@ -199,7 +199,7 @@ class TestConferenceInfoEditValidation(InfoTestCase):
         self.assertIn("registration_allow_talk", response.json())
 
     def test_deadline_before_registration_deadline_rejected(self):
-        staff = self.staff_client()
+        staff = self.superuser_client()
         response = staff.patch(
             api("conference-info/edit/"),
             {
@@ -212,7 +212,7 @@ class TestConferenceInfoEditValidation(InfoTestCase):
         self.assertIn("submission_edit_deadline", response.json())
 
     def test_deadline_after_conference_end_rejected(self):
-        staff = self.staff_client()
+        staff = self.superuser_client()
         response = staff.patch(
             api("conference-info/edit/"),
             {
@@ -225,7 +225,7 @@ class TestConferenceInfoEditValidation(InfoTestCase):
         self.assertIn("submission_edit_deadline", response.json())
 
     def test_in_range_deadline_accepted_and_persisted(self):
-        staff = self.staff_client()
+        staff = self.superuser_client()
         response = staff.patch(
             api("conference-info/edit/"),
             {
@@ -243,7 +243,7 @@ class TestConferenceInfoEditValidation(InfoTestCase):
         # Partial PATCH: the instance supplies the unpatched bound.
         self.conf_a.registration_deadline = date(2026, 6, 30)
         self.conf_a.save()
-        staff = self.staff_client()
+        staff = self.superuser_client()
         response = staff.patch(
             api("conference-info/edit/"),
             {"submission_edit_deadline": "2026-06-01"},
@@ -276,7 +276,7 @@ class TestAccommodationEndpoint(InfoTestCase):
         self.assertEqual([option["name"] for option in payload["options"]], ["Hotel A"])
 
     def test_patch_description_on_a_does_not_leak_to_b(self):
-        staff = self.staff_client()
+        staff = self.superuser_client()
         response = staff.patch(
             api("admin/accommodation/"),
             {"description": "Only A hotels"},

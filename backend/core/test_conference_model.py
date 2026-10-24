@@ -5,6 +5,7 @@ from datetime import date
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, connection, transaction
 from django.db.models.fields.reverse_related import ForeignObjectRel
@@ -15,6 +16,7 @@ from .models import (
     AccommodationOption,
     Conference,
     ConferenceDay,
+    ConferenceManagers,
     HikingRoute,
     HikingStop,
     Participant,
@@ -192,6 +194,12 @@ class TestIsReferenced(TestCase):
                 route=HikingRoute.objects.create(conference=c, name="Route"),
                 name="Stop",
             ),
+            "ConferenceManagers": lambda c: ConferenceManagers.objects.create(
+                conference=c,
+                user=get_user_model().objects.create_user(
+                    username=f"member-{c.pk}", password="pw"
+                ),
+            ),
         }
 
     def test_factories_cover_every_reverse_relation(self):
@@ -210,11 +218,23 @@ class TestIsReferenced(TestCase):
 
     def test_each_related_model_marks_the_conference_referenced(self):
         for index, (model_name, create_row) in enumerate(self.factories().items()):
+            if model_name == "ConferenceManagers":
+                continue
             with self.subTest(model=model_name):
                 conference = Conference.objects.create(slug=f"referenced-{index}")
                 create_row(conference)
 
                 self.assertTrue(conference.is_referenced())
+
+    def test_manager_grant_alone_does_not_block_deletion(self):
+        conference = Conference.objects.create(slug="membership-only")
+        user = get_user_model().objects.create_user(username="member", password="pw")
+        ConferenceManagers.objects.create(conference=conference, user=user)
+
+        self.assertFalse(conference.is_referenced())
+
+        conference.delete()
+        self.assertFalse(ConferenceManagers.objects.filter(user=user).exists())
 
 
 class TestAbstractParticipant(TestCase):

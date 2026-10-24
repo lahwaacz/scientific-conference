@@ -2,6 +2,7 @@ import { faGitlab } from "@fortawesome/free-brands-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { canManageConference } from "../../utils/access";
 import { fetchWithAuth } from "../../utils/api";
 import { getConferenceSlug } from "../../utils/conferenceSlug";
 import Loader from "../ui/Loader/Loader";
@@ -69,6 +70,20 @@ export default function AdminLoginModal({ onSuccess, onClose }) {
 
       if (!res.ok) {
         setError("Wrong username or password");
+        setLoading(false);
+        return;
+      }
+
+      let user = null;
+      try {
+        const data = await res.json();
+        user = data?.user ?? null;
+      } catch {
+        user = null;
+      }
+
+      if (user && !canManageConference(user, getConferenceSlug())) {
+        setError("This account does not have access to this conference.");
         setLoading(false);
         return;
       }

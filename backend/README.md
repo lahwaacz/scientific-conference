@@ -113,7 +113,7 @@ Administrators sign in with the university GitLab account or, when enabled, with
 
 `POST /api/auth/logout/` requires a valid access cookie; it reads and blacklists the refresh cookie, clears both JWT cookies and flushes the Django session. `POST /api/auth/refresh/` reads the refresh cookie and sets fresh cookies without echoing a token.
 
-Administrative actions require an authenticated user with staff privileges. Staff status (`is_staff`) is granted manually; GitLab groups are never consulted and accounts are never connected by matching e-mail addresses. A first GitLab sign-in creates a non-staff user. To reassign a GitLab social account to an existing local user (for example after the first GitLab login auto-created a separate account), run:
+Administrative API actions require an authenticated user who is a manager of the conference in the URL, or a superuser. A conference-manager grant (`ConferenceManagers`) is created per conference, manually, by a superuser in the Django administration; `is_staff` alone no longer grants conference access, and GitLab groups are never consulted. Accounts are never connected by matching e-mail addresses, and a first GitLab sign-in creates a user with no grants. To reassign a GitLab social account to an existing local user (for example after the first GitLab login auto-created a separate account), run:
 
 ```bash
 uv run python manage.py link_gitlab_account <gitlab-username> <local-username> [--delete-orphan]

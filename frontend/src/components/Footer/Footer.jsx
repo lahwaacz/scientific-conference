@@ -1,11 +1,33 @@
 import { useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import LogoIcon from "../../assets/logoWhite.png";
+import { canManageConference } from "../../utils/access";
 import { fetchWithAuth, refreshAccessToken } from "../../utils/api";
+import { getConferenceSlug } from "../../utils/conferenceSlug";
 import AdminLoginModal from "../AdminLoginModal/AdminLoginModal";
 import { useConferenceInfo } from "./../hooks/useConferenceInfo";
 import { useLockBodyScroll } from "./../hooks/useLockBodyScroll";
 import styles from "./Footer.module.css";
+
+async function probeAdminAccess() {
+  const response = await fetchWithAuth("/api/auth/user/", {
+    skipRefresh: true,
+  });
+  if (response.ok) {
+    return canManageConference(await response.json(), getConferenceSlug());
+  }
+  if (response.status !== 401) {
+    return false;
+  }
+  if (!(await refreshAccessToken({ reloadOnFailure: false }))) {
+    return false;
+  }
+  const retry = await fetchWithAuth("/api/auth/user/", { skipRefresh: true });
+  if (!retry.ok) {
+    return false;
+  }
+  return canManageConference(await retry.json(), getConferenceSlug());
+}
 
 export default function Footer() {
   const location = useLocation();
@@ -32,22 +54,16 @@ export default function Footer() {
     }
 
     isProbingAuth.current = true;
-    let authenticated = false;
+    let allowed = false;
     try {
-      const response = await fetchWithAuth("/api/auth/user/", {
-        skipRefresh: true,
-      });
-      authenticated = response.ok;
-      if (!authenticated && response.status === 401) {
-        authenticated = await refreshAccessToken({ reloadOnFailure: false });
-      }
+      allowed = await probeAdminAccess();
     } catch {
-      authenticated = false;
+      allowed = false;
     } finally {
       isProbingAuth.current = false;
     }
 
-    if (authenticated) {
+    if (allowed) {
       navigate("/admin-panel");
       return;
     }

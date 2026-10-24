@@ -256,7 +256,10 @@ class TestPdfDownloads(TestCase):
 
     def _client(self, is_staff):
         user = User.objects.create_user(
-            username=f"u-{is_staff}", password="pw", is_staff=is_staff
+            username=f"u-{is_staff}",
+            password="pw",
+            is_staff=is_staff,
+            is_superuser=is_staff,
         )
         token = RefreshToken.for_user(user)
         client = APIClient()

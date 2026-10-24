@@ -24,7 +24,7 @@ from rest_framework.test import APIClient
 
 from backend import urls as root_urls
 from core.auth.views import OAUTH_STATE_SALT, build_frontend_admin_url
-from core.models import Conference
+from core.models import Conference, ConferenceManagers
 
 from .conftest import api
 
@@ -234,6 +234,7 @@ class TestGitLabLogin(GitLabAuthTestCase):
         staff = User.objects.create_user(
             username="alice-local", password="pw", is_staff=True
         )
+        ConferenceManagers.objects.create(conference=self.conference, user=staff)
         SocialAccount.objects.create(
             provider="gitlab", uid="123", user=staff, extra_data={"username": "alice"}
         )

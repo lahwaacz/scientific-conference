@@ -52,7 +52,7 @@ The application hosts multiple conferences. Each conference is identified by a s
 The REST API follows the same split:
 
 - `/api/conferences/` — public list of all conferences, ordered running first, then upcoming, then past.
-- `/api/auth/...` — global authentication endpoints: GitLab OAuth sign-in, optional password sign-in, token refresh, and logout (one staff account administers every conference).
+- `/api/auth/...` — global authentication endpoints: GitLab OAuth sign-in, optional password sign-in, token refresh, and logout (sign-in is global; conference access is granted per conference).
 - `/api/<slug>/...` — everything else, scoped to one conference. An unknown slug returns 404.
 
 In the deployment, all of these sit under the `/conference/` prefix (for example `/conference/wsc2026/`). The legacy `/conference-demo/` prefix permanently redirects there.

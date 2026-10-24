@@ -20,7 +20,9 @@ def wsc_conference():
 
 class TestTalkScheduleEndpoint(TestCase):
     def setUp(self):
-        admin = User.objects.create_user(username="admin", password="pw", is_staff=True)
+        admin = User.objects.create_user(
+            username="admin", password="pw", is_staff=True, is_superuser=True
+        )
         token = RefreshToken.for_user(admin)
         self.client = APIClient()
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token.access_token}")
@@ -89,7 +91,9 @@ class TestTalkScheduleEndpoint(TestCase):
 
 class TestBreakCreateEndpoint(TestCase):
     def setUp(self):
-        admin = User.objects.create_user(username="admin", password="pw", is_staff=True)
+        admin = User.objects.create_user(
+            username="admin", password="pw", is_staff=True, is_superuser=True
+        )
         token = RefreshToken.for_user(admin)
         self.client = APIClient()
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token.access_token}")

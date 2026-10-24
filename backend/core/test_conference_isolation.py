@@ -148,8 +148,10 @@ def make_conference_data(conference, mark):
     )
 
 
-def staff_client(username="admin"):
-    user = User.objects.create_user(username=username, password="pw", is_staff=True)
+def superuser_client(username="admin"):
+    user = User.objects.create_user(
+        username=username, password="pw", is_staff=True, is_superuser=True
+    )
     token = RefreshToken.for_user(user)
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {token.access_token}")
@@ -214,7 +216,7 @@ class TestRouteTableLock(TestCase):
 
 class ConferencePairTestCase(TestCase):
     def setUp(self):
-        self.client = staff_client()
+        self.client = superuser_client()
         self.conf_a = alpha_conference()
         self.conf_b = beta_conference()
         self.a = make_conference_data(self.conf_a, MARK_A)
@@ -347,7 +349,7 @@ UNKNOWN_SLUG_MATRIX = [
 
 class TestUnknownSlug(TestCase):
     def setUp(self):
-        self.client = staff_client()
+        self.client = superuser_client()
 
     def test_every_scoped_route_404s_for_unknown_slug(self):
         for method, tail, body in UNKNOWN_SLUG_MATRIX:

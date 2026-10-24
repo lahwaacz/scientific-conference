@@ -27,6 +27,7 @@ from .models import (
     AccommodationOption,
     Conference,
     ConferenceDay,
+    ConferenceManagers,
     HikingRoute,
     HikingStop,
     Participant,
@@ -36,6 +37,31 @@ from .models import (
     Session,
     Talk,
 )
+
+
+class SuperuserOnlyAdminMixin:
+    """The Django admin is a superuser backup surface.
+
+    Conference data is managed through the SPA, where access is granted per
+    conference (ConferenceManagers). Every Django-admin entry point must
+    therefore be closed to non-superusers, including has_add_permission:
+    custom URLs such as the CSV import gate on it.
+    """
+
+    def has_module_permission(self, request):
+        return request.user.is_superuser
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_add_permission(self, request):
+        return request.user.is_superuser
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
 
 
 class TalkInline(admin.TabularInline):
@@ -52,8 +78,18 @@ class SessionInline(admin.TabularInline):
     ordering = ("start_time",)
 
 
+@admin.register(ConferenceManagers)
+class ConferenceManagersAdmin(SuperuserOnlyAdminMixin, admin.ModelAdmin):
+    list_display = ("conference", "user", "created_at")
+    list_filter = ("conference",)
+    search_fields = ("conference__slug", "user__username", "user__email")
+    autocomplete_fields = ("user",)
+    list_select_related = ("conference", "user")
+    ordering = ("conference__slug", "user__username")
+
+
 @admin.register(Conference)
-class ConferenceAdmin(admin.ModelAdmin):
+class ConferenceAdmin(SuperuserOnlyAdminMixin, admin.ModelAdmin):
     # Conferences are created here and their configuration lives on this
     # row; the SPA admin edits the same fields. Deleting one cascades to
     # every domain row, so it is offered only while nothing references it.
@@ -159,7 +195,7 @@ class ConferenceAdmin(admin.ModelAdmin):
 
 
 @admin.register(ConferenceDay)
-class ConferenceDayAdmin(admin.ModelAdmin):
+class ConferenceDayAdmin(SuperuserOnlyAdminMixin, admin.ModelAdmin):
     list_display = ("conference", "date")
     list_filter = ("conference",)
     ordering = ("date",)
@@ -167,14 +203,14 @@ class ConferenceDayAdmin(admin.ModelAdmin):
 
 
 @admin.register(Session)
-class SessionAdmin(admin.ModelAdmin):
+class SessionAdmin(SuperuserOnlyAdminMixin, admin.ModelAdmin):
     list_display = ("conference", "day", "chair", "start_time", "end_time")
     list_filter = ("conference", "day", "chair")
     inlines = [TalkInline]
 
 
 @admin.register(Talk)
-class TalkAdmin(admin.ModelAdmin):
+class TalkAdmin(SuperuserOnlyAdminMixin, admin.ModelAdmin):
     list_display = (
         "conference",
         "title",
@@ -195,7 +231,7 @@ class TalkAdmin(admin.ModelAdmin):
 
 
 @admin.register(Participant)
-class ParticipantAdmin(admin.ModelAdmin):
+class ParticipantAdmin(SuperuserOnlyAdminMixin, admin.ModelAdmin):
     list_display = ("conference", "name", "affiliation", "email")
     list_filter = ("conference",)
     search_fields = ("name",)
@@ -219,21 +255,21 @@ class ParticipantAdmin(admin.ModelAdmin):
 
 
 @admin.register(Abstract)
-class AbstractAdmin(admin.ModelAdmin):
+class AbstractAdmin(SuperuserOnlyAdminMixin, admin.ModelAdmin):
     list_display = ("conference", "title", "authors")
     list_filter = ("conference",)
     search_fields = ("title", "authors")
 
 
 @admin.register(Role)
-class RoleAdmin(admin.ModelAdmin):
+class RoleAdmin(SuperuserOnlyAdminMixin, admin.ModelAdmin):
     # Reference lookup data (like auth tables): no conference FK by design.
     list_display = ("name", "label")
     search_fields = ("name",)
 
 
 @admin.register(Person)
-class PersonAdmin(admin.ModelAdmin):
+class PersonAdmin(SuperuserOnlyAdminMixin, admin.ModelAdmin):
     list_display = ("conference", "name", "affiliation", "email")
     list_filter = ("conference", "roles")
     search_fields = ("name", "affiliation", "email")
@@ -271,7 +307,7 @@ class ParticipantSubmissionImportForm(forms.Form):
 
 
 @admin.register(ParticipantSubmission)
-class ParticipantSubmissionAdmin(admin.ModelAdmin):
+class ParticipantSubmissionAdmin(SuperuserOnlyAdminMixin, admin.ModelAdmin):
     change_list_template = "admin/core/participantsubmission/change_list.html"
     list_display = [
         "conference",
@@ -536,7 +572,7 @@ class ParticipantSubmissionAdmin(admin.ModelAdmin):
 
 
 @admin.register(AccommodationOption)
-class AccommodationOptionAdmin(admin.ModelAdmin):
+class AccommodationOptionAdmin(SuperuserOnlyAdminMixin, admin.ModelAdmin):
     list_display = ("conference", "name", "order")
     list_filter = ("conference",)
     list_select_related = ("conference",)
@@ -548,7 +584,7 @@ class HikingStopInline(admin.TabularInline):
 
 
 @admin.register(HikingRoute)
-class HikingRouteAdmin(admin.ModelAdmin):
+class HikingRouteAdmin(SuperuserOnlyAdminMixin, admin.ModelAdmin):
     list_display = ("conference", "name")
     list_filter = ("conference",)
     inlines = [HikingStopInline]

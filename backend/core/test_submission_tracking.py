@@ -579,8 +579,10 @@ class TestTrackingUpdateSerializer:
         assert not Path(old_path).exists()
 
 
-def make_staff_client():
-    user = User.objects.create_user(username="publisher", password="pw", is_staff=True)
+def make_superuser_client():
+    user = User.objects.create_user(
+        username="publisher", password="pw", is_staff=True, is_superuser=True
+    )
     token = RefreshToken.for_user(user)
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {token.access_token}")
@@ -753,7 +755,7 @@ class TestTrackingEndpoint:
         assert submission.published_participant is not None
         assert submission.published_abstract is not None
 
-        staff = make_staff_client()
+        staff = make_superuser_client()
         response = staff.post(
             api(f"admin/submissions/{submission.id}/reject/"),
             {"message": "Not accepted"},
@@ -954,7 +956,7 @@ class TestTrackingEndpoint:
         submission.refresh_from_db()
         assert submission.status == "pending"
 
-        publish = make_staff_client().post(
+        publish = make_superuser_client().post(
             api(f"admin/submissions/{submission.pk}/publish/")
         )
         assert publish.status_code == 200
@@ -965,7 +967,7 @@ class TestTrackingEndpoint:
         assert participant.email == "edited@example.com"
 
     def test_conference_info_payload_exposes_submission_edit_deadline(self, wsc):
-        staff = make_staff_client()
+        staff = make_superuser_client()
         response = staff.patch(
             api("conference-info/edit/"),
             {"submission_edit_deadline": "2026-08-31"},

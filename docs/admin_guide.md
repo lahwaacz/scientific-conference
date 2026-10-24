@@ -23,11 +23,11 @@ The entry point to the administrative interface is located in the footer of the 
 
 ### Sign in with GitLab
 
-Select **Sign in with GitLab** to sign in with the university GitLab. The browser redirects to the GitLab website and asks for the GitLab credentials there, and then returns to the conference website. The admin panel of the conference opens automatically after a successful sign-in.
+Select **Sign in with GitLab** to sign in with the university GitLab. The browser redirects to the GitLab website and asks for the GitLab credentials there, and then returns to the conference website. The admin panel of the conference opens automatically after a successful sign-in when the account has access to that conference; otherwise the site shows a "You do not have access to this conference" notice.
 
 GitLab is the standard way to sign in. Which options the login window offers depends on the deployment: when password sign-in is switched off, the login window shows only the GitLab button, and when GitLab sign-in is switched off, it shows only the username and password form. The optional password method is described in **Special Account Sign-in** below.
 
-A successful sign-in opens both administrative interfaces at once: the admin panel of the conference website described in this guide, and the Django administration used for creating conferences (see **Managing Multiple Conferences**). This applies whether you start from the website or from the Django administration.
+A successful sign-in establishes the session for both administrative interfaces. The conference admin panel is authorized per conference: the account must be listed as a conference manager for that conference. The Django administration, used for creating conferences and granting access, is reserved for superusers and is not needed for day-to-day conference management.
 
 ### Special Account Sign-in
 
@@ -46,21 +46,25 @@ You can leave the administrative part of the website in two ways:
 
 ### How Administrator Access Works
 
-Signing in with GitLab uses the university GitLab account, but the sign-in only proves who the person is. It never decides who is an administrator: administrator rights are always granted manually by an existing administrator, in the Django administration. Membership in GitLab groups or projects has no effect, and matching e-mail addresses never connect accounts automatically.
+Signing in with GitLab uses the university GitLab account, but the sign-in only proves who the person is. It never decides which conferences that person may administer: access is always granted manually, per conference, by a superuser in the Django administration. Membership in GitLab groups or projects has no effect, and matching e-mail addresses never connect accounts automatically.
 
-This has two practical consequences:
+Access is granted by creating a **conference manager** entry: a row that pairs one user account with one conference. That row allows the person to open the conference's admin panel and edit its data. It grants nothing on any other conference.
 
-- A person who signs in with GitLab for the first time gets a new user account in the system, without administrator rights. An administrator must promote it (see **Give a New Administrator Access** below).
-- An administrator who previously signed in with a username and password, and now signs in with GitLab, gets a separate new account rather than the old one. The GitLab identity can be linked to the existing account (see **Linking a GitLab Account to an Existing Administrator Account** below).
+Two rules follow:
+
+- `is_staff` alone grants no conference access. It only allows a user to open the Django administration, which is a superuser tool; the conference website's admin panel authorizes by conference manager grant.
+- Superusers can administer every conference, including conferences they are not a member of.
+
+A person who signs in with GitLab for the first time gets a new user account in the system, without access to any conference. An administrator who previously signed in with a username and password, and now signs in with GitLab, gets a separate new account; the two can be linked (see **Linking a GitLab Account to an Existing Administrator Account** below).
 
 ### Give a New Administrator Access
 
-1. Ask the person to open any conference website, enter the admin area, and sign in with GitLab once. This creates their user account.
-2. Open the Django administration at `<root>admin/` (for example, `https://mmg-webapps.fjfi.cvut.cz/conference/admin/`) and sign in.
+1. Ask the person to open the conference website, enter the admin area, and sign in with GitLab once. This creates their user account; the site shows a "You do not have access to this conference" notice.
+2. Open the Django administration at `<root>admin/` (for example, `https://mmg-webapps.fjfi.cvut.cz/conference/admin/`) and sign in as a superuser.
 3. Open **Users** and find the newly created account (it carries the GitLab username).
-4. Enable **Staff status** and save.
+4. Open **Conference managers**, select **Add conference manager**, choose the conference and the user, and save.
 
-The person can now sign in with GitLab and use the admin panel of every conference.
+The person can now sign in with GitLab and use the admin panel of that conference. Repeat the manager-grant step for every conference the person should manage.
 
 ### Linking a GitLab Account to an Existing Administrator Account
 
@@ -68,12 +72,12 @@ When an existing administrator starts signing in with GitLab, the first GitLab s
 
 1. Sign in with GitLab once, so the new account exists.
 2. Open the Django administration and open **Social accounts**. Find the GitLab entry of the new account.
-3. Change the **User** of that GitLab entry to the existing administrator account and save. GitLab sign-ins now open the existing account, with its administrator rights.
+3. Change the **User** of that GitLab entry to the existing administrator account and save. GitLab sign-ins now open the existing account, with its conference manager grants.
 4. Open **Users** and delete the leftover account created by the first GitLab sign-in, if nothing references it.
 
 Alternatively, the server operator can run a linking command on the backend; see the deployment guide.
 
-> **Warning:** Linking only decides which account GitLab sign-ins open. It does not copy or change the administrator rights of either account.
+> **Warning:** Linking only decides which account GitLab sign-ins open. It does not copy or change the conference manager grants of either account.
 
 ## Admin Panel Overview
 
@@ -106,7 +110,7 @@ Select a card on the landing page to open the corresponding conference website.
 
 All data of a conference belongs to that conference: its participants, submissions, program, accommodation, hiking routes, and website texts. Nothing is shared between conferences. The admin panel opened on a conference website can only see and change the data of that conference.
 
-Administrator accounts are shared across conferences. A single staff account can administer every conference. This is intended; administrator sessions and cookies are not scoped per conference. How accounts are created and linked is described in **Administrator Accounts**.
+Administrator accounts are global, but access is per conference. A conference-manager row grants management of one conference; a superuser can manage every conference. Sessions and cookies are not scoped per conference, and the server re-checks the grant on every request, so revoking it takes effect immediately. How accounts are created, linked, and granted access is described in **Administrator Accounts**.
 
 ### Creating a New Conference
 

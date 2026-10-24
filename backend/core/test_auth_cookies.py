@@ -7,7 +7,7 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 
-from core.models import Conference
+from core.models import Conference, ConferenceManagers
 
 from .conftest import api
 
@@ -23,6 +23,7 @@ class CookieAuthTestCase(TestCase):
             username="cookie-admin", password="pw", is_staff=True
         )
         self.conference = Conference.objects.create(slug=SLUG)
+        ConferenceManagers.objects.create(conference=self.conference, user=self.user)
 
     def login(self):
         response = self.client.post(

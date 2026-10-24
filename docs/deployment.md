@@ -63,15 +63,31 @@ No application-level login throttle is configured. Rate-limit both `/api/auth/..
 
 ### Authorizing Administrators
 
-Sign-in only proves identity. Administrator rights are the `is_staff` flag on the user account, set manually in the Django administration; GitLab groups or projects are never consulted, and accounts are never connected by matching e-mail addresses. A first GitLab sign-in creates a non-staff user; promote it in the Django administration (**Users**, enable **Staff status**).
+Sign-in only proves identity. Conference access is granted per conference through `ConferenceManagers` rows: a superuser adds the user account to a conference under **Conference managers** in the Django administration. That row allows the person to manage that one conference; it grants nothing on another conference. Superusers administer every conference. GitLab groups or projects are never consulted, and accounts are never connected by matching e-mail addresses.
 
-An existing staff user whose first GitLab sign-in created a separate new account can be linked back with the management command, run in the backend container:
+`is_staff` no longer grants access to any conference. It remains only the Django-administration entry flag, and the Django administration itself is superuser-only for conference data; administrators work in the conference admin panel. A first GitLab sign-in creates a user account with no manager grants.
+
+Non-superusers must hold no Django model permissions. In particular, `auth.change_user` would let a staff user promote themselves to superuser; conference managers do not need any Django-administration permission because they work in the conference admin panel.
+
+An existing user whose first GitLab sign-in created a separate new account can be linked back with the management command, run in the backend container:
 
 ```bash
 uv run python manage.py link_gitlab_account <gitlab-username> <local-username> [--delete-orphan]
 ```
 
-The command reassigns the GitLab social account to the local user and never modifies `is_staff`. `--delete-orphan` additionally deletes the account created by the first GitLab sign-in, unless a `Person` or a participant submission still references it (the command keeps the account and prints a warning in that case). The same reassignment can be done by hand in the Django administration under **Social accounts**.
+The command reassigns the GitLab social account to the local user and never modifies `is_staff` or conference manager grants. `--delete-orphan` additionally deletes the account created by the first GitLab sign-in, unless a `Person` or a participant submission still references it (the command keeps the account and prints a warning in that case). The same reassignment can be done by hand in the Django administration under **Social accounts**.
+
+### Upgrading to Per-Conference Authorization
+
+The per-conference access model (migration `0039`) replaces the global `is_staff` rule with superusers plus `ConferenceManagers` rows. There is no automatic backfill: non-superuser staff lose conference access at deploy until a superuser grants conference-manager rows.
+
+1. Before deploying, verify that at least one superuser account exists (`python manage.py shell -c "from django.contrib.auth import get_user_model; print(get_user_model().objects.filter(is_superuser=True).count())"`).
+2. Run `python manage.py migrate` before starting the new backend. Old code ignores the new table; new code queries it on every scoped request.
+3. Deploy the backend, then the frontend. The frontend reads `managed_conferences` from `/api/auth/user/`; deploying it after the backend avoids the missing-field window.
+4. Sign in as a superuser and create the **Conference managers** for the existing administrators.
+5. Verify that each administrator can open the admin panel of their conference and is refused on the others.
+
+Rollback reverses the order: deploy the previous code first, then roll back the migration (the rollback drops the grant rows).
 
 ### Rollout Order
 

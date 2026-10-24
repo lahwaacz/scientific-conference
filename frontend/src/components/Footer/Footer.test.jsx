@@ -69,7 +69,10 @@ describe("Footer", () => {
   });
 
   test("skips the login modal when the admin session is already active", async () => {
-    fetchWithAuth.mockResolvedValueOnce({ ok: true });
+    fetchWithAuth.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ is_superuser: true, managed_conferences: [] }),
+    });
     render(<Footer />);
 
     fireEvent.click(
@@ -85,7 +88,12 @@ describe("Footer", () => {
   });
 
   test("refreshes an expired access cookie before opening the modal", async () => {
-    fetchWithAuth.mockResolvedValueOnce({ ok: false, status: 401 });
+    fetchWithAuth
+      .mockResolvedValueOnce({ ok: false, status: 401 })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ is_superuser: true, managed_conferences: [] }),
+      });
     refreshAccessToken.mockResolvedValueOnce(true);
     render(<Footer />);
 
@@ -163,7 +171,10 @@ describe("Footer", () => {
     fireEvent.click(button);
 
     expect(fetchWithAuth).toHaveBeenCalledTimes(1);
-    resolveProbe({ ok: true });
+    resolveProbe({
+      ok: true,
+      json: async () => ({ is_superuser: true, managed_conferences: [] }),
+    });
     await waitFor(() =>
       expect(mockNavigate).toHaveBeenCalledWith("/admin-panel")
     );

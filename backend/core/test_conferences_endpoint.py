@@ -10,7 +10,7 @@ from django.test import RequestFactory, TestCase
 from django.urls import resolve, reverse
 from rest_framework.test import APIClient
 
-from .admin import ConferenceAdmin
+from .admin import ConferenceAdmin, SuperuserOnlyAdminMixin
 from .models import Conference, Participant, Role
 from .views import ConferenceListView
 
@@ -316,7 +316,14 @@ class TestConferenceAdminPolicy(TestCase):
             if model._meta.app_label == "core" and model not in (Conference, Role)
         }
 
-        self.assertEqual(len(core_admins), 9)
+        self.assertEqual(len(core_admins), 10)
         for object_name, admin_instance in core_admins.items():
             self.assertIn("conference", admin_instance.list_display, msg=object_name)
             self.assertIn("conference", admin_instance.list_filter, msg=object_name)
+
+    def test_every_core_admin_is_superuser_only(self):
+        for model, admin_instance in django_admin.site._registry.items():
+            if model._meta.app_label != "core":
+                continue
+            with self.subTest(model=model._meta.object_name):
+                self.assertIsInstance(admin_instance, SuperuserOnlyAdminMixin)

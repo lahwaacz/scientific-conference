@@ -526,7 +526,9 @@ class TestSubmissionAdminAPI(TestCase):
         shutil.rmtree(_TEMP_MEDIA, ignore_errors=True)
 
     def setUp(self):
-        admin = User.objects.create_user(username="admin", password="pw", is_staff=True)
+        admin = User.objects.create_user(
+            username="admin", password="pw", is_staff=True, is_superuser=True
+        )
         token = RefreshToken.for_user(admin)
         self.client = APIClient()
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token.access_token}")

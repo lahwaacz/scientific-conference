@@ -329,6 +329,7 @@ class TestPublishSubmissionAPI(APITestCase):
             username="admin",
             password="adminpass",
             is_staff=True,
+            is_superuser=True,
         )
         refresh = RefreshToken.for_user(self.admin)
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")

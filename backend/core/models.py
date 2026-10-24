@@ -141,6 +141,9 @@ class Conference(models.Model):
             ).exists()
             for relation in self._meta.get_fields(include_hidden=True)
             if isinstance(relation, ForeignObjectRel)
+            # Access grants are not content: a conference whose only related
+            # rows are manager grants is still deletable (the rows cascade).
+            and relation.get_accessor_name() != "managers"
         )
 
     @property
@@ -191,6 +194,31 @@ class Conference(models.Model):
         if today < self.date_start:
             return "future"
         return "past"
+
+
+class ConferenceManagers(models.Model):
+    conference = models.ForeignKey(
+        Conference, related_name="managers", on_delete=models.CASCADE
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name="conference_managers",
+        on_delete=models.CASCADE,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "conference manager"
+        verbose_name_plural = "conference managers"
+        ordering = ["conference__slug", "user__username"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["conference", "user"], name="uniq_conference_manager"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.user} @ {self.conference}"
 
 
 class ConferenceDay(models.Model):

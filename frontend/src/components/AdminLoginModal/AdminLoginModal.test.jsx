@@ -133,7 +133,9 @@ describe("AdminLoginModal", () => {
         if (url === "/api/auth/login/") {
           return Promise.resolve({
             ok: true,
-            json: async () => ({ access: "A", refresh: "R" }),
+            json: async () => ({
+              user: { is_superuser: true, managed_conferences: [] },
+            }),
           });
         }
         return Promise.reject(new Error(`unexpected call: ${url}`));
@@ -165,7 +167,12 @@ describe("AdminLoginModal", () => {
           return Promise.resolve(configResponse(PASSWORD_ONLY));
         }
         if (url === "/api/auth/login/") {
-          return Promise.resolve({ ok: true });
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({
+              user: { is_superuser: true, managed_conferences: [] },
+            }),
+          });
         }
         return Promise.reject(new Error(`unexpected call: ${url}`));
       });
@@ -178,6 +185,57 @@ describe("AdminLoginModal", () => {
       await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1));
       expect(localStorage.getItem("access_token")).toBeNull();
       expect(localStorage.getItem("refresh_token")).toBeNull();
+    });
+
+    test("calls onSuccess when the account manages the current conference", async () => {
+      fetchWithAuth.mockImplementation((url) => {
+        if (url === "/api/auth/config/") {
+          return Promise.resolve(configResponse(PASSWORD_ONLY));
+        }
+        if (url === "/api/auth/login/") {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({
+              user: { is_superuser: false, managed_conferences: ["wsc2026"] },
+            }),
+          });
+        }
+        return Promise.reject(new Error(`unexpected call: ${url}`));
+      });
+      render(<AdminLoginModal onSuccess={onSuccess} onClose={onClose} />);
+      await screen.findByPlaceholderText(/enter username/i);
+      fillUsername("manager");
+      fillPassword("pw");
+      submit();
+
+      await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1));
+    });
+
+    test("blocks onSuccess and explains when the account has no access", async () => {
+      fetchWithAuth.mockImplementation((url) => {
+        if (url === "/api/auth/config/") {
+          return Promise.resolve(configResponse(PASSWORD_ONLY));
+        }
+        if (url === "/api/auth/login/") {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({
+              user: { is_superuser: false, managed_conferences: ["other"] },
+            }),
+          });
+        }
+        return Promise.reject(new Error(`unexpected call: ${url}`));
+      });
+      render(<AdminLoginModal onSuccess={onSuccess} onClose={onClose} />);
+      await screen.findByPlaceholderText(/enter username/i);
+      fillUsername("outsider");
+      fillPassword("pw");
+      submit();
+
+      expect(
+        await screen.findByText(/does not have access to this conference/i)
+      ).toBeInTheDocument();
+      expect(onSuccess).not.toHaveBeenCalled();
     });
 
     test("shows the wrong-credentials message and does not persist on non-OK", async () => {

@@ -47,7 +47,7 @@ def test_admin_submission_list_orders_by_surname(wsc):
         )
 
     admin = User.objects.create_user(
-        username="sort-admin", password="pw", is_staff=True
+        username="sort-admin", password="pw", is_staff=True, is_superuser=True
     )
     token = RefreshToken.for_user(admin)
     client = APIClient()

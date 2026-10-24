@@ -18,7 +18,7 @@ from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
-from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -35,10 +35,10 @@ from .models import (
     Session,
     Talk,
 )
+from .permissions import IsConferenceManager, can_manage_conference
 from .serializers import (
     AbstractSerializer,
     AccommodationInfoSerializer,
-    AccommodationOptionSerializer,
     AccommodationOptionWriteSerializer,
     ConferenceCardSerializer,
     ConferenceDaySerializer,
@@ -79,8 +79,10 @@ class ConferenceScopedMixin:
         return get_conference_or_404(self.kwargs[self.conference_url_kwarg])
 
     def initial(self, request, *args, **kwargs):
+        # Resolve (and cache) the conference before authentication and
+        # permission checks: IsConferenceManager needs view.conference.
+        _ = self.conference
         super().initial(request, *args, **kwargs)
-        _ = self.conference  # force 404 uniformly (AdminPanelView too)
 
     def get_queryset(self):
         return super().get_queryset().filter(conference=self.conference)
@@ -131,12 +133,15 @@ def generate_program_pdf(request, conference_slug):
     try:
         auth = JWTCookieAuthentication()
         result = auth.authenticate(request)
-        if result is None or not result[0].is_staff:
-            return HttpResponse(status=403)
     except Exception:  # noqa: BLE001
         return HttpResponse(status=403)
 
+    if result is None:
+        return HttpResponse(status=403)
+
     conference = get_conference_or_404(conference_slug)
+    if not can_manage_conference(result[0], conference):
+        return HttpResponse(status=403)
 
     font_path = os.path.join(os.path.dirname(__file__), "fonts", "DejaVuSans.ttf")
     font_bold_path = os.path.join(
@@ -340,13 +345,8 @@ class AccommodationInfoView(ConferenceScopedMixin, APIView):
         return Response(serializer.data)
 
 
-class AccommodationOptionListView(generics.ListAPIView):
-    queryset = AccommodationOption.objects.all().order_by("order")
-    serializer_class = AccommodationOptionSerializer
-
-
 class AccommodationInfoEditView(ConferenceScopedMixin, APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsConferenceManager]
     parser_classes = [JSONParser]
 
     def patch(self, request, *args, **kwargs):
@@ -360,7 +360,7 @@ class AccommodationInfoEditView(ConferenceScopedMixin, APIView):
 
 
 class AccommodationOptionEditView(ConferenceScopedMixin, APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsConferenceManager]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def post(self, request, *args, **kwargs):
@@ -392,12 +392,15 @@ def generate_badges_pdf(request, conference_slug):
     try:
         auth = JWTCookieAuthentication()
         result = auth.authenticate(request)
-        if result is None or not result[0].is_staff:
-            return HttpResponse(status=403)
     except Exception:  # noqa: BLE001
         return HttpResponse(status=403)
 
+    if result is None:
+        return HttpResponse(status=403)
+
     conference = get_conference_or_404(conference_slug)
+    if not can_manage_conference(result[0], conference):
+        return HttpResponse(status=403)
 
     font_path = os.path.join(os.path.dirname(__file__), "fonts", "DejaVuSans.ttf")
     font_bold_path = os.path.join(
@@ -586,7 +589,7 @@ class PersonListAPIView(ConferenceScopedMixin, generics.ListCreateAPIView):
     def get_permissions(self):
         if self.request.method == "GET":
             return []
-        return [IsAdminUser()]
+        return [IsConferenceManager()]
 
     def get_authenticators(self):
         if self.request.method == "GET":
@@ -605,14 +608,14 @@ class PersonDetailView(ConferenceScopedMixin, generics.RetrieveUpdateDestroyAPIV
     queryset = Person.objects.all()
     serializer_class = PersonAdminSerializer
     authentication_classes = [JWTCookieAuthentication]
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsConferenceManager]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
 
 # Admin Panel - JWT
 class AdminPanelView(ConferenceScopedMixin, APIView):
     authentication_classes = [JWTCookieAuthentication]
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsConferenceManager]
 
     def get(self, request, *args, **kwargs):
         return Response(
@@ -671,7 +674,7 @@ class SubmissionListView(ConferenceScopedMixin, generics.ListAPIView):
     queryset = ParticipantSubmission.objects.all()
     serializer_class = ParticipantSubmissionSerializer
     authentication_classes = [JWTCookieAuthentication]
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsConferenceManager]
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -690,7 +693,7 @@ class SubmissionDetailView(ConferenceScopedMixin, generics.RetrieveUpdateAPIView
     queryset = ParticipantSubmission.objects.all()
     serializer_class = ParticipantSubmissionSerializer
     authentication_classes = [JWTCookieAuthentication]
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsConferenceManager]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
 
@@ -699,7 +702,7 @@ class UnscheduledTalksView(ConferenceScopedMixin, generics.ListAPIView):
     queryset = Talk.objects.all()
     serializer_class = TalkSerializer
     authentication_classes = [JWTCookieAuthentication]
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsConferenceManager]
 
     def get_queryset(self):
         # Talks без времени или дня
@@ -716,7 +719,7 @@ class TalkScheduleUpdateView(ConferenceScopedMixin, generics.UpdateAPIView):
     queryset = Talk.objects.all()
     serializer_class = TalkSerializer
     authentication_classes = [JWTCookieAuthentication]
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsConferenceManager]
     http_method_names = ["patch"]
 
     def patch(self, request, *args, **kwargs):
@@ -764,10 +767,8 @@ class TalkScheduleUpdateView(ConferenceScopedMixin, generics.UpdateAPIView):
 
 
 @api_view(["POST"])
+@permission_classes([IsConferenceManager])
 def unpublish_submission(request, conference_slug, pk):
-    if not request.user.is_staff:
-        return Response({"error": "Admin only"}, status=403)
-
     conference = get_conference_or_404(conference_slug)
 
     try:
@@ -786,10 +787,8 @@ def unpublish_submission(request, conference_slug, pk):
 
 
 @api_view(["POST"])
+@permission_classes([IsConferenceManager])
 def reject_submission(request, conference_slug, pk):
-    if not request.user.is_staff:
-        return Response({"error": "Admin only"}, status=403)
-
     conference = get_conference_or_404(conference_slug)
 
     try:
@@ -812,10 +811,8 @@ def reject_submission(request, conference_slug, pk):
 
 
 @api_view(["POST"])
+@permission_classes([IsConferenceManager])
 def restore_submission(request, conference_slug, pk):
-    if not request.user.is_staff:
-        return Response({"error": "Admin only"}, status=403)
-
     conference = get_conference_or_404(conference_slug)
 
     try:
@@ -833,10 +830,8 @@ def restore_submission(request, conference_slug, pk):
 
 # Admin: publish submission
 @api_view(["POST"])
+@permission_classes([IsConferenceManager])
 def publish_submission(request, conference_slug, pk):
-    if not request.user.is_staff:
-        return Response({"error": "Admin only"}, status=403)
-
     conference = get_conference_or_404(conference_slug)
 
     try:
@@ -884,7 +879,7 @@ class UnscheduledTalkDeleteView(ConferenceScopedMixin, generics.DestroyAPIView):
     queryset = Talk.objects.all()
     serializer_class = TalkSerializer
     authentication_classes = [JWTCookieAuthentication]
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsConferenceManager]
 
     def destroy(self, request, *args, **kwargs):
         talk = self.get_object()
@@ -912,7 +907,7 @@ class ConferenceDayDeleteView(ConferenceScopedMixin, generics.DestroyAPIView):
     queryset = ConferenceDay.objects.all()
     serializer_class = ConferenceDaySerializer
     authentication_classes = [JWTCookieAuthentication]
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsConferenceManager]
 
     def destroy(self, request, *args, **kwargs):
         day = self.get_object()
@@ -934,7 +929,7 @@ class ScheduleBreakCreateView(ConferenceScopedMixin, generics.CreateAPIView):
     queryset = Talk.objects.all()
     serializer_class = TalkSerializer
     authentication_classes = [JWTCookieAuthentication]
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsConferenceManager]
 
     def create(self, request, *args, **kwargs):
         day_id = request.data.get("day")
@@ -975,7 +970,7 @@ class SessionCreateView(ConferenceScopedMixin, generics.CreateAPIView):
     queryset = Session.objects.all()
     serializer_class = SessionSerializer
     authentication_classes = [JWTCookieAuthentication]
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsConferenceManager]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -990,7 +985,7 @@ class SessionListView(ConferenceScopedMixin, generics.ListAPIView):
     queryset = Session.objects.all()
     serializer_class = SessionSerializer
     authentication_classes = [JWTCookieAuthentication]
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsConferenceManager]
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -1004,14 +999,14 @@ class ConferenceDayCreateView(ConferenceScopedMixin, generics.CreateAPIView):
     queryset = ConferenceDay.objects.all()
     serializer_class = ConferenceDaySerializer
     authentication_classes = [JWTCookieAuthentication]
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsConferenceManager]
 
 
 class SessionUpdateTimeView(ConferenceScopedMixin, generics.UpdateAPIView):
     queryset = Session.objects.all()
     serializer_class = SessionSerializer
     authentication_classes = [JWTCookieAuthentication]
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsConferenceManager]
     http_method_names = ["patch"]
 
 
@@ -1022,7 +1017,7 @@ class HikingRouteListView(ConferenceScopedMixin, generics.ListAPIView):
 
 class HikingRouteEditView(ConferenceScopedMixin, APIView):
     authentication_classes = [JWTCookieAuthentication]
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsConferenceManager]
 
     def post(self, request, *args, **kwargs):
         serializer = HikingRouteSerializer(data=request.data)
@@ -1063,7 +1058,7 @@ class HikingRouteEditView(ConferenceScopedMixin, APIView):
 
 class HikingStopEditView(ConferenceScopedMixin, APIView):
     authentication_classes = [JWTCookieAuthentication]
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsConferenceManager]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def post(self, request, *args, **kwargs):
@@ -1100,7 +1095,7 @@ class ConferenceInfoView(ConferenceScopedMixin, APIView):
 
 class ConferenceInfoEditView(ConferenceScopedMixin, APIView):
     authentication_classes = [JWTCookieAuthentication]
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsConferenceManager]
     # Multipart so the SPA can PATCH FormData with optional photo files
     # (card_photo / hero_photo).
     parser_classes = [MultiPartParser, FormParser, JSONParser]
@@ -1116,7 +1111,7 @@ class ConferenceInfoEditView(ConferenceScopedMixin, APIView):
 
 
 @api_view(["DELETE"])
-@permission_classes([IsAdminUser])
+@permission_classes([IsConferenceManager])
 def delete_session(request, conference_slug, pk):
     conference = get_conference_or_404(conference_slug)
     try:
@@ -1135,7 +1130,7 @@ def delete_session(request, conference_slug, pk):
 
 
 @api_view(["PATCH"])
-@permission_classes([IsAdminUser])
+@permission_classes([IsConferenceManager])
 def update_session(request, conference_slug, pk):
     conference = get_conference_or_404(conference_slug)
     try:

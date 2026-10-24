@@ -30,8 +30,10 @@ def other_conference():
     return Conference.objects.get_or_create(slug=SLUG_B)[0]
 
 
-def staff_client(username="admin"):
-    user = User.objects.create_user(username=username, password="pw", is_staff=True)
+def superuser_client(username="admin"):
+    user = User.objects.create_user(
+        username=username, password="pw", is_staff=True, is_superuser=True
+    )
     token = RefreshToken.for_user(user)
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {token.access_token}")
@@ -68,7 +70,7 @@ class TestPublicPeopleList(PeopleTestCase):
         self.assertEqual(sorted(results[0]["roles"]), ["committee", "organizer"])
 
     def test_public_list_omits_auth_user_fields(self):
-        _, user = staff_client("linked-admin")
+        _, user = superuser_client("linked-admin")
         person = Person.objects.create(
             conference=wsc_conference(), name="Linked", user=user
         )
@@ -132,7 +134,7 @@ class TestPeopleWrites(PeopleTestCase):
         self.assertEqual(response.status_code, 401)
 
     def test_post_as_staff_creates_person_with_both_roles(self):
-        client, _ = staff_client()
+        client, _ = superuser_client()
 
         response = client.post(
             api("people/"),
@@ -154,7 +156,7 @@ class TestPeopleWrites(PeopleTestCase):
 
     def test_post_multipart_repeated_role_values(self):
         # The SPA posts multipart with one `roles` field per selected role.
-        client, _ = staff_client()
+        client, _ = superuser_client()
 
         response = client.post(
             api("people/"),
@@ -179,7 +181,7 @@ class TestPeopleWrites(PeopleTestCase):
             "Both",
             [self.organizer_role, self.committee_role],
         )
-        client, _ = staff_client()
+        client, _ = superuser_client()
 
         response = client.patch(
             api(f"people/{person.pk}/"), {"roles": ["committee"]}, format="json"
@@ -194,7 +196,7 @@ class TestPeopleWrites(PeopleTestCase):
 
     def test_patch_json_empty_roles_clears(self):
         person = self.make_person(wsc_conference(), "Org", [self.organizer_role])
-        client, _ = staff_client()
+        client, _ = superuser_client()
 
         response = client.patch(
             api(f"people/{person.pk}/"), {"roles": []}, format="json"
@@ -210,7 +212,7 @@ class TestPeopleWrites(PeopleTestCase):
         # FormData cannot express an empty list, so an absent `roles` key
         # means "leave unchanged" — the editor sends JSON for field saves.
         person = self.make_person(wsc_conference(), "Org", [self.organizer_role])
-        client, _ = staff_client()
+        client, _ = superuser_client()
 
         response = client.patch(
             api(f"people/{person.pk}/"),
@@ -227,7 +229,7 @@ class TestPeopleWrites(PeopleTestCase):
 
     def test_delete_as_staff(self):
         person = self.make_person(wsc_conference(), "Org", [self.organizer_role])
-        client, _ = staff_client()
+        client, _ = superuser_client()
 
         response = client.delete(api(f"people/{person.pk}/"))
 
@@ -235,7 +237,7 @@ class TestPeopleWrites(PeopleTestCase):
         self.assertFalse(Person.objects.filter(pk=person.pk).exists())
 
     def test_unknown_role_name_is_rejected(self):
-        client, _ = staff_client()
+        client, _ = superuser_client()
 
         response = client.post(
             api("people/"), {"name": "X", "roles": ["chair"]}, format="json"
@@ -245,7 +247,7 @@ class TestPeopleWrites(PeopleTestCase):
         self.assertIn("roles", response.json())
 
     def test_link_user_and_username(self):
-        client, user = staff_client()
+        client, user = superuser_client()
         person = self.make_person(wsc_conference(), "Linked", [])
 
         response = client.patch(
@@ -261,7 +263,7 @@ class TestPeopleWrites(PeopleTestCase):
 
     def test_user_username_is_none_when_unlinked(self):
         person = self.make_person(wsc_conference(), "Unlinked", [])
-        client, _ = staff_client()
+        client, _ = superuser_client()
 
         response = client.get(api(f"people/{person.pk}/"))
 
