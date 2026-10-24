@@ -481,6 +481,14 @@ class TestGitLabProviderRoutes(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, reverse("gitlab_login"))
 
+    def test_allauth_gitlab_login_page_is_styled(self):
+        with gitlab_urls():
+            response = self.client.get(reverse("gitlab_login"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="panel"')
+        self.assertContains(response, "Sign in via GitLab")
+        self.assertContains(response, "Continue")
+
 
 class TestCookieSecuritySettings(TestCase):
     def test_session_and_csrf_cookies_are_samesite_lax(self):

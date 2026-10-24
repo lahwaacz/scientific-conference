@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    <title>
+        {% if process == "connect" %}Connect {{ provider.name }}{% else %}Sign in via {{ provider.name }}{% endif %}
+        | Conference
+    </title>
+    {% include "account/_auth_styles.html" %}
+</head>
+<body>
+    <main class="page">
+        <section class="panel" aria-labelledby="login-title">
+            <p class="eyebrow">Conference administration</p>
+            <h1 id="login-title">
+                {% if process == "connect" %}Connect {{ provider.name }}{% else %}Sign in via {{ provider.name }}{% endif %}
+            </h1>
+            <p class="lead">
+                {% if process == "connect" %}
+                You are about to connect a new third-party account from {{ provider.name }}.
+                {% else %}
+                You are about to sign in using a third-party account from {{ provider.name }}.
+                {% endif %}
+            </p>
+
+            <form class="login-form" method="post">
+                {% csrf_token %}
+                <button class="button" type="submit">Continue</button>
+            </form>
+
+            <a class="back" href="{% url 'account_login' %}">Back to sign in</a>
+        </section>
+    </main>
+</body>
+</html>
