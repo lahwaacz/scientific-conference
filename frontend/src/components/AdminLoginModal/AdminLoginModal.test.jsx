@@ -256,20 +256,22 @@ describe("AdminLoginModal", () => {
       ).toBeInTheDocument();
     });
 
-    test("keeps the password form inside the collapsed special-account section", async () => {
+    test("keeps the password form visible in the special-account section", async () => {
       mockApi(BOTH);
       render(<AdminLoginModal onSuccess={onSuccess} onClose={onClose} />);
 
       const summary = await screen.findByText(/special account/i);
       const details = summary.closest("details");
       expect(details).not.toBeNull();
-      expect(details.open).toBe(false);
-      expect(details).toContainElement(
-        screen.getByPlaceholderText(/enter username/i)
-      );
-      expect(details).toContainElement(
-        screen.getByPlaceholderText(/enter password/i)
-      );
+      expect(details.open).toBe(true);
+      const username = screen.getByPlaceholderText(/enter username/i);
+      const password = screen.getByPlaceholderText(/enter password/i);
+      expect(details).toContainElement(username);
+      expect(details).toContainElement(password);
+      expect(username).toBeVisible();
+      expect(password).toBeVisible();
+      expect(username).toHaveAttribute("name", "username");
+      expect(password).toHaveAttribute("name", "password");
     });
 
     test("hides the GitLab button when the config disables it", async () => {

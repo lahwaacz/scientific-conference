@@ -112,6 +112,8 @@ export default function AdminLoginModal({ onSuccess, onClose }) {
   const passwordForm = (
     <form onSubmit={submit}>
       <input
+        id="admin-login-username"
+        name="username"
         type="text"
         placeholder="Enter username"
         aria-label="Username"
@@ -124,6 +126,8 @@ export default function AdminLoginModal({ onSuccess, onClose }) {
       />
 
       <input
+        id="admin-login-password"
+        name="password"
         type="password"
         placeholder="Enter password"
         aria-label="Password"
@@ -187,7 +191,7 @@ export default function AdminLoginModal({ onSuccess, onClose }) {
 
         {showPassword &&
           (showGitLab ? (
-            <details className={styles.details}>
+            <details className={styles.details} open>
               <summary className={styles.summary}>Special account</summary>
               {passwordForm}
             </details>

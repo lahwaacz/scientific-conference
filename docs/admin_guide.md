@@ -31,7 +31,7 @@ A successful GitLab sign-in opens both administrative interfaces at once: the ad
 
 ### Special Account Sign-in
 
-When the deployment offers it, the login window shows a username and password form. When GitLab sign-in is enabled as well, the form is available inside the collapsible **Special account** section; when GitLab sign-in is disabled (a password-only deployment), the login window shows the form directly instead. It signs in a local account that was created by an administrator in advance; it never creates new accounts.
+When the deployment offers it, the login window shows a username and password form. When GitLab sign-in is enabled as well, the form is available inside the **Special account** section, which is open by default so browser password managers such as KeePassXC can recognize the fields; you can collapse the section when you do not need it. When GitLab sign-in is disabled (a password-only deployment), the login window shows the form directly instead. It signs in a local account that was created by an administrator in advance; it never creates new accounts.
 
 This method is kept for testing, for demo deployments, and as a fallback for the case when GitLab is unavailable. It can be disabled on the deployment; when it is disabled, the form does not appear in the login window at all.
 
