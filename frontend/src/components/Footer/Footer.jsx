@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import LogoIcon from "../../assets/logoWhite.png";
+import { fetchWithAuth, refreshAccessToken } from "../../utils/api";
 import AdminLoginModal from "../AdminLoginModal/AdminLoginModal";
 import { useConferenceInfo } from "./../hooks/useConferenceInfo";
 import { useLockBodyScroll } from "./../hooks/useLockBodyScroll";
@@ -12,6 +13,7 @@ export default function Footer() {
   const isAdminPage = location.pathname.startsWith("/admin-panel");
   const info = useConferenceInfo();
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const isProbingAuth = useRef(false);
 
   useLockBodyScroll(isAdminOpen);
 
@@ -23,8 +25,33 @@ export default function Footer() {
     );
   }
 
-  function openAdmin(e) {
+  async function openAdmin(e) {
     e.preventDefault();
+    if (isProbingAuth.current) {
+      return;
+    }
+
+    isProbingAuth.current = true;
+    let authenticated = false;
+    try {
+      const response = await fetchWithAuth("/api/auth/user/", {
+        skipRefresh: true,
+      });
+      authenticated = response.ok;
+      if (!authenticated && response.status === 401) {
+        authenticated = await refreshAccessToken({ reloadOnFailure: false });
+      }
+    } catch {
+      authenticated = false;
+    } finally {
+      isProbingAuth.current = false;
+    }
+
+    if (authenticated) {
+      navigate("/admin-panel");
+      return;
+    }
+
     setIsAdminOpen(true);
   }
 

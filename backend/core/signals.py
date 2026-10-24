@@ -1,10 +1,23 @@
 from django.conf import settings
+from django.contrib.auth.signals import user_logged_in, user_logged_out
 from django.core.mail import send_mail
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
 from .models import Participant, ParticipantSubmission
 from .names import compute_sort_key
+
+
+@receiver(user_logged_in)
+def mark_session_jwt_login(sender, request, user, **kwargs):
+    if request is not None:
+        request._session_jwt_action = "set"
+
+
+@receiver(user_logged_out)
+def mark_session_jwt_logout(sender, request, user, **kwargs):
+    if request is not None:
+        request._session_jwt_action = "clear"
 
 
 @receiver(pre_save, sender=Participant)

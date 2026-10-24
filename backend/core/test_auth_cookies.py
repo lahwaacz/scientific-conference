@@ -124,7 +124,7 @@ class TestCookieScope(CookieAuthTestCase):
     def test_login_scopes_both_cookies_to_the_deployed_subpath(self):
         with (
             patch(
-                "core.auth.views._jwt_cookie_path",
+                "core.auth.cookies.jwt_cookie_path",
                 return_value="/conference/",
             ),
             patch.object(api_settings, "JWT_AUTH_REFRESH_COOKIE_PATH", "/conference/"),

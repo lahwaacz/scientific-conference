@@ -286,6 +286,27 @@ describe("fetchWithAuth 401 refresh flow", () => {
     expect(reloadMock).toHaveBeenCalled();
     expect(window.location.hash).toBe("/");
   });
+
+  test("returns a 401 probe response without refreshing", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, status: 401 });
+
+    const res = await api.fetchWithAuth("/api/auth/user/", {
+      skipRefresh: true,
+    });
+
+    expect(res.status).toBe(401);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    expect(reloadMock).not.toHaveBeenCalled();
+  });
+
+  test("soft refresh does not reload when the refresh request fails", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, status: 401 });
+
+    const refreshed = await api.refreshAccessToken({ reloadOnFailure: false });
+
+    expect(refreshed).toBe(false);
+    expect(reloadMock).not.toHaveBeenCalled();
+  });
 });
 
 describe("buildApiUrl conference scoping", () => {

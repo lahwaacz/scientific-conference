@@ -96,7 +96,7 @@ export function buildMediaUrl(path) {
   return `${base}/${cleanPath}`;
 }
 
-export async function refreshAccessToken() {
+export async function refreshAccessToken({ reloadOnFailure = true } = {}) {
   try {
     const response = await fetch(buildApiUrl("/api/auth/refresh/"), {
       method: "POST",
@@ -105,14 +105,18 @@ export async function refreshAccessToken() {
     });
 
     if (!response.ok) {
-      reloadAppAtHomePage();
+      if (reloadOnFailure) {
+        reloadAppAtHomePage();
+      }
       return false;
     }
 
     return true;
   } catch (error) {
     console.error("Token refresh failed:", error);
-    reloadAppAtHomePage();
+    if (reloadOnFailure) {
+      reloadAppAtHomePage();
+    }
     return false;
   }
 }
@@ -126,14 +130,15 @@ function fetchWithCookies(url, options) {
 }
 
 export async function fetchWithAuth(url, options = {}) {
+  const { skipRefresh = false, ...requestOptions } = options;
   const finalUrl = buildApiUrl(url);
-  const response = await fetchWithCookies(finalUrl, options);
+  const response = await fetchWithCookies(finalUrl, requestOptions);
 
-  if (response.status === 401) {
+  if (response.status === 401 && !skipRefresh) {
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
         failedQueue.push({ resolve, reject });
-      }).then(() => fetchWithCookies(finalUrl, options));
+      }).then(() => fetchWithCookies(finalUrl, requestOptions));
     }
 
     isRefreshing = true;
@@ -143,7 +148,7 @@ export async function fetchWithAuth(url, options = {}) {
 
       if (refreshed) {
         processQueue(null);
-        return fetchWithCookies(finalUrl, options);
+        return fetchWithCookies(finalUrl, requestOptions);
       }
 
       processQueue(new Error("Token refresh failed"));

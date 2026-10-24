@@ -27,7 +27,7 @@ Select **Sign in with GitLab** to sign in with the university GitLab. The browse
 
 GitLab is the standard way to sign in. Which options the login window offers depends on the deployment: when password sign-in is switched off, the login window shows only the GitLab button, and when GitLab sign-in is switched off, it shows only the username and password form. The optional password method is described in **Special Account Sign-in** below.
 
-A successful GitLab sign-in opens both administrative interfaces at once: the admin panel of the conference website described in this guide, and the Django administration used for creating conferences (see **Managing Multiple Conferences**).
+A successful sign-in opens both administrative interfaces at once: the admin panel of the conference website described in this guide, and the Django administration used for creating conferences (see **Managing Multiple Conferences**). This applies whether you start from the website or from the Django administration.
 
 ### Special Account Sign-in
 
@@ -39,7 +39,7 @@ This method is kept for testing, for demo deployments, and as a fallback for the
 
 You can leave the administrative part of the website in two ways:
 
-- Select **Logout** in the administrative interface. This also ends the sign-in on the server, so the session cannot be reused; a new sign-in is required to return.
+- Select **Logout** in either administrative interface. This ends the sign-in on the server and clears both the website admin panel session and the Django administration session, so the session cannot be reused; a new sign-in is required to return.
 - Select any section in the public website header. This leaves the admin panel but keeps the sign-in active.
 
 ## Administrator Accounts

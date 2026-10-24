@@ -8,7 +8,10 @@ the password login API route are conditional; these tests rebuild the URLconf
 per deployment mode to pin both.
 """
 
+from unittest.mock import patch
+
 from allauth.socialaccount.models import SocialAccount, SocialLogin
+from dj_rest_auth.app_settings import api_settings
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -17,6 +20,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 
 from core.auth.adapters import ConferenceSocialAccountAdapter, NoSignupAccountAdapter
+from core.auth.middleware import SessionJWTCookieMiddleware
 from core.context_processors import auth_config
 from core.models import Conference
 
@@ -128,6 +132,124 @@ class TestGitlabSessionLoginReachesDjangoAdmin(TestCase):
             )
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context["form"].non_field_errors())
+
+
+class TestAdminSessionJWTCookieSync(TestCase):
+    def setUp(self):
+        self.client = Client()
+        User.objects.create_user(username="sync-admin", password="pw", is_staff=True)
+
+    def test_admin_login_issues_jwt_cookies_for_the_frontend(self):
+        with password_only_urls():
+            response = self.client.post(
+                reverse("account_login"),
+                {"login": "sync-admin", "password": "pw", "next": "/admin/"},
+            )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("conference-jwt-access", response.cookies)
+        self.assertIn("conference-jwt-refresh", response.cookies)
+        self.assertTrue(response.cookies["conference-jwt-access"]["httponly"])
+        self.assertEqual(self.client.get("/api/auth/user/").status_code, 200)
+
+    def test_admin_logout_clears_and_blacklists_frontend_tokens(self):
+        with password_only_urls():
+            self.client.post(
+                reverse("account_login"),
+                {"login": "sync-admin", "password": "pw", "next": "/admin/"},
+            )
+
+        refresh = self.client.cookies["conference-jwt-refresh"].value
+        response = self.client.post("/admin/logout/")
+
+        self.assertEqual(response.cookies["conference-jwt-access"].value, "")
+        self.assertEqual(response.cookies["conference-jwt-refresh"].value, "")
+        self.assertEqual(self.client.get("/api/auth/user/").status_code, 401)
+
+        self.client.cookies["conference-jwt-refresh"] = refresh
+        self.assertEqual(self.client.post("/api/auth/refresh/", {}).status_code, 401)
+
+    def test_allauth_logout_clears_and_blacklists_frontend_tokens(self):
+        with password_only_urls():
+            self.client.post(
+                reverse("account_login"),
+                {"login": "sync-admin", "password": "pw", "next": "/admin/"},
+            )
+            refresh = self.client.cookies["conference-jwt-refresh"].value
+            response = self.client.post(reverse("account_logout"))
+
+        self.assertEqual(response.cookies["conference-jwt-access"].value, "")
+        self.assertEqual(response.cookies["conference-jwt-refresh"].value, "")
+        self.assertEqual(self.client.get("/api/auth/user/").status_code, 401)
+
+        self.client.cookies["conference-jwt-refresh"] = refresh
+        self.assertEqual(self.client.post("/api/auth/refresh/", {}).status_code, 401)
+
+    def test_failed_admin_login_does_not_issue_frontend_tokens(self):
+        with password_only_urls():
+            response = self.client.post(
+                reverse("account_login"),
+                {"login": "sync-admin", "password": "wrong", "next": "/admin/"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("conference-jwt-access", response.cookies)
+        self.assertNotIn("conference-jwt-refresh", response.cookies)
+
+    def test_session_bridge_ignores_spa_auth_routes(self):
+        self.assertFalse(
+            SessionJWTCookieMiddleware._is_session_surface("/api/auth/login/")
+        )
+        self.assertFalse(
+            SessionJWTCookieMiddleware._is_session_surface("/api/auth/logout/")
+        )
+        self.assertTrue(
+            SessionJWTCookieMiddleware._is_session_surface("/admin/logout/")
+        )
+        self.assertTrue(
+            SessionJWTCookieMiddleware._is_session_surface(
+                "/api/auth/allauth/gitlab/login/callback/"
+            )
+        )
+
+    def test_spa_login_does_not_use_the_session_bridge(self):
+        api = APIClient()
+        with (
+            password_only_urls(),
+            patch("core.auth.middleware.issue_jwt_cookies") as bridge_set,
+        ):
+            response = api.post(
+                "/api/auth/login/",
+                {"username": "sync-admin", "password": "pw"},
+                format="json",
+            )
+
+        self.assertEqual(response.status_code, 200)
+        bridge_set.assert_not_called()
+
+    def test_session_bridge_honors_relative_url_root(self):
+        with (
+            password_only_urls(RELATIVE_URL_ROOT="conference/"),
+            patch.object(
+                api_settings,
+                "JWT_AUTH_REFRESH_COOKIE_PATH",
+                "/conference/",
+            ),
+        ):
+            response = self.client.post(
+                reverse("account_login"),
+                {"login": "sync-admin", "password": "pw"},
+            )
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(
+                response.cookies["conference-jwt-access"]["path"], "/conference/"
+            )
+            self.assertEqual(
+                response.cookies["conference-jwt-refresh"]["path"], "/conference/"
+            )
+            self.assertEqual(
+                self.client.get("/conference/api/auth/user/").status_code, 200
+            )
 
 
 class TestPasswordOnlyDeployment(TestCase):

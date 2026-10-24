@@ -75,6 +75,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",  # after session/auth
+    "core.auth.middleware.SessionJWTCookieMiddleware",  # keeps admin session and JWT cookies in sync
 ]
 
 ROOT_URLCONF = "backend.urls"

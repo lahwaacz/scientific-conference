@@ -1,11 +1,9 @@
 import secrets
-from contextlib import suppress
 from urllib.parse import urlencode
 from uuid import uuid4
 
 from allauth.socialaccount.providers.gitlab.views import GitLabOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
-from dj_rest_auth.app_settings import api_settings
 from dj_rest_auth.jwt_auth import JWTCookieAuthentication, get_refresh_view
 from dj_rest_auth.registration.views import SocialLoginView
 from dj_rest_auth.views import LoginView
@@ -17,44 +15,18 @@ from django.utils import timezone
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.exceptions import TokenError
-from rest_framework_simplejwt.tokens import RefreshToken
 
+from core.auth.cookies import (
+    blacklist_refresh_cookie,
+    clear_jwt_cookies,
+    scope_access_cookie,
+)
 from core.auth.serializers import PasswordRevokingCookieTokenRefreshSerializer
 from core.models import Conference
 
 OAUTH_STATE_SALT = "gitlab-oauth"
 OAUTH_STATE_MAX_AGE = 600
 OAUTH_NONCE_COOKIE = "gitlab_oauth_nonce"
-
-
-def _jwt_cookie_path():
-    return "/" + (settings.RELATIVE_URL_ROOT or "")
-
-
-def _scope_access_cookie(response):
-    cookie_name = api_settings.JWT_AUTH_COOKIE
-    if cookie_name and cookie_name in response.cookies:
-        response.cookies[cookie_name]["path"] = _jwt_cookie_path()
-
-
-def _clear_jwt_cookies(response):
-    access_cookie = api_settings.JWT_AUTH_COOKIE
-    if access_cookie:
-        response.delete_cookie(
-            access_cookie,
-            path=_jwt_cookie_path(),
-            samesite=api_settings.JWT_AUTH_SAMESITE,
-            domain=api_settings.JWT_AUTH_COOKIE_DOMAIN,
-        )
-    refresh_cookie = api_settings.JWT_AUTH_REFRESH_COOKIE
-    if refresh_cookie:
-        response.delete_cookie(
-            refresh_cookie,
-            path=api_settings.JWT_AUTH_REFRESH_COOKIE_PATH,
-            samesite=api_settings.JWT_AUTH_SAMESITE,
-            domain=api_settings.JWT_AUTH_COOKIE_DOMAIN,
-        )
 
 
 def get_gitlab_oauth_settings():
@@ -151,7 +123,7 @@ class GitLabAuthorizeView(APIView):
 class CookieLoginView(LoginView):
     def get_response(self):
         response = super().get_response()
-        _scope_access_cookie(response)
+        scope_access_cookie(response)
         return response
 
 
@@ -163,7 +135,7 @@ class GitLabLoginView(SocialLoginView):
 
     def get_response(self):
         response = super().get_response()
-        _scope_access_cookie(response)
+        scope_access_cookie(response)
         return response
 
     @property
@@ -205,7 +177,7 @@ class CookieRefreshView(get_refresh_view()):
     def finalize_response(self, request, response, *args, **kwargs):
         response = super().finalize_response(request, response, *args, **kwargs)
         if response.status_code == 200:
-            _scope_access_cookie(response)
+            scope_access_cookie(response)
         if response.status_code == 200 and isinstance(response.data, dict):
             response.data.pop("access", None)
             response.data.pop("refresh", None)
@@ -222,13 +194,8 @@ class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        refresh_cookie = api_settings.JWT_AUTH_REFRESH_COOKIE
-        refresh = request.COOKIES.get(refresh_cookie) if refresh_cookie else None
-        # Invalid or already-expired refresh: nothing to blacklist then.
-        with suppress(TokenError):
-            if refresh:
-                RefreshToken(refresh).blacklist()
+        blacklist_refresh_cookie(request)
         django_logout(request)
         response = Response(status=204)
-        _clear_jwt_cookies(response)
+        clear_jwt_cookies(response)
         return response
