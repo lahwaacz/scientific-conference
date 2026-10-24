@@ -55,10 +55,9 @@ allauth_urlpatterns = [
         socialaccount_views.signup,
         name="socialaccount_signup",
     ),
-    path(
-        "gitlab/",
-        include("allauth.socialaccount.providers.gitlab.urls"),
-    ),
+    # The GitLab provider's URLconf already prefixes its routes with
+    # "gitlab/"; do not add another prefix here.
+    path("", include("allauth.socialaccount.providers.gitlab.urls")),
 ]
 
 

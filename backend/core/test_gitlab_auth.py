@@ -472,8 +472,11 @@ class TestGitLabProviderRoutes(TestCase):
 
     def test_allauth_gitlab_routes_resolve_when_enabled(self):
         with gitlab_urls():
-            self.assertTrue(reverse("gitlab_login"))
-            self.assertTrue(reverse("gitlab_callback"))
+            self.assertEqual(reverse("gitlab_login"), "/api/auth/allauth/gitlab/login/")
+            self.assertEqual(
+                reverse("gitlab_callback"),
+                "/api/auth/allauth/gitlab/login/callback/",
+            )
             response = self.client.get(reverse("account_login"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, reverse("gitlab_login"))
