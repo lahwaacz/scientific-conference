@@ -7,6 +7,8 @@ from django.http import HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
 
+from core.notifications import enqueue_notification
+
 from .importing import (
     IMPORTABLE_FIELDS,
     REQUIRED_FIELDS,
@@ -30,6 +32,7 @@ from .models import (
     ConferenceManagers,
     HikingRoute,
     HikingStop,
+    Notification,
     Participant,
     ParticipantSubmission,
     Person,
@@ -86,6 +89,47 @@ class ConferenceManagersAdmin(SuperuserOnlyAdminMixin, admin.ModelAdmin):
     autocomplete_fields = ("user",)
     list_select_related = ("conference", "user")
     ordering = ("conference__slug", "user__username")
+
+
+@admin.register(Notification)
+class NotificationAdmin(SuperuserOnlyAdminMixin, admin.ModelAdmin):
+    # Read-only inspection surface for queued/sent mail; a superuser can
+    # re-enqueue rows the worker never picked up (pending/failed only —
+    # "retrying" rows already have a Celery retry scheduled).
+    list_display = (
+        "created_at",
+        "kind",
+        "audience",
+        "recipient",
+        "conference",
+        "status",
+        "attempts",
+    )
+    list_filter = ("kind", "audience", "status", "conference")
+    search_fields = ("recipient", "subject", "body")
+    readonly_fields = [f.name for f in Notification._meta.fields]
+    actions = ["resend"]
+
+    def has_add_permission(self, request):
+        return False
+
+    @admin.action(description="Re-enqueue pending or failed notifications")
+    def resend(self, request, queryset):
+        notification_ids = list(
+            queryset.filter(status__in=("pending", "failed")).values_list(
+                "pk", flat=True
+            )
+        )
+        enqueued = sum(
+            1
+            for notification_id in notification_ids
+            if enqueue_notification(notification_id)
+        )
+        self.message_user(
+            request,
+            f"Re-enqueued {enqueued} of {len(notification_ids)} notification(s).",
+            messages.SUCCESS,
+        )
 
 
 @admin.register(Conference)
