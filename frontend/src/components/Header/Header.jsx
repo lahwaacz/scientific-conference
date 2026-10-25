@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import LogoIcon from "../../assets/logo.svg";
-import { buildApiUrl } from "../../utils/api";
+import { buildApiUrl, fetchWithAuth } from "../../utils/api";
+import Modal from "../ui/Modal/Modal";
 import { useLockBodyScroll } from "./../hooks/useLockBodyScroll";
 import styles from "./Header.module.css";
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { pathname } = useLocation();
+  const isAdmin =
+    pathname === "/admin-panel" || pathname.startsWith("/admin-panel/");
 
   const toggleMenu = () => setMenuOpen((prev) => !prev);
   useLockBodyScroll(menuOpen);
@@ -16,7 +20,7 @@ export default function Header() {
   return (
     <header className={styles.header}>
       <div className={styles.inner}>
-        <Logo onNavigate={closeMenu} />
+        <Logo onNavigate={closeMenu} isAdmin={isAdmin} />
 
         <button
           className={styles.burger}
@@ -43,18 +47,23 @@ export default function Header() {
           />
         )}
 
-        <Navbar isOpen={menuOpen} onNavigate={closeMenu} />
+        {isAdmin ? (
+          <AdminNav isOpen={menuOpen} onNavigate={closeMenu} />
+        ) : (
+          <Navbar isOpen={menuOpen} onNavigate={closeMenu} />
+        )}
       </div>
     </header>
   );
   // biome-ignore-end lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: Header scope ends
 }
 
-function Logo({ onNavigate }) {
+function Logo({ onNavigate, isAdmin = false }) {
   const location = useLocation();
+  const target = isAdmin ? "/admin-panel" : "/";
 
   const handleLogoClick = (e) => {
-    if (location.pathname === "/") {
+    if (location.pathname === target) {
       e.preventDefault();
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -62,9 +71,109 @@ function Logo({ onNavigate }) {
   };
 
   return (
-    <Link className={styles.logo} to="/" onClick={handleLogoClick}>
+    <Link
+      className={styles.logo}
+      to={target}
+      onClick={handleLogoClick}
+      aria-label={isAdmin ? "Admin panel home" : "Conference home"}
+    >
       <LogoIcon className={styles.logoIcon} />
     </Link>
+  );
+}
+
+function AdminNav({ isOpen, onNavigate }) {
+  const [user, setUser] = useState(null);
+  const [modal, setModal] = useState({ isOpen: false });
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchWithAuth("/api/auth/user/")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((payload) => {
+        if (!cancelled) {
+          setUser(payload);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const closeModal = () => setModal((prev) => ({ ...prev, isOpen: false }));
+
+  async function handleLogout() {
+    try {
+      const res = await fetchWithAuth("/api/auth/logout/", { method: "POST" });
+      if (!res.ok) {
+        setModal({
+          isOpen: true,
+          title: "Logout failed",
+          message: "The server could not end the session. Please try again.",
+          type: "danger",
+        });
+        return;
+      }
+      navigate("/");
+    } catch (error) {
+      setModal({
+        isOpen: true,
+        title: "Connection error",
+        message: error.message || "Server is unreachable.",
+        type: "danger",
+      });
+    }
+  }
+
+  return (
+    <nav className={`${styles.navBar} ${isOpen ? styles.navBarOpen : ""}`}>
+      <div className={styles.adminNavList}>
+        {user?.username && (
+          <div className={styles.adminNavItem}>
+            <span className={styles.username}>{user.username}</span>
+          </div>
+        )}
+        <div className={styles.adminNavItem}>
+          <Link
+            className={`nav-link ${styles.whiteLink}`}
+            to="/"
+            onClick={onNavigate}
+          >
+            View site
+          </Link>
+        </div>
+        {user?.is_superuser && (
+          <div className={styles.adminNavItem}>
+            <a
+              className={`nav-link ${styles.whiteLink}`}
+              href={buildApiUrl("/admin/")}
+            >
+              Django admin
+            </a>
+          </div>
+        )}
+        <div className={styles.adminNavItem}>
+          <button
+            type="button"
+            className={`nav-link ${styles.whiteLink} ${styles.logoutLink}`}
+            onClick={handleLogout}
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+
+      <Modal
+        isOpen={modal.isOpen}
+        title={modal.title}
+        message={modal.message}
+        type={modal.type}
+        onConfirm={closeModal}
+        onCancel={null}
+      />
+    </nav>
   );
 }
 

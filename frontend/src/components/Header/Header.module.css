@@ -123,6 +123,41 @@
   background-color: var(--secondary-color);
 }
 
+/* ADMIN NAV */
+.adminNavList {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px clamp(16px, 3vw, 32px);
+}
+.adminNavItem {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+.adminNavItem:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: calc(clamp(16px, 3vw, 32px) / -2);
+  width: 1px;
+  height: 30px;
+  background-color: var(--secondary-color);
+  transform: translateY(-50%);
+}
+.username {
+  color: var(--secondary-color);
+  font-family: var(--font-main);
+  font-size: clamp(14px, 1.4vw, 18px);
+  opacity: 0.75;
+}
+.logoutLink {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
 /* DROPDOWN */
 .dropdownWrapper {
   position: relative;
@@ -225,6 +260,21 @@
   }
 
   .navItem:not(:last-child)::after {
+    display: none;
+  }
+
+  .adminNavList {
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    gap: 24px;
+  }
+
+  .adminNavItem {
+    width: 100%;
+  }
+
+  .adminNavItem:not(:last-child)::after {
     display: none;
   }
 
