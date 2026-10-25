@@ -314,6 +314,9 @@ PUBLIC_BASE_URL = (
 )
 
 # Celery: broker only, no result backend (task results are ignored).
+# The task module is imported explicitly: autodiscovery does not recurse into
+# subpackages, so core.notifications.tasks would otherwise never register.
+CELERY_IMPORTS = ("core.notifications.tasks",)
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
 CELERY_TASK_IGNORE_RESULT = True
 CELERY_TASK_ALWAYS_EAGER = (
