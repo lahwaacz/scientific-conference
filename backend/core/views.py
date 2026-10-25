@@ -22,6 +22,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from core.notifications import notify_submission_received, notify_submission_updated
+
 from .models import (
     Abstract,
     AccommodationOption,
@@ -634,7 +636,8 @@ class SubmissionCreateView(ConferenceScopedMixin, generics.CreateAPIView):
             raise ValidationError(
                 {"detail": "Registration is not open for this conference."}
             )
-        serializer.save(conference=self.conference)
+        submission = serializer.save(conference=self.conference)
+        notify_submission_received(submission)
 
 
 class SubmissionTrackingView(ConferenceScopedMixin, generics.RetrieveUpdateAPIView):
@@ -667,7 +670,11 @@ class SubmissionTrackingView(ConferenceScopedMixin, generics.RetrieveUpdateAPIVi
             raise PermissionDenied(
                 "This submission has been rejected and can no longer be edited."
             )
-        return super().patch(request, *args, **kwargs)
+        was_approved = submission.status == "approved"
+        response = super().patch(request, *args, **kwargs)
+        if response.status_code == 200:
+            notify_submission_updated(self.get_object(), was_approved)
+        return response
 
 
 class SubmissionListView(ConferenceScopedMixin, generics.ListAPIView):
