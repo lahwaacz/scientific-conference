@@ -39,8 +39,10 @@ This method is kept for testing, for demo deployments, and as a fallback for the
 
 You can leave the administrative part of the website in two ways:
 
-- Select **Logout** in either administrative interface. This ends the sign-in on the server and clears both the website admin panel session and the Django administration session, so the session cannot be reused; a new sign-in is required to return.
-- Select any section in the public website header. This leaves the admin panel but keeps the sign-in active.
+- Select **Logout** in the admin panel header or in the Django administration. This ends the sign-in on the server and clears both the website admin panel session and the Django administration session, so the session cannot be reused; a new sign-in is required to return.
+- Select **View site** in the admin panel header. This opens the public conference website and keeps the sign-in active.
+
+The logo in the admin panel header does not leave the admin area: it returns you to the admin panel root.
 
 ## Administrator Accounts
 
@@ -87,6 +89,8 @@ After a successful login, the system opens the administrative panel. The panel c
 - Two buttons for generating documents.
 
 The administrative panel serves as the main navigation hub for all organizer tasks.
+
+Every page of the admin panel shows the same header. Instead of the public navigation links, the header displays the signed-in username, and selecting the logo returns you to the admin panel root. The header offers three actions: **View site** opens the public conference website and keeps the sign-in active, **Django admin** (shown to superusers only) opens the Django administration, and **Logout** ends the sign-in on the server (see **Leave the Admin Area**).
 
 ![Admin panel overview](./assets/adminpanel.png)
 
