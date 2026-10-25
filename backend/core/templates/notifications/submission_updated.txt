@@ -1,0 +1,22 @@
+Hello {{ submission.name }},
+
+your changes to the submission for {{ conference.title }} have been
+saved.
+
+Reference: {{ reference }}
+Title: {{ submission.abstract_title|default:"Untitled submission" }}
+Status: {% if was_approved %}returned to review{% else %}{{ submission.get_status_display }}{% endif %}
+{% if was_approved %}
+This submission had already been published. The previously published
+version stays online until an organizer publishes your changes.
+{% endif %}
+You can view and edit your submission at any time through your personal
+link:
+
+{{ tracking_url }}
+
+Keep this link — it is your only access to your submission.
+{% if info_desk_email %}
+If you have any questions, contact the conference office at
+{{ info_desk_email }}.
+{% endif %}

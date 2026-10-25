@@ -1,0 +1,21 @@
+Hello {{ submission.name }},
+
+thank you for your submission to {{ conference.title }}. It has been
+received and is now waiting for review.
+
+Reference: {{ reference }}
+Title: {{ submission.abstract_title|default:"Untitled submission" }}
+Arrival: {{ submission.arrival_date }}
+Departure: {{ submission.departure_date }}
+
+You can view and edit your submission at any time through your personal
+link:
+
+{{ tracking_url }}
+
+Keep this link — it is your only access to your submission. Anyone with
+the link can edit the submission, so please do not share it.
+{% if info_desk_email %}
+If you have any questions, contact the conference office at
+{{ info_desk_email }}.
+{% endif %}

@@ -1,0 +1,14 @@
+Hello,
+
+a new submission has been received for {{ conference.title }}.
+
+Reference: {{ reference }}
+Participant: {{ submission.name }}
+E-mail: {{ submission.email }}
+Affiliation: {{ submission.affiliation }}
+Title: {{ submission.abstract_title|default:"Untitled submission" }}
+Arrival: {{ submission.arrival_date }}
+Departure: {{ submission.departure_date }}
+
+The participant has been sent a personal link for viewing and editing
+the submission.

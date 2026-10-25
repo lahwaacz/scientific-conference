@@ -1,0 +1,14 @@
+Hello,
+
+a submission for {{ conference.title }} has been edited by the
+participant.
+
+Reference: {{ reference }}
+Participant: {{ submission.name }}
+E-mail: {{ submission.email }}
+Title: {{ submission.abstract_title|default:"Untitled submission" }}
+Current status: {{ submission.get_status_display }}
+{% if was_approved %}
+The submission had already been published; this edit has returned it to
+review.
+{% endif %}
