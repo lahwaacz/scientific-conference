@@ -347,6 +347,46 @@ The copied address opens the participant's submission directly; no login is requ
 
 Each submission also carries a `linked_user` field, visible in the Django administration and in the API. It is an optional connection between a submission and a user account. It is not used by any current feature of the conference website; it exists as a reserved seam for possible future login-based access to submissions. It can be set only in the Django administration or through the API, never by participants themselves.
 
+### Automatic E-mail Notifications
+
+The website sends confirmation e-mails automatically on two participant actions:
+
+- **Registration.** When a participant completes the public registration form successfully, they receive a confirmation e-mail with their participant reference and their personal tracking link. The e-mail asks them to keep the link and not share it, because the link is the only access to their submission (see **Participant Tracking Links and Self-Service Edits** above).
+- **Self-service edit.** Every successful edit through the tracking page's **Edit submission** form sends a second confirmation e-mail. When the edited submission had already been published, the e-mail states that the submission has gone back to review and that the previously published version stays online until an organizer publishes the changes again.
+
+The conference information desk receives its own short copy of both events. The copy goes to the **Information Desk Email** address of the conference, edited in the **Footer** subsection of **Edit Web Info** (see the **Footer Subsection** in **Edit Website Information**). It carries a short summary of the submission (the reference, the participant's name and e-mail, the submission title), but it deliberately does not contain the participant's tracking link, so the shared mailbox cannot edit submissions. When no information desk address is configured, no copy is sent.
+
+Nothing else is e-mailed automatically. There are no rejection notices, no schedule-change messages, no reminders, and no digest e-mails. Rejecting a registration does not send an e-mail; the optional rejection message stays on the tracking page (see **Reject a Registration**). Organizer edits in **Edit Participants and Abstracts** and the CSV import (see **Import Pre-Registered Participants** below) never trigger these e-mails either. The publication e-mail remains a separate mechanism: every transition of a submission into the published state sends it, including re-publication after a participant edit.
+
+Every outgoing message is recorded before it is sent, and the record survives outages. The records are inspected in the Django administration, not in the conference admin panel:
+
+1. Open the Django administration at `<root>admin/` (for example, `https://mmg-webapps.fjfi.cvut.cz/conference/admin/`) and sign in with a superuser account.
+2. Open **Notifications**.
+
+The list shows the creation time, the kind (submission received or submission updated), the audience (participant or organizer), the recipient, the conference, the status, and the number of send attempts for each message. The list can be filtered by kind, audience, status, and conference, and searched by recipient, subject, and body. The records are read-only: messages cannot be composed or edited here.
+
+A message that was never delivered can be queued again. Select its row and use the **Re-enqueue pending or failed notifications** action. The action re-queues only rows with status **Pending** or **Failed**, and reports how many were queued.
+
+The status of a message means:
+
+| Status | Meaning |
+| ------ | ------- |
+| **Pending** | The message is stored but has not been picked up for sending yet. |
+| **Retrying** | The message is being sent, or a retry is already scheduled. Leave these alone; the re-enqueue action skips them. |
+| **Sent** | Delivered successfully. |
+| **Failed** | Sending was given up after three retries, or the background queue was unreachable. The message can be re-queued. |
+| **Skipped** | The message has no recipient address, so nothing was sent. |
+
+When a participant reports that a confirmation e-mail never arrived:
+
+1. Open the Django administration and find the row in **Notifications** by the participant's e-mail address.
+2. Check **Status**, **Attempts**, and **Last error** on the row.
+3. When the status is **Pending** or **Failed**, queue the message again with the re-enqueue action, or ask the server operator to run, in the backend container, the command `python manage.py send_pending_notifications`. Its useful flags are `--dry-run` (report what would be queued without sending), `--limit` (queue at most the given number of messages), and `--status pending,failed` (the default selection).
+4. When a row stays **Retrying** for more than about an hour (for example because the worker was killed mid-send), ask the server operator to run `python manage.py send_pending_notifications --status pending,failed,retrying --stuck-retrying-minutes 60`. The time guard exists so a retry that is genuinely still in flight is never duplicated. Never run this command and the re-enqueue action at the same time for the same rows.
+5. When the status stays **Failed** after a re-queue, or when many rows are **Failed** at once, the mail server or the configured sender address (`DEFAULT_FROM_EMAIL`) is misconfigured. This is a deployment problem that the admin panel cannot fix; see the deployment guide. Nothing is lost meanwhile: the messages stay stored and can be re-queued once mail works again.
+
+> **Warning:** Production now really sends e-mail, and the publication e-mail is still sent directly inside the publish action, not through the background queue. When the mail server is unavailable, the **Publish** action itself fails with an error and the submission stays unpublished. Retry the publish action once mail works again; the publication e-mail is then sent together with the successful publish.
+
 ### Import Pre-Registered Participants
 
 Participants who were collected before registration opened (for example an early-bird list kept by e-mail) can be added in bulk from a CSV file. The import creates a **pending** submission for each row, exactly as if the participant had filled in the registration form themselves; nothing is e-mailed to anybody.

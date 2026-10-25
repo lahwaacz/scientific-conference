@@ -19,10 +19,13 @@ backend/
 │   ├── urls.py             # slug-scoped endpoint tails (full table)
 │   ├── admin.py            # decorator-style @admin.register
 │   ├── signals.py          # email on publish; wired via CoreConfig.ready() (apps.py)
+│   ├── notifications/      # participant/organizer e-mail: service.py (render + enqueue),
+│   │                       # tasks.py (Celery send, atomic claim, bounded retries)
 │   ├── auth/               # admin login: GitLab OAuth views (authorize/login/logout),
 │   │                       # allauth adapters (no local signup; social signup open), serializers
 │   ├── context_processors.py  # auth_config: login-method flags for the allauth login template
 │   ├── management/commands/link_gitlab_account.py  # reassign a GitLab SocialAccount to a local user
+│   ├── management/commands/send_pending_notifications.py  # re-enqueue pending/failed notifications
 │   ├── templates/account/login.html  # Django admin sign-in page (GitLab link + optional password form)
 │   ├── migrations/         # migrations
 │   ├── fixtures/            # split demo seed: conferences.json, participants.json, program.json
@@ -54,6 +57,10 @@ backend/
 | PDF generation | `core/views.py` | `generate_program_pdf`, `generate_badges_pdf`; per-conference, reportlab + `core/fonts/*.ttf` |
 | Publish workflow | `core/models.py` | `ParticipantSubmission.publish()`, `.unpublish()`, `.reject()`, `.restore()`, `.delete()`; status transitions are pending↔approved/rejected; dedup scoped to `conference`; `ParticipantAdmin` deletion unpublishes linked submissions first |
 | Email on publish | `core/signals.py` | fires via `CoreConfig.ready()` |
+| Notification e-mail service + task | `core/notifications/` (`service.py`, `tasks.py`) | `notify_submission_received` / `notify_submission_updated` create and render the rows (templates in `core/templates/notifications/`); organizer rows exist only when `Conference.info_desk_email` is set and never carry the tracking link; `tasks.send_notification` is the Celery task (registered via `CELERY_IMPORTS`, not autodiscovery) |
+| Notification outbox model | `core/models.py` (`Notification`) | conference-scoped e-mail outbox/audit row: kind/audience/recipient/subject/body/status/attempts/last_error; unique `dedupe_key` (received event only); `submission` FK is SET_NULL; never exposed over the REST API |
+| Notification admin surface | `core/admin.py` (`NotificationAdmin`) | superuser-only, every field read-only, `has_add_permission` False; filters kind/audience/status/conference; the `resend` action re-enqueues `pending`/`failed` rows only |
+| Drain queued notifications | `core/management/commands/send_pending_notifications.py` | re-enqueues `pending`/`failed` rows (`--status` accepts only those two); `--dry-run`, `--limit` (default 500); safe to repeat |
 | Env config | `backend/settings.py` | DJANGO_SECRET_KEY / DJANGO_DEBUG / DJANGO_ALLOWED_HOSTS / DJANGO_DB_PATH / DJANGO_STATIC_URL / DJANGO_STATIC_ROOT / DJANGO_MEDIA_ROOT / DJANGO_USE_HTTPS / DJANGO_CSRF_TRUSTED_ORIGINS, plus unprefixed RELATIVE_URL_ROOT and the login vars: AUTH_PASSWORD_LOGIN_ENABLED / AUTH_GITLAB_LOGIN_ENABLED / GITLAB_URL / GITLAB_CLIENT_ID / GITLAB_CLIENT_SECRET / GITLAB_OAUTH_CALLBACK_URL |
 
 ## CONVENTIONS
@@ -62,6 +69,7 @@ backend/
 - Conference scoping: every view in `core/urls.py` is served under `/api/<slug>/…` and must resolve its conference. Class views inherit `ConferenceScopedMixin` (views.py: eager 404 on unknown slug in `initial()`, queryset filter, `perform_create` assignment, serializer context); function views call `get_conference_or_404(conference_slug)`. The only unscoped views are auth + `ConferenceListView`, registered globally in `backend/urls.py` BEFORE the slug include.
 - Serializers: `<Model>Serializer` for read, `...WriteSerializer` split for writes. Serializer field lists are explicit and exclude `conference`; the write path gets the conference via the view's `save(conference=…)`. `TalkSerializer` narrows `session`/`day` querysets via the context conference (cross-conference FK ⇒ 400).
 - Submission state changes go through the dedicated publish/unpublish/reject/restore actions; `status` and `rejection_message` are read-only in API serializers. `rejected` rows are excluded from the default submission list and cannot be edited through the tracking link; permanent deletion is Django-admin-only.
+- Notification e-mail is queued, never sent inline: `core.notifications` creates the `Notification` row and defers the Celery send to `transaction.on_commit`, so the task never races an uncommitted row. The task claims its row atomically (`pending`/`retrying`/`failed` rows are flipped to `retrying` before sending, so `sent`/`skipped` rows and concurrent duplicates never double-send); retries are bounded (`max_retries=3`) and `failed` is set only on terminal failure (the admin `resend` action and the drain command, both selecting `pending`/`failed` only, are the re-entry points); and broker errors are caught in `enqueue_notification` and recorded on the row, so the broker must never break the HTTP response.
 - URL paths kebab-case with trailing slash; API mounted under `/{RELATIVE_URL_ROOT}api/`, admin tails under the slug prefix (e.g. `/api/<slug>/admin/...`).
 - `Conference` is the single config row: it owns the logistics (title, dates, location, card/hero/venue photos, short description, badge title), the web texts and the accommodation description; `year` and `status` are derived read-only properties. `GET conference-info/` returns the plain `ConferenceInfoSerializer` payload; `PATCH conference-info/edit/` (multipart-capable, `BlankAsNoneDateField` maps empty date strings to null) writes logistics + web fields. Read endpoints must stay side-effect free — no lazy row creation.
 - Global default is `AllowAny`; admin views declare `authentication_classes=[JWTCookieAuthentication]` + `permission_classes=[IsConferenceManager]` per-view — do not centralize into settings. `IsConferenceManager` resolves `view.conference` (mixin) or falls back to `view.kwargs["conference_slug"]` (`@api_view` functions); the plain Django PDF views call `can_manage_conference`.
@@ -100,5 +108,5 @@ backend/
 - Deleting a conference day or an unscheduled talk orphans the linked `Abstract` (FK sits on Talk). Deliberate admin choice (2026-10-03); do not add delete cascades.
 - PDF generators (`generate_program_pdf`, `generate_badges_pdf`) build into `io.BytesIO`, then write bytes into the response — do not pass the HttpResponse to canvas directly (pyright compatibility, bytes unchanged). Both filter every queryset by conference; badges header is `badge_title or title`, footer is `location`.
 - `traceback.print_exc()` debug calls and Russian comments exist in models/views/settings — leave them.
-- Signals: publish email fires on status transition to approved via `_old_status` captured in pre_save — `QuerySet.update()`/bulk paths silently skip it, and `fail_silently=False` means mail errors raise inside the publish request.
+- Signals: publish email fires on status transition to approved via `_old_status` captured in pre_save — `QuerySet.update()`/bulk paths silently skip it, and `fail_silently=False` means mail errors raise inside the publish request; publish mail stays synchronous by design while participant/organizer notifications go through the `Notification` queue instead.
 - No pagination configured: list endpoints return all rows.

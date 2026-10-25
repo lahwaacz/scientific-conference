@@ -1,7 +1,7 @@
 # PROJECT KNOWLEDGE BASE
 
 **Generated:** 2026-10-02
-**Updated:** 2026-10-24 — per-conference authorization (ConferenceManagers), superuser-only Django admin, capability-gated SPA
+**Updated:** 2026-10-25 — e-mail notifications (Celery + Redis worker, conference-scoped `Notification` outbox)
 **Commit:** b24fa5e
 **Branch:** main
 
@@ -61,6 +61,7 @@ Codegraph covers Python only (JS unindexed); refs via pyright LSP.
 | `ConferenceManagers` | model | backend/core/models.py | `IsConferenceManager`, `ConferenceManagersAdmin`, `AuthUserSerializer` | per-conference grant (unique conference+user); a row grants management, `is_superuser` bypasses |
 | `IsConferenceManager` / `can_manage_conference` | permission / helper | backend/core/permissions.py | every scoped admin view + PDF views | superuser OR manager grant for the resolved conference; the permission falls back to `view.kwargs["conference_slug"]` for `@api_view` functions |
 | `ParticipantSubmission.publish()` / `.unpublish()` | method | backend/core/models.py | core workflow | creates public rows or removes them while keeping the submission pending; dedup scoped to `conference` |
+| `Notification` | model | backend/core/models.py | `core/notifications/` (service + Celery task), `NotificationAdmin`, `send_pending_notifications` | conference-scoped e-mail outbox/audit row, one per participant/organizer message for the two public events (submission received/updated); statuses pending/retrying/sent/failed/skipped, `failed` is terminal after three retries, unique `dedupe_key` dedupes the received event |
 | `generate_program_pdf` / `generate_badges_pdf` | function | backend/core/views.py | PDF endpoints | per-conference reportlab PDFs; badges header = `badge_title or title`, footer = `location`; need `core/fonts/*.ttf` |
 | DRF views | classes | backend/core/views.py | scoped via core/urls.py + ConferenceListView | public `AllowAny` + admin `IsConferenceManager` |
 | `App` | component | frontend/src/App.jsx | entry | renders `<Landing/>` when no slug (or unknown slug, with a not-found banner), else HashRouter + all routes + layout shell |
@@ -93,6 +94,7 @@ Codegraph covers Python only (JS unindexed); refs via pyright LSP.
 - NEVER "fix" the dual fetch-prefixing (`configuredFetch.js` global patch + `buildApiUrl`): they coexist only via `startsWith('http')` guards; touching one side risks double-prefixed URLs.
 - NEVER add an API endpoint outside the `/api/<slug>/` include without conference scoping — the route-table lock in `backend/core/test_conference_isolation.py` fails the suite for any unscoped route.
 - Public writes are limited to registration (`/submit/`) and token-based submission edits (`/track/<token>/`). Never reintroduce anonymous create on participants or abstracts; `Abstract.participant` is required and cascades, and `ParticipantAdmin` deletion must unpublish linked submissions first.
+- NEVER send notification e-mail inside the request/response cycle (queue a `Notification` row and let the Celery task send it; the legacy publish e-mail in `core/signals.py` is the one deliberate exception) and never BCC or copy a participant's tracking link to the info desk or any shared mailbox: the tracking link is a bearer capability, so participant and organizer messages are separate rows and the organizer templates are token-free.
 - Auth routes are global under `/api/auth/` and must stay registered BEFORE the slug include (or `/api/auth/*` is captured as a conference_slug prefix and 404s). NEVER include `dj_rest_auth.urls` wholesale at `/api/auth/` — it shadows the custom login/logout registration.
 - The SPA OAuth callback is a PATH route (`/<root>/oauth/callback`, matched by `isOAuthCallbackPath()` before the slug logic). NEVER move it into a HashRouter fragment and never let the slug singleton treat `oauth` as a conference slug.
 - NEVER auto-provision conference access or admin rights from GitLab: no social group authorization, no e-mail auto-connect, no automatic `is_staff`, no automatic `ConferenceManagers`. Linking and access grants are manual (Django admin or `link_gitlab_account`).

@@ -83,6 +83,28 @@ Administrators sign in with the university GitLab account or, when enabled, with
 
 At least one method must be enabled; the server refuses to start otherwise. See `docs/deployment.md` for the full deployment procedure (application registration, rollout order, emergency access).
 
+### Mail and notification environment variables
+
+Participant confirmation e-mails are queued through Celery and sent by a
+worker (see `docs/deployment.md` for the Redis service and the worker
+container). The backend reads these environment variables:
+
+- `MAIL_BACKEND` (default: the console backend when `DJANGO_DEBUG=True`, otherwise the SMTP backend) — mail backend path override.
+- `EMAIL_HOST` (default `localhost`), `EMAIL_PORT` (default `25`), `EMAIL_HOST_USER` (empty), `EMAIL_HOST_PASSWORD` (empty), `EMAIL_USE_TLS` (default `False`), `EMAIL_TIMEOUT` (default `10`) — the SMTP connection.
+- `DEFAULT_FROM_EMAIL` (default `noreply@conference.local`) — sender address of every message.
+- `PUBLIC_BASE_URL` (default `http://localhost:3000/`) — public SPA root used to build the tracking link inside e-mails.
+- `CELERY_BROKER_URL` (default `redis://localhost:6379/0`) — broker for the notification worker.
+- `CELERY_TASK_ALWAYS_EAGER` (default `True` when `DJANGO_DEBUG=True`, otherwise `False`) — run tasks synchronously in the web process.
+
+Local development needs neither Redis nor a worker: with `DJANGO_DEBUG=True`
+mail is printed to the server console and Celery runs eagerly, so tasks execute
+inside the request. Note that eager mode does not retry failed sends, unlike
+production — but only because `CELERY_TASK_EAGER_PROPAGATES=True` propagates
+the retry exception instead of letting Celery re-run the task in-process (do
+not remove that setting as if it were cosmetic). `PUBLIC_BASE_URL` is what
+makes the tracking link in a local e-mail point at
+`http://localhost:3000/<slug>/#/track/<token>`.
+
 ## API Overview
 
 The backend exposes endpoints for:
