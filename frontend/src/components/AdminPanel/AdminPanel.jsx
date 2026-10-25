@@ -128,29 +128,6 @@ export default function AdminPanel() {
     fetchAdminData();
   }, []);
 
-  async function handleLogout() {
-    try {
-      const res = await fetchWithAuth("/api/auth/logout/", { method: "POST" });
-      if (!res.ok) {
-        openModal({
-          title: "Logout failed",
-          message: "The server could not end the session. Please try again.",
-          type: "danger",
-          onConfirm: closeModal,
-        });
-        return;
-      }
-      navigate("/");
-    } catch (error) {
-      openModal({
-        title: "Connection error",
-        message: error.message || "Server is unreachable.",
-        type: "danger",
-        onConfirm: closeModal,
-      });
-    }
-  }
-
   if (error) {
     return (
       <div className={styles.container}>
@@ -262,10 +239,6 @@ export default function AdminPanel() {
               <p className={styles.description}>Export conference program</p>
             </button>
           </div>
-
-          <button className={styles.logoutButton} onClick={handleLogout}>
-            Logout
-          </button>
         </div>
       )}
 

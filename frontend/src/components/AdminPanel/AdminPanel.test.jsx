@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 
 /**
  * The cue under the title shows which conference this admin session is
@@ -72,79 +72,5 @@ describe("AdminPanel conference cue", () => {
         "Conference: Workshop on Scientific Computing 2026 (wsc2026)"
       )
     ).toBeInTheDocument();
-  });
-});
-
-/**
- * Logout ends the server-side session: the backend reads the HttpOnly
- * refresh cookie, blacklists it, clears the JWT cookies, and flushes the
- * Django session. The SPA has no tokens to clear locally.
- */
-describe("AdminPanel logout", () => {
-  beforeEach(() => {
-    localStorage.clear();
-    mockFetches();
-  });
-
-  test("posts to the logout endpoint with cookies, then navigates home", async () => {
-    await renderAdminPanel();
-    const { mockNavigate } = await import("react-router-dom");
-
-    fireEvent.click(await screen.findByRole("button", { name: /^logout$/i }));
-
-    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/"));
-
-    const logoutCall = globalThis.fetch.mock.calls.find(([url]) =>
-      url.includes("/api/auth/logout/")
-    );
-    expect(logoutCall).toBeDefined();
-    expect(logoutCall[0]).toBe("http://localhost:8000/api/auth/logout/");
-    expect(logoutCall[1].method).toBe("POST");
-    expect(logoutCall[1].credentials).toBe("include");
-    expect(logoutCall[1].body).toBeUndefined();
-  });
-
-  test("keeps the page and shows an error when the logout request fails", async () => {
-    globalThis.fetch = vi.fn((url) => {
-      if (url.includes("/api/auth/logout/")) {
-        return Promise.reject(new Error("boom"));
-      }
-      if (url.includes("conference-info")) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => ({ title: "T" }),
-        });
-      }
-      return Promise.resolve({ ok: true, json: async () => ({}) });
-    });
-    await renderAdminPanel();
-    const { mockNavigate } = await import("react-router-dom");
-
-    fireEvent.click(await screen.findByRole("button", { name: /^logout$/i }));
-
-    expect(await screen.findByText(/connection error/i)).toBeInTheDocument();
-    expect(mockNavigate).not.toHaveBeenCalled();
-  });
-
-  test("keeps the page and reports a non-OK logout response", async () => {
-    globalThis.fetch = vi.fn((url) => {
-      if (url.includes("/api/auth/logout/")) {
-        return Promise.resolve({ ok: false, status: 500 });
-      }
-      if (url.includes("conference-info")) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => ({ title: "T" }),
-        });
-      }
-      return Promise.resolve({ ok: true, json: async () => ({}) });
-    });
-    await renderAdminPanel();
-    const { mockNavigate } = await import("react-router-dom");
-
-    fireEvent.click(await screen.findByRole("button", { name: /^logout$/i }));
-
-    expect(await screen.findByText(/logout failed/i)).toBeInTheDocument();
-    expect(mockNavigate).not.toHaveBeenCalled();
   });
 });
