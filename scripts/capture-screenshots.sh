@@ -86,6 +86,8 @@ cleanup() {
   [[ -n "${FRONTEND_PID:-}" ]] && kill -- "-$FRONTEND_PID" 2>/dev/null || true
   $PWCLI kill-all >/dev/null 2>&1 || true
   [[ -n "${DB_FILE:-}" ]] && rm -f "$DB_FILE" || true
+  [[ -n "${COOKIE_JAR:-}" ]] && rm -f "$COOKIE_JAR" || true
+  [[ -n "${STATE_FILE:-}" ]] && rm -f "$STATE_FILE" || true
 }
 trap cleanup EXIT
 
@@ -181,7 +183,7 @@ capture accommodation /accommodation
 capture hiking    /hiking
 capture track     "/track/$TRACKING_TOKEN"
 
-# --- admin captures (deterministic dev superuser, JWT in localStorage) ------
+# --- admin captures (deterministic dev superuser, HttpOnly JWT cookies) ------
 ADMIN_USER=screenshots
 ADMIN_PASS=screenshots
 (cd "$BACKEND" && uv run python manage.py shell -c \
@@ -189,17 +191,61 @@ ADMIN_PASS=screenshots
    u=U.objects.filter(username='$ADMIN_USER').first() or U(username='$ADMIN_USER'); \
    u.is_staff=True; u.is_superuser=True; u.set_password('$ADMIN_PASS'); u.save()")
 
-TOKENS=$(curl -sf -X POST "http://localhost:$BACKEND_PORT/api/auth/login/" \
+# Login never echoes tokens: it sets the HttpOnly conference-jwt-access and
+# conference-jwt-refresh cookies (the SPA never reads or stores them). Capture
+# those cookies from a curl jar and hand them to the browser as Playwright
+# storage state so the SPA's credentialed API calls authenticate.
+COOKIE_JAR=$(mktemp "${TMPDIR:-/tmp}/conference-cookies-XXXXXX.txt")
+STATE_FILE=$(mktemp "${TMPDIR:-/tmp}/conference-state-XXXXXX.json")
+chmod 600 "$COOKIE_JAR" "$STATE_FILE"
+curl -sf -c "$COOKIE_JAR" -X POST "http://localhost:$BACKEND_PORT/api/auth/login/" \
   -H 'Content-Type: application/json' \
-  -d "{\"username\":\"$ADMIN_USER\",\"password\":\"$ADMIN_PASS\"}")
-ACCESS=$(printf '%s' "$TOKENS" | python3 -c \
-  "import json,sys; print(json.load(sys.stdin)['access'])")
-REFRESH=$(printf '%s' "$TOKENS" | python3 -c \
-  "import json,sys; print(json.load(sys.stdin)['refresh'])")
+  -d "{\"username\":\"$ADMIN_USER\",\"password\":\"$ADMIN_PASS\"}" >/dev/null \
+  || die "admin login failed (is password login enabled?)"
 
-$PWCLI goto "http://localhost:$FRONTEND_PORT/" >/dev/null
-$PWCLI eval "() => { localStorage.setItem('access_token', '$ACCESS'); \
-  localStorage.setItem('refresh_token', '$REFRESH'); }" >/dev/null
+if ! python3 - "$COOKIE_JAR" "$STATE_FILE" <<'PY'
+import json
+import sys
+
+jar_path, state_path = sys.argv[1], sys.argv[2]
+cookies = []
+with open(jar_path, encoding="utf-8") as jar:
+    for raw in jar:
+        line = raw.rstrip("\n")
+        http_only = line.startswith("#HttpOnly_")
+        if http_only:
+            line = line[len("#HttpOnly_") :]
+        elif not line or line.startswith("#"):
+            continue
+        fields = line.split("\t")
+        if len(fields) != 7:
+            continue
+        domain, _include_subdomains, path, secure, expires, name, value = fields
+        expires = int(expires)
+        cookies.append(
+            {
+                "name": name,
+                "value": value,
+                "domain": domain,
+                "path": path,
+                "expires": expires if expires > 0 else -1,
+                "httpOnly": http_only,
+                "secure": secure.upper() == "TRUE",
+                "sameSite": "Lax",
+            }
+        )
+
+names = {cookie["name"] for cookie in cookies}
+if not {"conference-jwt-access", "conference-jwt-refresh"} <= names:
+    sys.exit(1)
+with open(state_path, "w", encoding="utf-8") as state:
+    json.dump({"cookies": cookies, "origins": []}, state)
+PY
+then
+  die "admin login did not set the conference JWT cookies"
+fi
+
+$PWCLI state-load "$STATE_FILE" >/dev/null
 
 capture admin-panel            /admin-panel
 capture admin-participants     /admin-panel/participants-info
@@ -224,6 +270,16 @@ for png in "$OUT"/*.png; do
   fi
   if cmp -s "$OUT/landing.png" "$png"; then
     echo "ERROR: $label.png is byte-identical to landing.png" >&2
+    exit 1
+  fi
+done
+
+# --- admin-session guard: an unauthenticated /admin-panel redirects to the
+# conference home, so failed cookie injection makes every admin capture a
+# byte-identical duplicate of home.png.
+for png in "$OUT"/admin-*.png; do
+  if cmp -s "$OUT/home.png" "$png"; then
+    echo "ERROR: $(basename "$png") is identical to home.png (admin login failed)" >&2
     exit 1
   fi
 done
