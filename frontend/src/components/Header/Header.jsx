@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import LogoIcon from "../../assets/logo.svg";
 import { buildApiUrl, fetchWithAuth } from "../../utils/api";
-import Modal from "../ui/Modal/Modal";
 import { useLockBodyScroll } from "./../hooks/useLockBodyScroll";
+import Modal from "../ui/Modal/Modal";
 import styles from "./Header.module.css";
 
 export default function Header() {
