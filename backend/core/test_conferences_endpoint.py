@@ -317,7 +317,7 @@ class TestConferenceAdminPolicy(TestCase):
             if model._meta.app_label == "core" and model not in (Conference, Role)
         }
 
-        self.assertEqual(len(core_admins), 10)
+        self.assertEqual(len(core_admins), 11)
         for object_name, admin_instance in core_admins.items():
             self.assertIn("conference", admin_instance.list_display, msg=object_name)
             self.assertIn("conference", admin_instance.list_filter, msg=object_name)
