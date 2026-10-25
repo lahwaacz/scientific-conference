@@ -809,6 +809,57 @@ class ParticipantSubmission(models.Model):
         super().delete(*args, **kwargs)
 
 
+class Notification(models.Model):
+    KIND_CHOICES = [
+        ("submission_received", "Submission received"),
+        ("submission_updated", "Submission updated"),
+    ]
+    AUDIENCE_CHOICES = [
+        ("participant", "Participant"),
+        ("organizer", "Organizer"),
+    ]
+    STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("retrying", "Retrying"),
+        ("sent", "Sent"),
+        ("failed", "Failed"),
+        ("skipped", "Skipped"),
+    ]
+
+    conference = models.ForeignKey(
+        Conference, related_name="notifications", on_delete=models.CASCADE
+    )
+    kind = models.CharField(max_length=32, choices=KIND_CHOICES)
+    audience = models.CharField(
+        max_length=16, choices=AUDIENCE_CHOICES, default="participant"
+    )
+    submission = models.ForeignKey(
+        "ParticipantSubmission",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="notifications",
+    )
+    recipient = models.EmailField()
+    subject = models.CharField(max_length=255)
+    body = models.TextField()
+    status = models.CharField(
+        max_length=16, choices=STATUS_CHOICES, default="pending", db_index=True
+    )
+    attempts = models.PositiveSmallIntegerField(default=0)
+    last_error = models.TextField(blank=True, default="")
+    dedupe_key = models.CharField(max_length=128, blank=True, null=True, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    sent_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["conference", "status"])]
+
+    def __str__(self):
+        return f"{self.kind}/{self.audience} -> {self.recipient} ({self.status})"
+
+
 class HikingRoute(models.Model):
     conference = models.ForeignKey(
         Conference, related_name="hiking_routes", on_delete=models.CASCADE
