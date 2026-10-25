@@ -19,6 +19,7 @@ from .models import (
     ConferenceManagers,
     HikingRoute,
     HikingStop,
+    Notification,
     Participant,
     ParticipantSubmission,
     Person,
@@ -205,6 +206,13 @@ class TestIsReferenced(TestCase):
                 affiliation="CTU",
                 arrival_date=date(2026, 5, 1),
                 departure_date=date(2026, 5, 2),
+            ),
+            "Notification": lambda c: Notification.objects.create(
+                conference=c,
+                kind="submission_received",
+                recipient="participant@example.com",
+                subject="Submission received",
+                body="Body",
             ),
             "HikingRoute": lambda c: HikingRoute.objects.create(
                 conference=c, name="Route"
