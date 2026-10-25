@@ -107,6 +107,7 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": os.getenv("DJANGO_DB_PATH", BASE_DIR / "db.sqlite3"),
+        "OPTIONS": {"timeout": 20},
     }
 }
 
@@ -274,8 +275,53 @@ LOGIN_REDIRECT_URL = FRONTEND_ROOT
 ACCOUNT_LOGOUT_REDIRECT_URL = FRONTEND_ROOT
 
 
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-DEFAULT_FROM_EMAIL = "noreply@conference.local"
+# Mail goes through Django's MAILERS configuration; the individual EMAIL_*
+# settings are deprecated and scheduled for removal in Django 2028. Development
+# prints messages to the console, production uses the deployment's SMTP server.
+# The env var names remain the familiar EMAIL_* ones; only the Django-level
+# shape changed.
+MAIL_BACKEND = os.getenv("MAIL_BACKEND") or (
+    "django.core.mail.backends.console.EmailBackend"
+    if DEBUG
+    else "django.core.mail.backends.smtp.EmailBackend"
+)
+_mailer_options: dict[str, object] = {}
+if "smtp" in MAIL_BACKEND.lower():
+    _mailer_options = {
+        "host": os.getenv("EMAIL_HOST", "localhost"),
+        "port": int(os.getenv("EMAIL_PORT", "25")),
+        "timeout": int(os.getenv("EMAIL_TIMEOUT", "10")),
+        "use_tls": os.getenv("EMAIL_USE_TLS", "False").lower() == "true",
+    }
+    _mail_username = os.getenv("EMAIL_HOST_USER", "")
+    if _mail_username:
+        _mailer_options["username"] = _mail_username
+    _mail_password = os.getenv("EMAIL_HOST_PASSWORD", "")
+    if _mail_password:
+        _mailer_options["password"] = _mail_password
+
+MAILERS = {
+    "default": {
+        "BACKEND": MAIL_BACKEND,
+        **({"OPTIONS": _mailer_options} if _mailer_options else {}),
+    }
+}
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@conference.local")
+
+# Absolute public SPA root used to build tracking links inside emails.
+PUBLIC_BASE_URL = (
+    os.getenv("PUBLIC_BASE_URL", "http://localhost:3000/").rstrip("/") + "/"
+)
+
+# Celery: broker only, no result backend (task results are ignored).
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
+CELERY_TASK_IGNORE_RESULT = True
+CELERY_TASK_ALWAYS_EAGER = (
+    os.getenv("CELERY_TASK_ALWAYS_EAGER", "True" if DEBUG else "False").lower()
+    == "true"
+)
+CELERY_TASK_EAGER_PROPAGATES = True
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
 
 # CORS settings
