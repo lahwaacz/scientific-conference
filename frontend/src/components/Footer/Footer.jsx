@@ -29,6 +29,14 @@ async function probeAdminAccess() {
   return canManageConference(await retry.json(), getConferenceSlug());
 }
 
+function Logo() {
+  return (
+    <div className={styles.logo}>
+      <img className={styles.logoIcon} src={LogoIcon} alt="Logo" />
+    </div>
+  );
+}
+
 export default function Footer() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -38,14 +46,6 @@ export default function Footer() {
   const isProbingAuth = useRef(false);
 
   useLockBodyScroll(isAdminOpen);
-
-  function Logo() {
-    return (
-      <div className={styles.logo}>
-        <img className={styles.logoIcon} src={LogoIcon} alt="Logo" />
-      </div>
-    );
-  }
 
   async function openAdmin(e) {
     e.preventDefault();
