@@ -188,4 +188,28 @@ describe("Footer", () => {
       screen.queryByText("Venue page description")
     ).not.toBeInTheDocument();
   });
+
+  test("hides the Additional information column when it has no content", async () => {
+    render(<Footer />);
+
+    expect(await screen.findByText("Footer venue blurb")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: /additional information/i })
+    ).not.toBeInTheDocument();
+  });
+
+  test("shows the Additional information column when any field is filled", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      jsonOf({
+        ...infoPayload,
+        website_url: "https://wsc.example.com",
+      })
+    );
+    render(<Footer />);
+
+    expect(
+      await screen.findByRole("heading", { name: /additional information/i })
+    ).toBeInTheDocument();
+    expect(screen.getByText("https://wsc.example.com")).toBeInTheDocument();
+  });
 });

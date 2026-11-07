@@ -44,6 +44,9 @@ export default function Footer() {
   const info = useConferenceInfo();
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const isProbingAuth = useRef(false);
+  const hasAdditionalInfo = Boolean(
+    info?.website_url || info?.poster_url || info?.info_desk_email
+  );
 
   useLockBodyScroll(isAdminOpen);
 
@@ -89,45 +92,47 @@ export default function Footer() {
           <p>{info?.conference_office_text || ""}</p>
         </div>
 
-        <div className={styles.column}>
-          <h4>Additional information</h4>
-          <p>
-            {info?.website_url && (
-              <>
-                URL:{" "}
-                <a
-                  href={info.website_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {info.website_url}
-                </a>
-                <br />
-              </>
-            )}
-            {info?.poster_url && (
-              <>
-                Conference poster:{" "}
-                <a
-                  href={info.poster_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  WSC Poster
-                </a>
-                <br />
-              </>
-            )}
-            {info?.info_desk_email && (
-              <>
-                Information desk:{" "}
-                <a href={`mailto:${info.info_desk_email}`}>
-                  {info.info_desk_email}
-                </a>
-              </>
-            )}
-          </p>
-        </div>
+        {hasAdditionalInfo && (
+          <div className={styles.column}>
+            <h4>Additional information</h4>
+            <p>
+              {info?.website_url && (
+                <>
+                  URL:{" "}
+                  <a
+                    href={info.website_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {info.website_url}
+                  </a>
+                  <br />
+                </>
+              )}
+              {info?.poster_url && (
+                <>
+                  Conference poster:{" "}
+                  <a
+                    href={info.poster_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    WSC Poster
+                  </a>
+                  <br />
+                </>
+              )}
+              {info?.info_desk_email && (
+                <>
+                  Information desk:{" "}
+                  <a href={`mailto:${info.info_desk_email}`}>
+                    {info.info_desk_email}
+                  </a>
+                </>
+              )}
+            </p>
+          </div>
+        )}
       </div>
 
       <hr className={styles.separator} />
