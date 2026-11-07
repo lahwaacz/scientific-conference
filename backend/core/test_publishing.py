@@ -599,7 +599,7 @@ class TestSubmissionAdminAPI(TestCase):
         self.assertEqual(abstract.title, "New Title")
         self.assertEqual(talk.title, "New Title")
 
-    def test_patch_with_cleared_abstract_fields_keeps_records(self):
+    def test_patch_clearing_talk_title_is_rejected_and_keeps_records(self):
         submission = make_submission()
         submission.publish()
 
@@ -609,7 +609,11 @@ class TestSubmissionAdminAPI(TestCase):
             format="json",
         )
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("abstract_title", response.data)
+        submission.refresh_from_db()
+        self.assertEqual(submission.abstract_title, "Numerical Methods")
+        self.assertEqual(submission.abstract_text, "Some abstract text")
         self.assertEqual(Abstract.objects.count(), 1)
         self.assertEqual(Talk.objects.count(), 1)
 

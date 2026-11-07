@@ -264,6 +264,103 @@ describe("Tracking", () => {
     expect(payload.is_student).toBe(true);
   });
 
+  test("dates-off JSON edits omit date keys and preserve the derived stored stay", async () => {
+    const derivedSubmission = {
+      ...pendingSubmission,
+      stay_dates_derived: true,
+    };
+    const datesOffInfo = {
+      ...openWindowInfo,
+      registration_collect_dates: false,
+      submission_edit_deadline: "2099-12-31",
+    };
+    await renderWithSubmission(derivedSubmission, datesOffInfo);
+
+    expect(screen.getByText("Stay")).toBeInTheDocument();
+    expect(
+      screen.getByText("Full conference (10 September 2026–12 September 2026)")
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Arrival")).not.toBeInTheDocument();
+    expect(screen.queryByText("Departure")).not.toBeInTheDocument();
+
+    await openEditForm();
+
+    expect(document.querySelector('input[name="arrival"]')).toBeNull();
+    expect(document.querySelector('input[name="departure"]')).toBeNull();
+    expect(
+      screen.getByText(/you can add it later until 31 December 2099/i)
+    ).toBeInTheDocument();
+
+    globalThis.fetch
+      .mockResolvedValueOnce(jsonResponse(200, derivedSubmission))
+      .mockResolvedValueOnce(jsonResponse(200, derivedSubmission));
+    fireEvent.submit(document.querySelector("form"));
+
+    expect(await screen.findByText(/Changes saved/i)).toBeInTheDocument();
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(3));
+    const payload = JSON.parse(globalThis.fetch.mock.calls[1][1].body);
+    expect(payload).not.toHaveProperty("arrival_date");
+    expect(payload).not.toHaveProperty("departure_date");
+    expect(payload.name).toBe("Alice Smith");
+    expect(
+      screen.getByText("Full conference (10 September 2026–12 September 2026)")
+    ).toBeInTheDocument();
+  });
+
+  test("dates-off multipart edits omit arrival and departure keys", async () => {
+    const derivedSubmission = {
+      ...pendingSubmission,
+      photo: null,
+      stay_dates_derived: true,
+    };
+    await renderWithSubmission(derivedSubmission, {
+      ...openWindowInfo,
+      registration_collect_dates: false,
+    });
+    await openEditForm();
+
+    const newPhoto = new File(["photo"], "new.jpg", { type: "image/jpeg" });
+    fireEvent.change(document.querySelector('input[type="file"]'), {
+      target: { files: [newPhoto] },
+    });
+    globalThis.fetch
+      .mockResolvedValueOnce(jsonResponse(200, derivedSubmission))
+      .mockResolvedValueOnce(jsonResponse(200, derivedSubmission));
+    fireEvent.submit(document.querySelector("form"));
+
+    expect(await screen.findByText(/Changes saved/i)).toBeInTheDocument();
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(3));
+    const body = globalThis.fetch.mock.calls[1][1].body;
+    expect(body).toBeInstanceOf(FormData);
+    expect(body.has("arrival_date")).toBe(false);
+    expect(body.has("departure_date")).toBe(false);
+    expect(body.get("photo")).toBe(newPhoto);
+  });
+
+  test("equal stored dates collapse to one row and require repair when dates are collected", async () => {
+    await renderWithSubmission({
+      ...pendingSubmission,
+      departure_date: pendingSubmission.arrival_date,
+    });
+
+    expect(screen.getByText("Stay")).toBeInTheDocument();
+    expect(screen.getByText("10 September 2026")).toBeInTheDocument();
+    expect(screen.queryByText("Arrival")).not.toBeInTheDocument();
+    expect(screen.queryByText("Departure")).not.toBeInTheDocument();
+
+    await openEditForm();
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "This submission used the full conference day; set a departure date after arrival to save changes."
+    );
+    fireEvent.submit(document.querySelector("form"));
+
+    expect(
+      await screen.findByText("Departure date must be after arrival date")
+    ).toBeInTheDocument();
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+  });
+
   test("Just attend edit clears hidden contribution fields", async () => {
     await renderWithSubmission(pendingSubmission);
     await openEditForm();

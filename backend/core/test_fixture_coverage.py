@@ -3,7 +3,12 @@ from collections import defaultdict
 from itertools import combinations
 from pathlib import Path
 
+from django.core.management import call_command
+
+from .models import Conference, ParticipantSubmission
+
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
+DEMO_FIXTURES = ("conferences.json", "participants.json", "program.json")
 TYPES = ("talk", "poster", "attend")
 ALL_COMBINATIONS = {
     combo for size in range(1, len(TYPES) + 1) for combo in combinations(TYPES, size)
@@ -26,6 +31,22 @@ def test_demo_conferences_cover_every_allowed_type_combination():
     conferences = [row["fields"] for row in load("conferences.json")]
 
     assert {allowed_types(conference) for conference in conferences} == ALL_COMBINATIONS
+
+
+def test_demo_fixtures_load_into_a_clean_database(db):
+    # loaddata itself is the assertion: stale field names (e.g. a leftover
+    # registration_instructions key) fail inside it, and the order is
+    # load-bearing (talks reference participants loaded by the earlier file).
+    call_command("loaddata", *DEMO_FIXTURES, verbosity=0)
+
+    assert set(Conference.objects.values_list("pk", flat=True)) == {
+        row["pk"] for row in load("conferences.json")
+    }
+    assert set(ParticipantSubmission.objects.values_list("pk", flat=True)) == {
+        row["pk"]
+        for row in load("participants.json")
+        if row["model"] == "core.participantsubmission"
+    }
 
 
 def test_every_demo_conference_has_a_participant_for_each_allowed_type():

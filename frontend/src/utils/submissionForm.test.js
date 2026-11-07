@@ -178,6 +178,40 @@ describe("validateSubmissionForm", () => {
     }
   });
 
+  test("skips missing and ordering date errors when dates are not collected", () => {
+    for (const dates of [
+      { arrival: "", departure: "" },
+      { arrival: "2026-09-12", departure: "2026-09-10" },
+    ]) {
+      const errors = validateSubmissionForm({
+        formData: validFormData(dates),
+        photo: null,
+        collectDates: false,
+      });
+      expect(errors).toEqual({});
+    }
+  });
+
+  test("keeps non-date validation when dates are not collected", () => {
+    const errors = validateSubmissionForm({
+      formData: validFormData({
+        affiliation: "CT",
+        abstract_title: "",
+        abstract_text: words(251),
+        arrival: "",
+        departure: "",
+      }),
+      photo: null,
+      collectDates: false,
+    });
+
+    expect(errors).toEqual({
+      affiliation: "Please enter a valid affiliation",
+      abstract_title: "Please enter a title",
+      abstract_text: "Abstract must not exceed 250 words",
+    });
+  });
+
   test("flags a photo larger than 5MB", () => {
     const errors = validateSubmissionForm({
       formData: validFormData(),

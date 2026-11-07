@@ -8,6 +8,8 @@ import {
 import {
   isArrivalDepartureTentative,
   registrationWindowStatus,
+  submissionEditEffectiveDeadline,
+  submissionEditWindowStatus,
 } from "../../utils/registrationWindow";
 import { countWords, validateSubmissionForm } from "../../utils/submissionForm";
 import { useConferenceInfo } from "../hooks/useConferenceInfo";
@@ -77,6 +79,16 @@ const initialFormData = {
   is_student: false,
 };
 
+// Native date inputs open on the selected value (today when empty), so seed
+// them with the conference dates only when stay dates are collected.
+function conferenceDefaultDates(info, collectDates) {
+  if (!collectDates) return { arrival: "", departure: "" };
+  return {
+    arrival: info?.date_start || "",
+    departure: info?.date_end || "",
+  };
+}
+
 export default function RegistrationForm() {
   const info = useConferenceInfo();
   const { modal, showAlert } = useModal();
@@ -106,13 +118,36 @@ export default function RegistrationForm() {
     );
   }, [info, allowedKey, defaultType]);
 
+  const collectDates = info?.registration_collect_dates !== false;
+  const defaultDates = conferenceDefaultDates(info, collectDates);
+
+  useEffect(() => {
+    if (!info) return;
+    setFormData((prev) => {
+      const arrival = collectDates ? prev.arrival || defaultDates.arrival : "";
+      const departure = collectDates
+        ? prev.departure || defaultDates.departure
+        : "";
+      if (arrival === prev.arrival && departure === prev.departure) {
+        return prev;
+      }
+      return { ...prev, arrival, departure };
+    });
+  }, [info, collectDates, defaultDates.arrival, defaultDates.departure]);
+
   const defaultFormData = {
     ...initialFormData,
     contribution_type: defaultType,
+    arrival: defaultDates.arrival,
+    departure: defaultDates.departure,
   };
   const isDirty =
     photo !== null ||
-    Object.keys(formData).some((key) => formData[key] !== defaultFormData[key]);
+    Object.keys(formData).some((key) => {
+      const hiddenDate =
+        !collectDates && (key === "arrival" || key === "departure");
+      return !hiddenDate && formData[key] !== defaultFormData[key];
+    });
   useUnsavedChangesGuard(
     isDirty,
     "Leave the registration form? Unsubmitted changes will be lost."
@@ -123,6 +158,7 @@ export default function RegistrationForm() {
       formData,
       photo,
       allowedTypes: allowedTypeValues,
+      collectDates,
     });
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -194,8 +230,10 @@ export default function RegistrationForm() {
           "additional_affiliations",
           isAttend ? "" : formData.additional_affiliations
         );
-        submitData.append("arrival_date", formData.arrival);
-        submitData.append("departure_date", formData.departure);
+        if (collectDates) {
+          submitData.append("arrival_date", formData.arrival);
+          submitData.append("departure_date", formData.departure);
+        }
         submitData.append("info", formData.info);
         submitData.append("is_student", formData.is_student);
 
@@ -310,6 +348,12 @@ export default function RegistrationForm() {
 
   const windowStatus = registrationWindowStatus(info);
   const arrivalDepartureTentative = isArrivalDepartureTentative(info);
+  const abstractEditingClosed = submissionEditWindowStatus(info) === "closed";
+  const abstractEditDeadline = submissionEditEffectiveDeadline(info);
+  const abstractLaterUntil =
+    !abstractEditingClosed && abstractEditDeadline
+      ? formatDate(abstractEditDeadline)
+      : null;
 
   if (windowStatus === "not-open") {
     return (
@@ -407,6 +451,9 @@ export default function RegistrationForm() {
               onCropPhoto={photo ? () => setCropFile(photo) : undefined}
               wordCount={wordCount}
               arrivalDepartureTentative={arrivalDepartureTentative}
+              showDates={collectDates}
+              abstractLaterUntil={abstractLaterUntil}
+              abstractEditingClosed={abstractEditingClosed}
               allowedTypes={allowedTypes}
             />
 

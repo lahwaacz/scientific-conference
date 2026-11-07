@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { registrationRequirements } from "../../utils/registrationRequirements";
 import { useConferenceInfo } from "./../hooks/useConferenceInfo";
 import Separator from "../ui/Separator/Separator";
 import Title from "../ui/Title/Title";
@@ -15,17 +16,7 @@ export default function Registration() {
       })
     : "";
 
-  const instructions = !info
-    ? []
-    : info.registration_instructions
-      ? info.registration_instructions.split("\n").filter(Boolean)
-      : [
-          "Name",
-          "Your e-mail",
-          "Affiliation",
-          "The abstract of your contribution",
-          "Arrival and departure dates",
-        ];
+  const requirements = info ? registrationRequirements(info) : [];
 
   return (
     <section className={styles.registration}>
@@ -35,7 +26,7 @@ export default function Registration() {
           <p className={styles.description}>{info?.registration_fee_note}</p>
           <p className={styles.strong}>Required registration data:</p>
           <ol>
-            {instructions.map((item, i) => (
+            {requirements.map((item, i) => (
               <li key={i}>{item}</li>
             ))}
           </ol>

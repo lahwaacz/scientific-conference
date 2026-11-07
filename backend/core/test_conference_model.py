@@ -42,6 +42,26 @@ def make_info(**overrides):
     return Conference(slug="wsc2026", **fields)
 
 
+class TestRegistrationConfigDefaults(TestCase):
+    def test_conference_collects_participant_dates_by_default(self):
+        conference = Conference.objects.create(slug="dates-collected-by-default")
+
+        self.assertTrue(conference.registration_collect_dates)
+
+    def test_submission_stay_dates_are_not_derived_by_default(self):
+        conference = Conference.objects.create(slug="stay-dates-not-derived")
+        submission = ParticipantSubmission.objects.create(
+            conference=conference,
+            name="Participant",
+            email="participant@example.com",
+            affiliation="CTU",
+            arrival_date=date(2026, 5, 1),
+            departure_date=date(2026, 5, 2),
+        )
+
+        self.assertFalse(submission.stay_dates_derived)
+
+
 class TestReservedSlugs(TestCase):
     def test_reserved_slug_auth_rejected(self):
         conference = make_conference(slug="auth")

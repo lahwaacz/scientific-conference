@@ -55,8 +55,13 @@ const mergedInfo = {
   description: "About the conference.",
   registration_fee_note: "Free of charge.",
   registration_instructions: "Fill the form.",
+  registration_opening: "2026-03-01",
   registration_deadline: "2026-04-01",
   submission_edit_deadline: "2026-04-15",
+  registration_allow_talk: false,
+  registration_allow_poster: false,
+  registration_allow_attend: true,
+  registration_collect_dates: false,
 };
 
 const peopleFixture = [
@@ -189,10 +194,76 @@ describe("EditWebInfoHome logistics editing", () => {
     );
     expect(body.get("badge_title")).toBe("WSC 2026");
     expect(body.get("description")).toBe("About the conference.");
-    expect(body.has("registration_fee_note")).toBe(false);
-    expect(body.has("registration_deadline")).toBe(false);
-    expect(body.has("submission_edit_deadline")).toBe(false);
+    for (const field of [
+      "registration_fee_note",
+      "registration_instructions",
+      "registration_opening",
+      "registration_deadline",
+      "submission_edit_deadline",
+      "registration_allow_talk",
+      "registration_allow_poster",
+      "registration_allow_attend",
+      "registration_collect_dates",
+    ]) {
+      expect(body.has(field)).toBe(false);
+    }
     expect(body.has("year")).toBe(false);
+  });
+
+  test("shows actionable guidance when single-day dates conflict with date collection", async () => {
+    const { container } = await renderLoaded();
+    fireEvent.change(container.querySelector('input[name="date_start"]'), {
+      target: { value: "2026-05-29" },
+    });
+    fireEvent.change(container.querySelector('input[name="date_end"]'), {
+      target: { value: "2026-05-29" },
+    });
+    fetchWithAuth.mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      json: async () => ({
+        registration_collect_dates: [
+          "Participant dates cannot be collected for a single-day conference.",
+        ],
+      }),
+    });
+
+    fireEvent.submit(container.querySelector("form"));
+
+    const error = await screen.findByText(
+      /Participant dates cannot be collected for a single-day conference\./
+    );
+    expect(error.textContent).toBe(
+      'Participant dates cannot be collected for a single-day conference.\n\nTo save this date change, open Edit Registration and turn off "Collect arrival and departure dates", then set the same start and end date here again.'
+    );
+    expect(
+      screen.queryByText("Failed to save. Please try again.")
+    ).not.toBeInTheDocument();
+  });
+
+  test("shows formatted field errors for other 400 responses", async () => {
+    const { container } = await renderLoaded();
+    fetchWithAuth.mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      json: async () => ({
+        date_end: [
+          "The end date conflicts with the submission editing deadline.",
+        ],
+      }),
+    });
+
+    fireEvent.submit(container.querySelector("form"));
+
+    const error = await screen.findByText(
+      /The server rejected these settings:/
+    );
+    expect(error.textContent).toBe(
+      "The server rejected these settings:\ndate_end: The end date conflicts with the submission editing deadline."
+    );
+    expect(
+      screen.queryByText("Failed to save. Please try again.")
+    ).not.toBeInTheDocument();
   });
 
   test("save omits every photo from FormData when no file is selected", async () => {

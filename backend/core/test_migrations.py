@@ -9,6 +9,7 @@ deploy-time migration run.
 """
 
 import importlib
+from datetime import date
 from types import SimpleNamespace
 
 from django.test import TestCase
@@ -24,6 +25,10 @@ merge_conference_config = importlib.import_module(
 )
 copy_conference_config = merge_conference_config.copy_conference_config
 CONFERENCE_FIELDS = merge_conference_config.CONFERENCE_FIELDS
+
+registration_config_migration = importlib.import_module(
+    "core.migrations.0040_remove_conference_registration_instructions_and_more"
+)
 
 
 class FakeInfo:
@@ -176,3 +181,64 @@ class TestMergeConferenceConfig(TestCase):
         copy_conference_config(FakeMergeApps(conferences, [], []), None)
 
         self.assertEqual(conferences.updates, {})
+
+
+class CurrentConferenceApps:
+    def get_model(self, app_label, model_name):
+        if (app_label, model_name) != ("core", "Conference"):
+            raise LookupError(f"{app_label}.{model_name}")
+        return Conference
+
+
+class TestRegistrationDateCollectionMigration(TestCase):
+    def test_only_equal_non_null_dates_disable_date_collection(self):
+        multi = Conference.objects.create(
+            slug="multi-day",
+            date_start=date(2026, 5, 1),
+            date_end=date(2026, 5, 2),
+        )
+        single = Conference.objects.create(
+            slug="single-day",
+            date_start=date(2026, 6, 1),
+            date_end=date(2026, 6, 1),
+        )
+
+        registration_config_migration.set_registration_collect_dates(
+            CurrentConferenceApps(), None
+        )
+
+        multi.refresh_from_db()
+        single.refresh_from_db()
+        self.assertTrue(multi.registration_collect_dates)
+        self.assertFalse(single.registration_collect_dates)
+
+    def test_inverted_dates_are_reported_but_not_repaired(self):
+        conference = Conference.objects.create(
+            slug="inverted-days",
+            date_start=date(2026, 5, 3),
+            date_end=date(2026, 5, 2),
+        )
+
+        registration_config_migration.set_registration_collect_dates(
+            CurrentConferenceApps(), None
+        )
+
+        conference.refresh_from_db()
+        self.assertTrue(conference.registration_collect_dates)
+        self.assertEqual(conference.date_start, date(2026, 5, 3))
+        self.assertEqual(conference.date_end, date(2026, 5, 2))
+
+    def test_partial_and_missing_dates_keep_the_default(self):
+        conferences = [
+            Conference.objects.create(slug="undated"),
+            Conference.objects.create(slug="start-only", date_start=date(2026, 5, 1)),
+            Conference.objects.create(slug="end-only", date_end=date(2026, 5, 2)),
+        ]
+
+        registration_config_migration.set_registration_collect_dates(
+            CurrentConferenceApps(), None
+        )
+
+        for conference in conferences:
+            conference.refresh_from_db()
+            self.assertTrue(conference.registration_collect_dates)

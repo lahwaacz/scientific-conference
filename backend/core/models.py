@@ -7,6 +7,15 @@ from django.db.models.fields.reverse_related import ForeignObjectRel
 from django.utils import timezone
 
 from .names import compute_sort_key
+from .registration import (
+    ATTEND_FIELDS,
+    CONFIGURATION_FIELDS,
+    SubmissionSnapshot,
+    clear_attend_fields,
+    validate_common_fields,
+    validate_conference_configuration,
+    validate_date_order,
+)
 
 RESERVED_SLUGS = {"auth", "admin", "api", "conferences", "media", "static"}
 
@@ -33,7 +42,7 @@ class Conference(models.Model):
 
     # Web content
     description = models.TextField(blank=True)
-    registration_instructions = models.TextField(blank=True)
+    registration_collect_dates = models.BooleanField(default=True)
     registration_opening = models.DateField(null=True, blank=True)
     registration_deadline = models.DateField(null=True, blank=True)
     submission_edit_deadline = models.DateField(null=True, blank=True)
@@ -78,40 +87,14 @@ class Conference(models.Model):
 
     def clean(self):
         super().clean()
-        # full_clean() path (Django admin, scripts). DRF never calls it, so
-        # ConferenceInfoWriteSerializer.validate() mirrors these rules.
-        errors = {}
+        # DRF does not call full_clean(); its write serializer delegates to
+        # the same policy function with PATCH-effective values.
+        errors = validate_conference_configuration(
+            {field: getattr(self, field) for field in CONFIGURATION_FIELDS}
+        )
         # reserved-word validation (F2)
         if self.slug and self.slug.lower() in RESERVED_SLUGS:
-            errors["slug"] = f'"{self.slug}" is a reserved word.'
-        deadline_errors = []
-        if self.submission_edit_deadline is not None:
-            if (
-                self.registration_deadline is not None
-                and self.submission_edit_deadline < self.registration_deadline
-            ):
-                deadline_errors.append(
-                    "Submission editing deadline must be on or after the registration deadline."
-                )
-            if (
-                self.date_end is not None
-                and self.submission_edit_deadline > self.date_end
-            ):
-                deadline_errors.append(
-                    "Submission editing deadline must be on or before the conference end date."
-                )
-        if deadline_errors:
-            errors["submission_edit_deadline"] = deadline_errors
-        if not any(
-            (
-                self.registration_allow_talk,
-                self.registration_allow_poster,
-                self.registration_allow_attend,
-            )
-        ):
-            errors["registration_allow_talk"] = (
-                "At least one contribution type must be allowed."
-            )
+            errors["slug"] = [f'"{self.slug}" is a reserved word.']
         if errors:
             raise ValidationError(errors)
 
@@ -450,6 +433,7 @@ class ParticipantSubmission(models.Model):
 
     arrival_date = models.DateField()
     departure_date = models.DateField()
+    stay_dates_derived = models.BooleanField(default=False)
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     submitted_at = models.DateTimeField(auto_now_add=True)
@@ -496,6 +480,61 @@ class ParticipantSubmission(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.abstract_title or 'No title'} ({self.status})"
+
+    def clean(self):
+        super().clean()
+        try:
+            conference = self.conference
+        except Conference.DoesNotExist:
+            return
+        creating = self.pk is None
+        instance = None
+        if not creating:
+            # ModelForm mutates the instance before Model.clean() runs, so the
+            # legacy-value comparison must use the persisted pre-update row.
+            original = (
+                type(self)
+                .objects.filter(pk=self.pk)
+                .values(
+                    "contribution_type",
+                    "abstract_title",
+                    "arrival_date",
+                    "departure_date",
+                )
+                .first()
+            )
+            if original is not None:
+                instance = SubmissionSnapshot(**original)
+        attrs = {
+            field: getattr(self, field)
+            for field in (
+                "name",
+                "email",
+                "affiliation",
+                "contribution_type",
+                *ATTEND_FIELDS,
+                "arrival_date",
+                "departure_date",
+            )
+        }
+        errors = validate_common_fields(
+            attrs, conference=conference, instance=instance, creating=creating
+        )
+        errors.update(
+            validate_date_order(
+                attrs,
+                instance=instance,
+                conference=conference,
+                dates_supplied=creating,
+                creating=creating,
+            )
+        )
+        if self.contribution_type == "attend":
+            normalized = clear_attend_fields(attrs)
+            for field in ATTEND_FIELDS:
+                setattr(self, field, normalized[field])
+        if errors:
+            raise ValidationError(errors)
 
     def save(self, *args, **kwargs):
         update_fields = kwargs.get("update_fields")

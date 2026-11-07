@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchWithAuth } from "../../utils/api";
+import { formatFieldErrors } from "../../utils/formatFieldErrors";
+import { registrationRequirements } from "../../utils/registrationRequirements";
 import Loader from "../ui/Loader/Loader";
 import Title from "../ui/Title/Title";
 import styles from "./EditWebInfoRegistration.module.css";
@@ -11,6 +13,7 @@ export default function EditWebInfoRegistration() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const requirements = form ? registrationRequirements(form) : [];
 
   useEffect(() => {
     fetchWithAuth(`/api/conference-info/`)
@@ -28,6 +31,7 @@ export default function EditWebInfoRegistration() {
       [name]: type === "checkbox" ? checked : value,
     }));
     setSaved(false);
+    setError("");
   }
 
   async function handleSave(e) {
@@ -47,15 +51,27 @@ export default function EditWebInfoRegistration() {
         method: "PATCH",
         body: JSON.stringify({
           registration_fee_note: form.registration_fee_note,
-          registration_instructions: form.registration_instructions,
           registration_opening: form.registration_opening,
           registration_deadline: form.registration_deadline,
           submission_edit_deadline: form.submission_edit_deadline,
           registration_allow_talk: form.registration_allow_talk !== false,
           registration_allow_poster: form.registration_allow_poster !== false,
           registration_allow_attend: form.registration_allow_attend !== false,
+          registration_collect_dates: form.registration_collect_dates !== false,
         }),
       });
+      if (res.status === 400) {
+        let fieldErrors = "";
+        try {
+          fieldErrors = formatFieldErrors(await res.json());
+        } catch {
+          fieldErrors = "";
+        }
+        setError(
+          fieldErrors || "The server rejected these settings; check the fields."
+        );
+        return;
+      }
       if (!res.ok) throw new Error();
       setSaved(true);
     } catch {
@@ -95,22 +111,21 @@ export default function EditWebInfoRegistration() {
             </div>
 
             <div className={styles.field}>
-              <label>
-                Required Registration Data
-                <span className={styles.hintInline}>
-                  {" "}
-                  (one item per line — shown as numbered list)
-                </span>
-              </label>
-              <textarea
-                name="registration_instructions"
-                rows={7}
-                value={form.registration_instructions || ""}
-                onChange={handleChange}
-                placeholder={
-                  "Name\nYour e-mail\nAffiliation\nThe abstract of your contribution\nArrival and departure dates"
-                }
-              />
+              <h3 className={styles.previewStrong}>
+                Required Registration Data (live preview)
+              </h3>
+              <small className={styles.hint}>
+                Derived from the unsaved settings below; optional fields are not
+                listed.
+              </small>
+              <ol
+                className={styles.previewList}
+                aria-label="Required registration data preview"
+              >
+                {requirements.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ol>
             </div>
 
             <div className={styles.field}>
@@ -193,9 +208,34 @@ export default function EditWebInfoRegistration() {
                 Just attend
               </label>
             </div>
+
+            <div className={styles.field}>
+              <label className={styles.checkboxOption}>
+                <input
+                  type="checkbox"
+                  name="registration_collect_dates"
+                  checked={form.registration_collect_dates !== false}
+                  onChange={handleChange}
+                />
+                Collect arrival and departure dates
+              </label>
+              <small className={styles.hint}>
+                When off, registrations use the conference date range instead.
+                Single-day conferences must disable date collection.
+              </small>
+              <small className={styles.hint}>
+                Multi-day to single-day: turn collection off here first, then
+                set equal dates in Home. Single-day to multi-day: set different
+                Home dates first, then turn collection back on.
+              </small>
+            </div>
           </section>
 
-          {error && <p className={styles.error}>{error}</p>}
+          {error && (
+            <p className={styles.error} role="alert">
+              {error}
+            </p>
+          )}
 
           <div className={styles.actions}>
             {saved && (

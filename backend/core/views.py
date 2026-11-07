@@ -503,11 +503,13 @@ def generate_badges_pdf(request, conference_slug):
                 if sub.arrival_date and sub.departure_date:
                     arr = sub.arrival_date
                     dep = sub.departure_date
-                    arrival_str = f"{arr.day} {MONTHS[arr.month - 1]}"
-                    departure_str = f"{dep.day} {MONTHS[dep.month - 1]} {dep.year}"
-                    footer_text = (
-                        f"{arrival_str} – {departure_str}  |  {conference.location}"
-                    )
+                    if arr == dep:
+                        stay_text = f"{arr.day} {arr.strftime('%B')} {arr.year}"
+                    else:
+                        arrival_str = f"{arr.day} {MONTHS[arr.month - 1]}"
+                        departure_str = f"{dep.day} {MONTHS[dep.month - 1]} {dep.year}"
+                        stay_text = f"{arrival_str} – {departure_str}"
+                    footer_text = f"{stay_text}  |  {conference.location}"
                 else:
                     footer_text = conference.location
                 c.drawCentredString(x + badge_w / 2, y + 2.8 * mm, footer_text)

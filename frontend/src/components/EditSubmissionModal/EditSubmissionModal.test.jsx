@@ -94,6 +94,129 @@ describe("EditSubmissionModal save paths", () => {
     expect(JSON.parse(opts.body).name).toBe("Jane Doe");
   });
 
+  test("attend hides contribution fields and clears their stale JSON values", async () => {
+    fetchWithAuth.mockResolvedValueOnce({
+      ok: true,
+      json: async () => submission,
+    });
+    renderModal({
+      contribution_type: "attend",
+      abstract_title: "Stale title",
+      abstract_text: "Stale abstract",
+      additional_authors: "Stale Author",
+      additional_affiliations: "Stale Affiliation",
+    });
+
+    expect(document.querySelector('input[name="abstract_title"]')).toBeNull();
+    expect(document.querySelector('textarea[name="abstract_text"]')).toBeNull();
+    expect(
+      document.querySelector('input[name="additional_authors"]')
+    ).toBeNull();
+    expect(
+      document.querySelector('textarea[name="additional_affiliations"]')
+    ).toBeNull();
+
+    fireEvent.submit(document.querySelector("form"));
+
+    await waitFor(() => expect(fetchWithAuth).toHaveBeenCalledTimes(1));
+    const payload = JSON.parse(fetchWithAuth.mock.calls[0][1].body);
+    expect(payload).toMatchObject({
+      contribution_type: "attend",
+      abstract_title: "",
+      abstract_text: "",
+      additional_authors: "",
+      additional_affiliations: "",
+    });
+  });
+
+  test("attend clears stale contribution values in the multipart body", async () => {
+    fetchWithAuth.mockResolvedValueOnce({
+      ok: true,
+      json: async () => submission,
+    });
+    renderModal({
+      contribution_type: "attend",
+      abstract_title: "Stale title",
+      abstract_text: "Stale abstract",
+      additional_authors: "Stale Author",
+      additional_affiliations: "Stale Affiliation",
+    });
+
+    fireEvent.change(document.querySelector('input[type="file"]'), {
+      target: {
+        files: [new File(["fake"], "participant.png", { type: "image/png" })],
+      },
+    });
+    fireEvent.submit(document.querySelector("form"));
+
+    await waitFor(() => expect(fetchWithAuth).toHaveBeenCalledTimes(1));
+    const body = fetchWithAuth.mock.calls[0][1].body;
+    expect(body).toBeInstanceOf(FormData);
+    for (const key of [
+      "abstract_title",
+      "abstract_text",
+      "additional_authors",
+      "additional_affiliations",
+    ]) {
+      expect(body.get(key)).toBe("");
+    }
+  });
+
+  test("derived stay provenance is read-only and is not sent by the client", async () => {
+    fetchWithAuth.mockResolvedValueOnce({
+      ok: true,
+      json: async () => submission,
+    });
+    renderModal({ stay_dates_derived: true });
+
+    expect(
+      screen.getByText(/Full conference stay: these dates were derived/i)
+    ).toBeInTheDocument();
+    expect(document.querySelector('[name="stay_dates_derived"]')).toBeNull();
+
+    fireEvent.submit(document.querySelector("form"));
+
+    await waitFor(() => expect(fetchWithAuth).toHaveBeenCalledTimes(1));
+    const payload = JSON.parse(fetchWithAuth.mock.calls[0][1].body);
+    expect(payload).not.toHaveProperty("stay_dates_derived");
+  });
+
+  test("equal collected dates show the repair banner and block the save", async () => {
+    renderModal({ departure_date: submission.arrival_date });
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "This submission used the full conference day; set a departure date after arrival to save changes."
+    );
+    expect(document.querySelector('input[name="arrival_date"]')).toHaveValue(
+      "2026-09-10"
+    );
+    expect(document.querySelector('input[name="departure_date"]')).toHaveValue(
+      "2026-09-10"
+    );
+
+    fireEvent.submit(document.querySelector("form"));
+
+    expect(await screen.findByText("Date repair required")).toBeInTheDocument();
+    expect(fetchWithAuth).not.toHaveBeenCalled();
+  });
+
+  test("equal admin dates remain editable and save when collection is off", async () => {
+    conferenceInfo.value.registration_collect_dates = false;
+    fetchWithAuth.mockResolvedValueOnce({
+      ok: true,
+      json: async () => submission,
+    });
+    renderModal({ departure_date: submission.arrival_date });
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    fireEvent.submit(document.querySelector("form"));
+
+    await waitFor(() => expect(fetchWithAuth).toHaveBeenCalledTimes(1));
+    const payload = JSON.parse(fetchWithAuth.mock.calls[0][1].body);
+    expect(payload.arrival_date).toBe("2026-09-10");
+    expect(payload.departure_date).toBe("2026-09-10");
+  });
+
   test("with a new photo sends PUT with a FormData body", async () => {
     fetchWithAuth.mockResolvedValueOnce({
       ok: true,

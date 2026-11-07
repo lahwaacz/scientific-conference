@@ -19,53 +19,15 @@ from .models import (
     Session,
     Talk,
 )
+from .registration import (
+    CONFIGURATION_FIELDS,
+    DATE_FIELDS,
+    normalize_new_submission,
+    normalize_submission_update,
+    validate_conference_configuration,
+)
 
 User = get_user_model()
-
-CONTRIBUTION_TYPES = ("talk", "poster", "attend")
-
-
-def _allowed_contribution_types(conference):
-    if conference is None:
-        return CONTRIBUTION_TYPES
-    return conference.allowed_contribution_types
-
-
-def _validate_contribution_type(serializer, data, instance=None):
-    allowed = _allowed_contribution_types(serializer.context.get("conference"))
-    if not allowed:
-        raise serializers.ValidationError(
-            {"contribution_type": "Registration is not accepting contributions."}
-        )
-
-    current = instance.contribution_type if instance is not None else None
-    supplied = "contribution_type" in data
-    contribution_type = data.get("contribution_type", current)
-    if contribution_type is None:
-        contribution_type = allowed[0]
-        data["contribution_type"] = contribution_type
-
-    if contribution_type not in allowed and contribution_type != current:
-        raise serializers.ValidationError(
-            {
-                "contribution_type": (
-                    "This contribution type is not available for this conference."
-                )
-            }
-        )
-
-    if (instance is None or (supplied and contribution_type != current)) and (
-        contribution_type in ("talk", "poster")
-    ):
-        title = data.get("abstract_title")
-        if title is None and instance is not None:
-            title = instance.abstract_title
-        if not (title or "").strip():
-            raise serializers.ValidationError(
-                {"abstract_title": "Title is required for a talk or poster."}
-            )
-
-    return data
 
 
 class ParticipantSerializer(serializers.ModelSerializer):
@@ -326,6 +288,7 @@ class ParticipantSubmissionSerializer(serializers.ModelSerializer):
             "arrival_date",
             "departure_date",
             "stay_duration",
+            "stay_dates_derived",
             "status",
             "submitted_at",
             "reviewed_at",
@@ -347,23 +310,12 @@ class ParticipantSubmissionSerializer(serializers.ModelSerializer):
             "published_participant",
             "published_abstract",
             "stay_duration",
+            "stay_dates_derived",
             "tracking_token",
             "participant_reference",
         ]
 
     def validate(self, data):
-        arrival = data.get("arrival_date") or (
-            self.instance.arrival_date if self.instance else None
-        )
-        departure = data.get("departure_date") or (
-            self.instance.departure_date if self.instance else None
-        )
-
-        if departure and arrival and departure <= arrival:
-            raise serializers.ValidationError(
-                {"departure_date": "Departure date must be after arrival date"}
-            )
-
         new_type = data.get("contribution_type")
         if (
             self.instance is not None
@@ -383,7 +335,24 @@ class ParticipantSubmissionSerializer(serializers.ModelSerializer):
                         )
                     }
                 )
-        return _validate_contribution_type(self, data, self.instance)
+
+        try:
+            if self.instance is None:
+                return normalize_new_submission(
+                    data, conference=self.context["conference"]
+                )
+            conference = self.context.get("conference") or self.instance.conference
+            return normalize_submission_update(
+                data,
+                instance=self.instance,
+                conference=conference,
+                allow_date_override=True,
+            )
+        except DjangoValidationError as exc:
+            detail = getattr(exc, "message_dict", None) or {
+                "non_field_errors": exc.messages
+            }
+            raise serializers.ValidationError(detail) from exc
 
     @transaction.atomic
     def update(self, instance, validated_data):
@@ -430,6 +399,8 @@ class ParticipantSubmissionCreateSerializer(ParticipantSubmissionSerializer):
     # (DRF's get_fields takes the declared-fields branch and skips them), so
     # the parent's writable declaration would survive into the public create.
     linked_user = serializers.PrimaryKeyRelatedField(read_only=True)
+    arrival_date = serializers.DateField(required=False)
+    departure_date = serializers.DateField(required=False)
 
     class Meta(ParticipantSubmissionSerializer.Meta):
         fields = [*ParticipantSubmissionSerializer.Meta.fields]
@@ -437,6 +408,34 @@ class ParticipantSubmissionCreateSerializer(ParticipantSubmissionSerializer):
             *ParticipantSubmissionSerializer.Meta.read_only_fields,
             "admin_notes",
         ]
+
+    def to_internal_value(self, data):
+        if not self.context["conference"].registration_collect_dates:
+            data = data.copy()
+            for field in DATE_FIELDS:
+                data.pop(field, None)
+        return super().to_internal_value(data)
+
+    def validate(self, data):
+        try:
+            return normalize_new_submission(data, conference=self.context["conference"])
+        except DjangoValidationError as exc:
+            detail = getattr(exc, "message_dict", None) or {
+                "non_field_errors": exc.messages
+            }
+            raise serializers.ValidationError(detail) from exc
+
+
+class ParticipantSubmissionImportSerializer(ParticipantSubmissionCreateSerializer):
+    """Superuser-only CSV create: internal notes are writable, uploads are not."""
+
+    admin_notes = serializers.CharField(
+        required=False, allow_blank=True, trim_whitespace=False
+    )
+    photo = serializers.ImageField(read_only=True)
+
+    class Meta(ParticipantSubmissionCreateSerializer.Meta):
+        read_only_fields = ParticipantSubmissionSerializer.Meta.read_only_fields
 
 
 class ParticipantTrackingSerializer(serializers.ModelSerializer):
@@ -461,6 +460,7 @@ class ParticipantTrackingSerializer(serializers.ModelSerializer):
             "arrival_date",
             "departure_date",
             "stay_duration",
+            "stay_dates_derived",
             "status",
             "submitted_at",
             "reviewed_at",
@@ -508,19 +508,36 @@ class ParticipantTrackingUpdateSerializer(serializers.ModelSerializer):
             "rejection_message",
         ]
 
-    def validate(self, data):
-        arrival = data.get("arrival_date") or (
-            self.instance.arrival_date if self.instance else None
+    def to_internal_value(self, data):
+        conference = (
+            self.instance.conference
+            if self.instance is not None
+            else self.context.get("conference")
         )
-        departure = data.get("departure_date") or (
-            self.instance.departure_date if self.instance else None
-        )
+        if conference is not None and not conference.registration_collect_dates:
+            data = data.copy()
+            for field in DATE_FIELDS:
+                data.pop(field, None)
+        return super().to_internal_value(data)
 
-        if departure and arrival and departure <= arrival:
+    def validate(self, data):
+        if self.instance is None:
             raise serializers.ValidationError(
-                {"departure_date": "Departure date must be after arrival date"}
+                {"detail": "Tracking updates require an existing submission."}
             )
-        return _validate_contribution_type(self, data, self.instance)
+        conference = self.context.get("conference") or self.instance.conference
+        try:
+            return normalize_submission_update(
+                data,
+                instance=self.instance,
+                conference=conference,
+                allow_date_override=False,
+            )
+        except DjangoValidationError as exc:
+            detail = getattr(exc, "message_dict", None) or {
+                "non_field_errors": exc.messages
+            }
+            raise serializers.ValidationError(detail) from exc
 
     def update(self, instance, validated_data):
         was_approved = instance.status == "approved"
@@ -621,7 +638,7 @@ class ConferenceInfoWriteSerializer(serializers.ModelSerializer):
             "short_description",
             "badge_title",
             "description",
-            "registration_instructions",
+            "registration_collect_dates",
             "registration_opening",
             "registration_deadline",
             "submission_edit_deadline",
@@ -643,39 +660,15 @@ class ConferenceInfoWriteSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, attrs):
-        def current(field):
-            if field in attrs:
-                return attrs[field]
-            return getattr(self.instance, field, None)
-
-        deadline = current("submission_edit_deadline")
-        if deadline is not None:
-            registration_deadline = current("registration_deadline")
-            date_end = current("date_end")
-            if registration_deadline is not None and deadline < registration_deadline:
-                raise serializers.ValidationError(
-                    {
-                        "submission_edit_deadline": "Submission editing deadline must be on or after the registration deadline."
-                    }
-                )
-            if date_end is not None and deadline > date_end:
-                raise serializers.ValidationError(
-                    {
-                        "submission_edit_deadline": "Submission editing deadline must be on or before the conference end date."
-                    }
-                )
-        if not any(
-            (
-                current("registration_allow_talk"),
-                current("registration_allow_poster"),
-                current("registration_allow_attend"),
+        values = {
+            field: (
+                attrs[field] if field in attrs else getattr(self.instance, field, None)
             )
-        ):
-            raise serializers.ValidationError(
-                {
-                    "registration_allow_talk": "At least one contribution type must be allowed."
-                }
-            )
+            for field in CONFIGURATION_FIELDS
+        }
+        errors = validate_conference_configuration(values)
+        if errors:
+            raise serializers.ValidationError(errors)
         return attrs
 
 

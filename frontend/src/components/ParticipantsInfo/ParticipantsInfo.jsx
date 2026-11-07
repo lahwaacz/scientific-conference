@@ -97,11 +97,7 @@ export default function ParticipantsInfo() {
                         ""
                       )}
                     </td>
-                    <td>
-                      {sub.arrival_date && sub.departure_date
-                        ? `${formatDate(sub.arrival_date)} – ${formatDate(sub.departure_date)}`
-                        : "—"}
-                    </td>
+                    <td>{formatStayPeriod(sub)}</td>
                     <td className={styles.infoCell}>{sub.info || ""}</td>
                   </tr>
                 ))}
@@ -117,4 +113,19 @@ export default function ParticipantsInfo() {
 function formatDate(dateStr) {
   const d = new Date(dateStr);
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function formatStayPeriod(submission) {
+  if (!submission.arrival_date || !submission.departure_date) return "—";
+
+  const arrival = formatDate(submission.arrival_date);
+  const sameDay =
+    String(submission.arrival_date).slice(0, 10) ===
+    String(submission.departure_date).slice(0, 10);
+  const period = sameDay
+    ? arrival
+    : `${arrival} – ${formatDate(submission.departure_date)}`;
+
+  if (submission.stay_dates_derived) return `Full conference (${period})`;
+  return sameDay ? `${period} (Same day)` : period;
 }

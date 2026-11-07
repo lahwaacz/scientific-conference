@@ -11,9 +11,17 @@ export default function SubmissionFields({
   onCropPhoto,
   wordCount,
   arrivalDepartureTentative = false,
+  showDates = true,
+  abstractLaterUntil = null,
+  abstractEditingClosed = false,
   allowedTypes = CONTRIBUTION_TYPES,
 }) {
   const showContribution = formData.contribution_type !== "attend";
+  const abstractHint = abstractEditingClosed
+    ? "The abstract can no longer be added online; contact the organizers."
+    : abstractLaterUntil
+      ? `Required for the final contribution — you can add it later until ${abstractLaterUntil}.`
+      : "Required for the final contribution — you can add it later.";
 
   return (
     <>
@@ -172,6 +180,7 @@ export default function SubmissionFields({
               onChange={onChange}
               maxLength={2500}
             />
+            <small className={styles.abstractHint}>{abstractHint}</small>
             {errors.abstract_text && (
               <span className={styles.error}>{errors.abstract_text}</span>
             )}
@@ -206,40 +215,42 @@ export default function SubmissionFields({
       )}
 
       {/* Dates */}
-      <div className={styles.fieldRow}>
-        <div>
-          <label className={styles.date}>
-            {`Arrival Date${arrivalDepartureTentative ? " (tentative)" : ""}`}{" "}
-            <span className={styles.required}>*</span>
-          </label>
-          <input
-            type="date"
-            name="arrival"
-            value={formData.arrival}
-            onChange={onChange}
-            required
-          />
-          {errors.arrival && (
-            <span className={styles.error}>{errors.arrival}</span>
-          )}
+      {showDates && (
+        <div className={styles.fieldRow}>
+          <div>
+            <label className={styles.date}>
+              {`Arrival Date${arrivalDepartureTentative ? " (tentative)" : ""}`}{" "}
+              <span className={styles.required}>*</span>
+            </label>
+            <input
+              type="date"
+              name="arrival"
+              value={formData.arrival}
+              onChange={onChange}
+              required
+            />
+            {errors.arrival && (
+              <span className={styles.error}>{errors.arrival}</span>
+            )}
+          </div>
+          <div>
+            <label className={styles.date}>
+              {`Departure Date${arrivalDepartureTentative ? " (tentative)" : ""}`}{" "}
+              <span className={styles.required}>*</span>
+            </label>
+            <input
+              type="date"
+              name="departure"
+              value={formData.departure}
+              onChange={onChange}
+              required
+            />
+            {errors.departure && (
+              <span className={styles.error}>{errors.departure}</span>
+            )}
+          </div>
         </div>
-        <div>
-          <label className={styles.date}>
-            {`Departure Date${arrivalDepartureTentative ? " (tentative)" : ""}`}{" "}
-            <span className={styles.required}>*</span>
-          </label>
-          <input
-            type="date"
-            name="departure"
-            value={formData.departure}
-            onChange={onChange}
-            required
-          />
-          {errors.departure && (
-            <span className={styles.error}>{errors.departure}</span>
-          )}
-        </div>
-      </div>
+      )}
 
       {/* Student checkbox */}
       <div className={styles.field}>

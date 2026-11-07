@@ -209,7 +209,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   color: white;
 }
 
-.hint {
+.hint,
+.abstractHint {
   display: block;
   margin-top: 8px;
   color: #999;

@@ -38,6 +38,44 @@ describe("ParticipantsInfo", () => {
     );
   });
 
+  test("collapses an equal-date stay and labels it Same day", async () => {
+    fetchWithAuth.mockResolvedValue(
+      listResponse([
+        {
+          ...submission,
+          departure_date: submission.arrival_date,
+          stay_duration: 0,
+        },
+      ])
+    );
+
+    render(<ParticipantsInfo />);
+
+    expect(
+      await screen.findByText(
+        (_, el) =>
+          el?.tagName === "TD" && el.textContent === "May 29 (Same day)"
+      )
+    ).toBeInTheDocument();
+    expect(screen.queryByText("0 days")).not.toBeInTheDocument();
+  });
+
+  test("labels a derived stay Full conference using the stored range", async () => {
+    fetchWithAuth.mockResolvedValue(
+      listResponse([{ ...submission, stay_dates_derived: true }])
+    );
+
+    render(<ParticipantsInfo />);
+
+    expect(
+      await screen.findByText(
+        (_, el) =>
+          el?.tagName === "TD" &&
+          el.textContent === "Full conference (May 29 – May 30)"
+      )
+    ).toBeInTheDocument();
+  });
+
   test("renders the participant summary and stay period", async () => {
     fetchWithAuth.mockResolvedValue(listResponse([submission]));
 

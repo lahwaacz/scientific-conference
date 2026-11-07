@@ -35,7 +35,7 @@ const toFormData = (submission) => ({
   is_student: Boolean(submission.is_student),
 });
 
-const toApiPayload = (formData) => {
+const toApiPayload = (formData, collectDates) => {
   const isAttend = formData.contribution_type === "attend";
   return {
     name: formData.name,
@@ -46,12 +46,19 @@ const toApiPayload = (formData) => {
     abstract_text: isAttend ? "" : formData.abstract_text,
     additional_authors: isAttend ? "" : formData.additional_authors,
     additional_affiliations: isAttend ? "" : formData.additional_affiliations,
-    arrival_date: formData.arrival,
-    departure_date: formData.departure,
+    ...(collectDates
+      ? {
+          arrival_date: formData.arrival,
+          departure_date: formData.departure,
+        }
+      : {}),
     info: formData.info,
     is_student: formData.is_student,
   };
 };
+
+const LEGACY_EQUAL_DATE_MESSAGE =
+  "This submission used the full conference day; set a departure date after arrival to save changes.";
 
 // Backend 400 keys arrive in API naming; SubmissionFields keys are form-local.
 const REVERSE_FIELD_MAP = {
@@ -110,6 +117,7 @@ export default function Tracking() {
     submission?.contribution_type
   );
   const allowedTypeValues = allowedTypes.map((type) => type.value);
+  const collectDates = info?.registration_collect_dates !== false;
 
   useEffect(() => {
     let cancelled = false;
@@ -260,6 +268,7 @@ export default function Tracking() {
       photo,
       allowedTypes: allowedTypeValues,
       originalContributionType: submission?.contribution_type,
+      collectDates,
     });
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) {
@@ -267,7 +276,7 @@ export default function Tracking() {
     }
     setSaving(true);
     try {
-      const payload = toApiPayload(formData);
+      const payload = toApiPayload(formData, collectDates);
       let response;
       if (photo) {
         const submitData = new FormData();
@@ -351,6 +360,44 @@ export default function Tracking() {
   const isRejected = submission.status === "rejected";
   const editWindowStatus = info ? submissionEditWindowStatus(info) : null;
   const editLocked = editWindowStatus === "closed" && !isRejected;
+  const abstractEditDeadline = info
+    ? submissionEditEffectiveDeadline(info)
+    : null;
+  const abstractLaterUntil =
+    editWindowStatus === "open" && abstractEditDeadline
+      ? formatDate(abstractEditDeadline)
+      : null;
+  const hasEqualStoredDates = Boolean(
+    submission.arrival_date &&
+      submission.departure_date &&
+      toDateInputValue(submission.arrival_date) ===
+        toDateInputValue(submission.departure_date)
+  );
+
+  let stayRows;
+  if (
+    submission.stay_dates_derived &&
+    submission.arrival_date &&
+    submission.departure_date
+  ) {
+    const storedRange = hasEqualStoredDates
+      ? formatDate(submission.arrival_date)
+      : `${formatDate(submission.arrival_date)}–${formatDate(submission.departure_date)}`;
+    stayRows = [["Stay", `Full conference (${storedRange})`]];
+  } else if (hasEqualStoredDates) {
+    stayRows = [["Stay", formatDate(submission.arrival_date)]];
+  } else {
+    stayRows = [
+      [
+        "Arrival",
+        submission.arrival_date && formatDate(submission.arrival_date),
+      ],
+      [
+        "Departure",
+        submission.departure_date && formatDate(submission.departure_date),
+      ],
+    ];
+  }
 
   const rows = [
     ["Name", submission.name],
@@ -361,11 +408,7 @@ export default function Tracking() {
     ["Abstract", submission.abstract_text],
     ["Additional authors", submission.additional_authors],
     ["Additional affiliations", submission.additional_affiliations],
-    ["Arrival", submission.arrival_date && formatDate(submission.arrival_date)],
-    [
-      "Departure",
-      submission.departure_date && formatDate(submission.departure_date),
-    ],
+    ...stayRows,
     ["Student", submission.is_student ? "Yes" : "No"],
     ["Additional information", submission.info],
   ];
@@ -433,6 +476,11 @@ export default function Tracking() {
                   Saving changes sends your submission back for review.
                 </p>
               )}
+              {collectDates && hasEqualStoredDates && (
+                <p className={styles.approvedNotice} role="alert">
+                  {LEGACY_EQUAL_DATE_MESSAGE}
+                </p>
+              )}
               {errors.detail && (
                 <p className={styles.errorText}>{errors.detail}</p>
               )}
@@ -445,6 +493,9 @@ export default function Tracking() {
                 onRemovePhoto={handleRemovePhoto}
                 onCropPhoto={photo ? () => setCropFile(photo) : undefined}
                 wordCount={wordCount}
+                showDates={collectDates}
+                abstractLaterUntil={abstractLaterUntil}
+                abstractEditingClosed={editWindowStatus === "closed"}
                 allowedTypes={allowedTypes}
               />
               <div className={styles.formActions}>

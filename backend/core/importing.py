@@ -14,9 +14,8 @@ Design notes
 * Imported rows become **pending** ``ParticipantSubmission`` rows: each carries
   a ``tracking_token`` (the registration link distributed later) but stays
   invisible until an admin publishes it.
-* ``arrival_date`` / ``departure_date`` default to the conference's
-  ``Conference.date_start`` / ``date_end`` unless the CSV maps its own date
-  column.
+* Stay dates follow the conference registration policy: explicitly mapped and
+  required when collected, otherwise derived and marked with provenance.
 * Duplicate emails -- within the file or already present in the conference --
   are warned about and skipped, never created. Re-running the import is
   therefore idempotent.
@@ -34,6 +33,8 @@ from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 
 from .models import Conference, Participant, ParticipantSubmission
+from .registration import DATE_FIELDS
+from .serializers import ParticipantSubmissionImportSerializer
 
 STATUS_OK = "ok"
 STATUS_WARNING = "warning"
@@ -56,11 +57,10 @@ _EXCLUDED_FIELDS = frozenset(
         "published_abstract",
         "tracking_token",
         "linked_user",
+        "stay_dates_derived",
     }
 )
 
-REQUIRED_FIELDS = ("name", "email")
-DATE_FIELDS = ("arrival_date", "departure_date")
 # Fields that accept several source columns, whose values are merged.
 MERGEABLE_FIELDS = frozenset({"admin_notes"})
 
@@ -96,9 +96,21 @@ def _build_importable_fields() -> list[tuple[str, str]]:
     return fields
 
 
-IMPORTABLE_FIELDS: list[tuple[str, str]] = _build_importable_fields()
-_FIELD_NAMES = frozenset(name for name, _ in IMPORTABLE_FIELDS)
-_LABELS = dict(IMPORTABLE_FIELDS)
+def importable_fields(conference: Conference) -> list[tuple[str, str]]:
+    fields = _build_importable_fields()
+    if conference.registration_collect_dates:
+        return fields
+    return [(name, label) for name, label in fields if name not in DATE_FIELDS]
+
+
+def required_fields(conference: Conference) -> tuple[str, ...]:
+    fields = ("name", "email", "affiliation")
+    if conference.registration_collect_dates:
+        return (*fields, *DATE_FIELDS)
+    return fields
+
+
+_LABELS = dict(_build_importable_fields())
 
 
 def _build_max_lengths() -> dict[str, int]:
@@ -192,10 +204,14 @@ class ColumnMapping:
 
 
 def resolve_mapping(
-    headers: list[str], manual: dict[int, str] | None = None
+    headers: list[str],
+    conference: Conference,
+    manual: dict[int, str] | None = None,
 ) -> ColumnMapping:
     manual = manual or {}
-    by_norm = {_normalize(name): name for name in _FIELD_NAMES}
+    importable = importable_fields(conference)
+    field_names = frozenset(name for name, _ in importable)
+    by_norm = {_normalize(name): name for name in field_names}
     field_to_indices: dict[str, list[int]] = {}
     configurable: list[tuple[int, str, str]] = []
     conflicts: list[tuple[int, str]] = []
@@ -213,7 +229,7 @@ def resolve_mapping(
         applied = False
         if (
             choice
-            and choice in _FIELD_NAMES
+            and choice in field_names
             and (choice in MERGEABLE_FIELDS or choice not in field_to_indices)
         ):
             field_to_indices.setdefault(choice, []).append(index)
@@ -243,31 +259,6 @@ def parsed_from_session(data: dict) -> ParsedCsv:
         records=[list(record) for record in data["records"]],
         line_numbers=list(data["line_numbers"]),
     )
-
-
-@dataclass
-class DateDefaults:
-    arrival: date | None
-    departure: date | None
-
-
-def resolve_date_defaults(
-    conference: Conference, mapping: ColumnMapping
-) -> DateDefaults:
-    """Conference dates back default arrival/departure when the CSV lacks them."""
-    start = conference.date_start
-    end = conference.date_end
-    if "arrival_date" not in mapping.field_to_indices and start is None:
-        raise ImportFileError(
-            f'Conference "{conference.slug}" has no start date; map an arrival-date '
-            "column or set the conference dates."
-        )
-    if "departure_date" not in mapping.field_to_indices and end is None:
-        raise ImportFileError(
-            f'Conference "{conference.slug}" has no end date; map a departure-date '
-            "column or set the conference dates."
-        )
-    return DateDefaults(arrival=start, departure=end)
 
 
 @dataclass
@@ -356,7 +347,6 @@ def validate_rows(
     parsed: ParsedCsv,
     mapping: ColumnMapping,
     conference: Conference,
-    defaults: DateDefaults,
 ) -> list[RowResult]:
     existing: set[str] = set()
     existing.update(
@@ -399,26 +389,22 @@ def validate_rows(
                 )
 
         payload = _typed_payload(values, errors)
-        payload.setdefault(
-            "contribution_type",
-            "talk"
-            if values.get("abstract_title") or values.get("abstract_text")
-            else "attend",
+        serializer = ParticipantSubmissionImportSerializer(
+            data=payload, context={"conference": conference}
         )
-        payload.setdefault("arrival_date", defaults.arrival)
-        payload.setdefault("departure_date", defaults.departure)
-        arrival = payload.get("arrival_date")
-        departure = payload.get("departure_date")
-        if arrival is None:
-            errors.append("Arrival date is empty and the conference has no start date.")
-        if departure is None:
-            errors.append("Departure date is empty and the conference has no end date.")
-        if (
-            isinstance(arrival, date)
-            and isinstance(departure, date)
-            and departure <= arrival
-        ):
-            errors.append("Departure date must be after the arrival date.")
+        if serializer.is_valid():
+            normalized = serializer.validated_data
+            if isinstance(normalized, dict):
+                payload = normalized
+        else:
+            for field_name, field_messages in serializer.errors.items():
+                for message in field_messages:
+                    if field_name == "non_field_errors":
+                        errors.append(str(message))
+                    elif message == "This field is required.":
+                        errors.append(f"{field_label(field_name)} is required.")
+                    else:
+                        errors.append(f"{field_label(field_name)}: {message}")
 
         duplicate = _duplicate_message(email, bool(errors), existing, seen, line)
         messages = list(errors)
@@ -463,15 +449,15 @@ def summarise(results: list[RowResult]) -> ImportSummary:
 
 
 def create_submissions(
-    results: list[RowResult], conference: Conference, defaults: DateDefaults
+    results: list[RowResult], conference: Conference
 ) -> ImportSummary:
     """Create a pending submission for every ``ok`` row."""
     for result in results:
         if result.status != STATUS_OK:
             continue
-        payload = dict(result.payload)
-        payload["conference"] = conference
-        payload.setdefault("arrival_date", defaults.arrival)
-        payload.setdefault("departure_date", defaults.departure)
-        ParticipantSubmission.objects.create(**payload)
+        serializer = ParticipantSubmissionImportSerializer(
+            data=result.payload, context={"conference": conference}
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save(conference=conference)
     return summarise(results)

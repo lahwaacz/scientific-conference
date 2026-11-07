@@ -16,6 +16,8 @@ backend/
 │   ├── views.py            # views (scoped + ConferenceListView)
 │   ├── permissions.py      # conference authorization (IsConferenceManager, can_manage_conference)
 │   ├── serializers.py
+│   ├── registration.py     # pure registration policy shared by models, serializers,
+│   │                       # admin forms and the CSV importer (no mirrored rules)
 │   ├── urls.py             # slug-scoped endpoint tails (full table)
 │   ├── admin.py            # decorator-style @admin.register
 │   ├── signals.py          # email on publish; wired via CoreConfig.ready() (apps.py)
@@ -25,14 +27,15 @@ backend/
 │   ├── management/commands/link_gitlab_account.py  # reassign a GitLab SocialAccount to a local user
 │   ├── templates/account/login.html  # Django admin sign-in page (GitLab link + optional password form)
 │   ├── migrations/         # migrations
-│   ├── fixtures/            # split demo seed: conferences.json, participants.json, program.json
+│   ├── fixtures/           # split demo seed: conferences.json, participants.json, program.json
 │   ├── conftest.py         # pytest fixtures: wsc()/other() two-conference factory + api() URL helper
 │   ├── tests.py            # original suites (Django TestCase, pytest runs them)
 │   ├── test_*.py           # pytest-django suites by domain (schedule, publishing,
 │   │                       # timeline, signals, admin, public, PDF + conference model,
 │   │                       # conferences endpoint, conference isolation, conference-info,
 │   │                       # conference permissions, gitlab auth, cookie auth, admin login,
-│   │                       # link_gitlab_account)
+│   │                       # link_gitlab_account, registration policy + normalization,
+│   │                       # CSV import, submission tracking, migrations)
 │   └── fonts/DejaVu*.ttf   # required by reportlab PDF generation
 ├── manage.py
 ├── Dockerfile
@@ -53,6 +56,7 @@ backend/
 | Conference model / admin policies | `core/models.py`, `core/admin.py` | slug reserved words in `clean()`; deletion gated by `Conference.is_referenced()` (manager grants excluded) |
 | PDF generation | `core/views.py` | `generate_program_pdf`, `generate_badges_pdf`; per-conference, reportlab + `core/fonts/*.ttf` |
 | Publish workflow | `core/models.py` | `ParticipantSubmission.publish()`, `.unpublish()`, `.reject()`, `.restore()`, `.delete()`; status transitions are pending↔approved/rejected; dedup scoped to `conference`; `ParticipantAdmin` deletion unpublishes linked submissions first |
+| Registration rules (dates toggle, required fields) | `core/registration.py` | pure policy functions shared by `Conference.clean()`, `ParticipantSubmission.clean()`, serializers, Django-admin forms and the CSV importer; `Conference.registration_collect_dates` (off = derive the conference range, both conference dates required, single-day must be off) + `ParticipantSubmission.stay_dates_derived` (derived provenance, cleared by any real date override) |
 | Email on publish | `core/signals.py` | fires via `CoreConfig.ready()` |
 | Env config | `backend/settings.py` | DJANGO_SECRET_KEY / DJANGO_DEBUG / DJANGO_ALLOWED_HOSTS / DJANGO_DB_PATH / DJANGO_STATIC_URL / DJANGO_STATIC_ROOT / DJANGO_MEDIA_ROOT / DJANGO_USE_HTTPS / DJANGO_CSRF_TRUSTED_ORIGINS, plus unprefixed RELATIVE_URL_ROOT and the login vars: AUTH_PASSWORD_LOGIN_ENABLED / AUTH_GITLAB_LOGIN_ENABLED / GITLAB_URL / GITLAB_CLIENT_ID / GITLAB_CLIENT_SECRET / GITLAB_OAUTH_CALLBACK_URL |
 
@@ -62,6 +66,7 @@ backend/
 - Conference scoping: every view in `core/urls.py` is served under `/api/<slug>/…` and must resolve its conference. Class views inherit `ConferenceScopedMixin` (views.py: eager 404 on unknown slug in `initial()`, queryset filter, `perform_create` assignment, serializer context); function views call `get_conference_or_404(conference_slug)`. The only unscoped views are auth + `ConferenceListView`, registered globally in `backend/urls.py` BEFORE the slug include.
 - Serializers: `<Model>Serializer` for read, `...WriteSerializer` split for writes. Serializer field lists are explicit and exclude `conference`; the write path gets the conference via the view's `save(conference=…)`. `TalkSerializer` narrows `session`/`day` querysets via the context conference (cross-conference FK ⇒ 400).
 - Submission state changes go through the dedicated publish/unpublish/reject/restore actions; `status` and `rejection_message` are read-only in API serializers. `rejected` rows are excluded from the default submission list and cannot be edited through the tracking link; permanent deletion is Django-admin-only.
+- Registration policy lives in `core/registration.py` (pure functions, no ORM): `validate_conference_configuration` (single-day conferences cannot collect dates; collection off requires both conference dates; date order) is called by BOTH `Conference.clean()` and `ConferenceInfoWriteSerializer.validate()` — never mirror its conditionals. Every submission write path normalizes through `normalize_new_submission` / `normalize_submission_update`: name/email/affiliation required, affiliation ≥ 3 chars, abstract ≤ 250 words, title required for talk/poster, contribution type constrained to `registration_allow_*`, attend clears the contribution fields. Dates: `registration_collect_dates` on = require both participant dates, strict `departure > arrival`; off = derive the conference range once and set `stay_dates_derived = True` (any real admin/participant date override clears it; tracking PATCH with dates off drops injected date keys, never re-derives; admin updates may override). Badges and all displays print stored submission dates only, collapsing equal dates. CSV parity: `ParticipantSubmissionImportSerializer` subclasses the public create serializer (plus writable `admin_notes`), required fields are name/email/affiliation (+ dates only when collected), no conference-date fallback when collected, date columns ignored when off, default type = first allowed type, no registration-window gate. The old free-text required-data field on `Conference` is gone (migration 0040); do not reintroduce it.
 - URL paths kebab-case with trailing slash; API mounted under `/{RELATIVE_URL_ROOT}api/`, admin tails under the slug prefix (e.g. `/api/<slug>/admin/...`).
 - `Conference` is the single config row: it owns the logistics (title, dates, location, card/hero/venue photos, short description, badge title), the web texts and the accommodation description; `year` and `status` are derived read-only properties. `GET conference-info/` returns the plain `ConferenceInfoSerializer` payload; `PATCH conference-info/edit/` (multipart-capable, `BlankAsNoneDateField` maps empty date strings to null) writes logistics + web fields. Read endpoints must stay side-effect free — no lazy row creation.
 - Global default is `AllowAny`; admin views declare `authentication_classes=[JWTCookieAuthentication]` + `permission_classes=[IsConferenceManager]` per-view — do not centralize into settings. `IsConferenceManager` resolves `view.conference` (mixin) or falls back to `view.kwargs["conference_slug"]` (`@api_view` functions); the plain Django PDF views call `can_manage_conference`.

@@ -155,7 +155,7 @@ The logistical facts of a conference (title, dates, location, card and hero phot
 4. Change the required fields in the logistics block at the top of the form.
 5. Select **Save Changes**.
 
-Website texts such as the homepage description, registration instructions, venue description, and footer are edited in the same form, as described in the **Edit Website Information** chapter. Only the slug is managed in the Django administration.
+Website texts such as the homepage description, venue description, and footer, together with the registration settings, are edited in the same form, as described in the **Edit Website Information** chapter. Only the slug is managed in the Django administration.
 
 ### Deleting a Conference
 
@@ -198,6 +198,8 @@ Each item displays:
 - Arrival and departure dates.
 - Additional information provided by the participant (dietary restrictions, accessibility needs, etc.).
 
+A stay recorded without collected dates is shown as the full conference range, and a stay whose arrival and departure dates are equal is shown as a single day.
+
 The list is ordered alphabetically by participant surname; each full name is displayed as entered.
 
 ### Important Note
@@ -225,6 +227,14 @@ The **Edit Participants and Abstracts** section contains the complete informatio
 
 ![Edit submission modal](./assets/editsubmissionmodal.png)
 
+### Arrival and Departure Dates in the Admin Panel
+
+Every submission stores its own arrival and departure dates, and all admin pages display the stored dates, never the current conference range. Stays that were recorded without collected dates (through the public form or a CSV import while the conference does not collect them) are shown as **Full conference** on the participant cards, and the edit modal shows a small read-only note that these dates were derived automatically. Overriding the dates by hand in the modal replaces the stored range and removes the derived mark.
+
+The modal lets an organizer set the dates explicitly even while the conference does not collect them. Saving dates while the conference collects them requires a departure after the arrival; a submission with equal stored dates shows the same repair notice as the tracking page ("This submission used the full conference day; set a departure date after arrival to save changes.") and must be given a later departure before the save goes through.
+
+Changing the participation type to **Just attend** in the modal clears the title, abstract, additional authors, and additional affiliations of the submission; the same clearing happens on the public form, the tracking link, and the CSV import.
+
 ### Publish a Submission
 
 Publishing makes the participant and, for talks and posters, the abstract visible in the public part of the website.
@@ -236,7 +246,7 @@ Before publishing, the following fields must be filled in:
 - Date of arrival
 - Date of departure
 
-For a **Talk** or **Poster**, a **Title** is also required. The abstract text is optional.
+For a **Talk** or **Poster**, a **Title** is also required. The abstract text is optional at the form level, but it is expected for the final contribution; participants can add it later through their tracking link until submission editing closes (see the **Registration** subsection). The arrival and departure dates are stored automatically as the full conference range when the conference does not collect them.
 
 To publish a submission:
 
@@ -324,7 +334,7 @@ Every submission carries two identifiers that connect the participant with their
 
 When a participant submits the registration form, the confirmation screen shows the reference and the tracking link, together with a **Copy link** button and a warning to save the link. The link is the only way for the participant to reach their submission again, so participants are asked to keep it.
 
-Opening the tracking link shows the participant their own submission: the reference, the current status (**Pending review**, **Published**, or **Rejected**), the submitted details, and, while submission editing is open and the submission is not rejected, an **Edit submission** button. Through this form, participants correct their own details (name, affiliation, email, abstract, arrival and departure dates, photo) without contacting the organizers. Editing is governed by the **Submission Editing Deadline** (see the **Registration** subsection), which is independent of the registration window: participants can keep editing after registration has closed, up to that date.
+Opening the tracking link shows the participant their own submission: the reference, the current status (**Pending review**, **Published**, or **Rejected**), the submitted details, and, while submission editing is open and the submission is not rejected, an **Edit submission** button. Through this form, participants correct their own details (name, affiliation, email, abstract, photo, and, while the conference collects them, arrival and departure dates) without contacting the organizers. Editing is governed by the **Submission Editing Deadline** (see the **Registration** subsection), which is independent of the registration window: participants can keep editing after registration has closed, up to that date.
 
 A rejected submission still shows its details, status, and the organizer's optional message, but the edit form is never available. This is enforced by the backend as well as by the hidden button.
 
@@ -334,7 +344,11 @@ For administrators, participant self-service edits have the following consequenc
 - The public entries are refreshed only when the submission is published again. Re-publishing also transfers the participant's edits to the public website: the public participant entry is updated to match the submission (name, affiliation, email, and photo; a photo is replaced only when the submission has one).
 - Re-publishing sends the automated publication email again. This is expected behavior: every transition of a submission into the published state sends the email, including re-publication after a participant edit.
 
-The conference end date always ends editing: once the conference has ended (or the submission-editing deadline has passed), the tracking link still shows the submission and its status, but the edit form is replaced by a notice that online editing is closed. When no submission-editing deadline is set, editing closes automatically the day before the conference start date (and stays open only if no start date is set either).
+The conference end date always ends editing: once the conference has ended (or the submission-editing deadline has passed), the tracking link still shows the submission and its status, but the edit form is replaced by a notice that online editing is closed. When no submission-editing deadline is set, editing closes automatically the day before the conference start date (and stays open only if no start date is set either). This also ends adding an abstract later: once editing is closed, the abstract can no longer be added online, and the participant must contact the organizers.
+
+The tracking page shows the stay using the dates stored on the submission. Stays that were recorded without collected dates (through the public form or a CSV import while the conference does not collect them) are derived automatically and shown as a single **Stay: Full conference** row with the stored conference date range instead of separate arrival and departure rows; submissions with explicitly stored dates keep the arrival and departure rows. While the conference does not collect the dates, the edit form hides the date fields. When the stored arrival and departure are equal, the page shows one date instead of a range.
+
+A submission whose stored arrival and departure dates are equal (typically a legacy row recorded before the conference started collecting dates) must be repaired on its next date-bearing edit once the conference collects dates: the edit form shows a notice ("This submission used the full conference day; set a departure date after arrival to save changes."), and saving requires a departure date after the arrival. Unrelated edits made while the conference does not collect dates are not affected.
 
 If a participant loses the tracking link, it can be recovered from the administrative interface:
 
@@ -349,11 +363,11 @@ Each submission also carries a `linked_user` field, visible in the Django admini
 
 ### Import Pre-Registered Participants
 
-Participants who were collected before registration opened (for example an early-bird list kept by e-mail) can be added in bulk from a CSV file. The import creates a **pending** submission for each row, exactly as if the participant had filled in the registration form themselves; nothing is e-mailed to anybody.
+Participants who were collected before registration opened (for example an early-bird list kept by e-mail) can be added in bulk from a CSV file. The import creates a **pending** submission for each row, exactly as if the participant had filled in the registration form themselves; nothing is e-mailed to anybody. The import does not check the registration window, so it can be run before registration opens and after it has closed.
 
 The import lives in the **Django administration**, not in the conference website: open **Participant submissions** and select **Import CSV** in the top-right corner.
 
-A CSV column is matched to a participant field automatically when its name matches the field name, ignoring capital letters and spaces. For example, a column called `Name` fills the participant name, `Email` the e-mail, `Abstract Title` (or `abstract_title`) the title, and `Admin Notes` the internal admin notes. The available fields are the participant-submission fields: name, e-mail, affiliation, title, abstract, contribution type, additional authors, additional affiliations, arrival and departure dates, admin notes, additional info, and the student flag. **Name** and **Email** are required; everything else is optional. The contribution type accepts `Talk`, `Poster`, or `Just attend` (also the Czech `přednáška` and `účast`); when the column is absent or empty, it is inferred as Talk when an abstract is present and Just attend otherwise. CSV import and the Django administration are administrative overrides: they do not enforce the conference's **Allowed Contribution Types** setting. The conference website, participant tracking links, and the conference admin panel enforce it. The student flag accepts `yes`/`no` (also `true`/`false`, `y`/`n`, `1`/`0`, and `ano`/`ne`); an empty cell is treated as `no`, and any other value is an error. A `photo` column is ignored, because photos are added later.
+A CSV column is matched to a participant field automatically when its name matches the field name, ignoring capital letters and spaces. For example, a column called `Name` fills the participant name, `Email` the e-mail, `Abstract Title` (or `abstract_title`) the title, and `Admin Notes` the internal admin notes. The available fields are the participant-submission fields: name, e-mail, affiliation, title, abstract, contribution type, additional authors, additional affiliations, arrival and departure dates, admin notes, additional info, and the student flag; the two date columns are offered only while the conference collects the dates (see below). **Name**, **Email**, and **Affiliation** are always required, and the arrival and departure dates are required as well while the conference collects them; everything else is optional. The import applies the same validation rules as the public registration form: the affiliation must be at least 3 characters long, the abstract must not exceed 250 words, the contribution type must be allowed by the conference's **Allowed Contribution Types** setting, and a **Title** is required for Talk and Poster rows. The contribution type accepts `Talk`, `Poster`, or `Just attend` (also the Czech `přednáška` and `účast`); when the column is absent or empty, it defaults to the first allowed type, which is Talk whenever talks are allowed. Rows with `Just attend` have their title, abstract, additional authors, and additional affiliations cleared. The student flag accepts `yes`/`no` (also `true`/`false`, `y`/`n`, `1`/`0`, and `ano`/`ne`); an empty cell is treated as `no`, and any other value is an error. A `photo` column is ignored, because photos are added later.
 
 Columns that do not match a field name are shown on the preview screen, where each can be mapped to a field by hand — for example, mapping a column called `Topic / Title (Tentative, for all now)` to **Title**. Several columns can be mapped to **Admin notes**; their values are merged, one per line (empty cells are dropped). Every other field accepts a single column.
 
@@ -376,7 +390,7 @@ Nothing is saved until **Confirm import** is pressed; **Preview** and **Update p
 
 A row is treated as a duplicate, and skipped, when its e-mail address already appears earlier in the same file or already exists in the selected conference (as a submission or as a published participant). Because of this, the import can be run again safely: already-imported rows are skipped instead of duplicated.
 
-Arrival and departure dates default to the conference start and end dates. The conference start and end dates must therefore be set (in **Edit Website Information**) unless the file maps its own arrival-date and departure-date columns; otherwise the import is refused with an error. A mapped date column must use the `YYYY-MM-DD` format; an empty date cell falls back to the conference dates (or is an error if the conference has none).
+Arrival and departure dates follow the conference's **Collect arrival and departure dates** setting (see the **Registration** subsection). While the conference collects them, the arrival-date and departure-date columns must be mapped and filled: a mapped date cell must use the `YYYY-MM-DD` format, an empty or invalid cell is a row error, and the values never fall back to the conference dates. While the conference does not collect them, the date columns are not offered for mapping and any date values in the file are ignored; every imported submission then stores the full conference date range as its stay, so both conference dates must be set.
 
 Imported submissions are **pending**, so they are not visible on the public website yet. Each one already carries its tracking link, so the personal links can be distributed to the participants right away (see **Participant Tracking Links and Self-Service Edits** above). When the time comes to show the participants and their tentative titles publicly, select the imported submissions in **Edit Participants and Abstracts** and use **Publish selected submissions**.
 
@@ -559,7 +573,7 @@ The crop is saved as a **JPEG up to 1024 px** on its longest side. Because the p
 
 ### Registration Subsection
 
-Use the **Registration** subsection to update the registration page text and the registration window.
+Use the **Registration** subsection to update the registration fee note, the registration window, the allowed contribution types, and the collection of arrival and departure dates.
 
 1. Open the **Registration** subsection.
 2. Modify the relevant input fields.
@@ -567,15 +581,24 @@ Use the **Registration** subsection to update the registration page text and the
 
 After a successful submission, the public registration form is replaced by a confirmation screen showing the participant reference and the personal tracking link; see **Participant Tracking Links and Self-Service Edits** in **Edit Participants and Abstracts**.
 
-The registration form asks for a participation type: **Talk**, **Poster**, or **Just attend**. **Talk** is selected by default. Talk and poster submissions show the title and abstract fields; the title is required for both. **Just attend** hides them and creates no abstract or talk when published.
+**Required Registration Data** is not edited as text. The public registration page derives the list from the settings in this subsection, and the editor shows a live preview of the list as it will appear. The list always contains the name, e-mail, and affiliation. The participation type is listed only when more than one contribution type is allowed. The title and abstract are listed only when Talk and/or Poster is allowed, worded for the allowed combination (for example, "Title and abstract of your talk or poster" when both are allowed). The arrival and departure dates are listed only while the conference collects them (see below). Optional fields, such as the photo, the student flag, and the additional information, are not listed.
+
+The registration form asks for a participation type: **Talk**, **Poster**, or **Just attend**. The first allowed type is selected by default, which is Talk whenever talks are allowed. Talk and poster submissions show the title and abstract fields; the title is required for both. The abstract is expected for the final contribution, but the form does not force it: the participant can add it later through their tracking link until the effective submission editing deadline, and the form says so under the abstract field. Once submission editing has closed, an abstract can no longer be added online; the form then tells the participant to contact the organizers instead. **Just attend** hides the contribution fields and creates no abstract or talk when published. Changing a submission to **Just attend** later, whether in the admin panel, through the tracking link, or in a CSV import, clears its title, abstract, additional authors, and additional affiliations.
 
 **Allowed Contribution Types** controls which of the three options the form offers; at least one must stay enabled. Existing submissions keep their type if an option is later disabled.
+
+**Collect arrival and departure dates** controls whether the registration form asks for them. When it is enabled, the form requires both dates, the departure must be after the arrival, and the date fields are pre-filled with the conference start and end dates. When it is disabled, the form hides both date fields and every registration instead stores the full conference date range as the stay. Such stays are recorded with derived provenance: badges, the tracking page, and the admin pages always print the dates stored on the submission (a single date when arrival and departure are equal), never the current conference range, so a later change of the conference dates does not silently rewrite existing stays. An organizer can still override the dates of any submission by hand in **Edit Participants and Abstracts**.
+
+A single-day conference cannot collect participant dates: saving equal conference start and end dates is rejected while collection is enabled, and when collection is disabled both conference dates are required. Use the following order when changing the conference length:
+
+- **Multi-day to single-day:** turn date collection off in this subsection first, then set the equal start and end dates in the **Home** subsection.
+- **Single-day to multi-day:** set different start and end dates in the **Home** subsection first, then turn date collection back on here.
 
 The registration window has two optional dates. The **Registration Opening Date** is the first day the registration form is available; before it, the public registration form is replaced by a "not open yet" notice. The **Registration Deadline** is the last day the form is available; after it, the form is replaced by a "registration closed" notice. Outside the window the backend also rejects submission attempts directly, so the form cannot be bypassed. When both dates are empty, registration is open — but a conference whose end date has passed always has closed registration, even without a deadline.
 
 The **Submission Editing Deadline** is an independent optional date that controls how long participants can edit their own submission through the personal tracking link (see **Participant Tracking Links and Self-Service Edits** in **Edit Participants and Abstracts**). Participants can keep editing until this date even after registration has closed. The deadline must fall on or after the registration deadline and on or before the conference end date (when those dates are set), because the conference end date always ends editing — even a later deadline cannot keep editing open past the end of the conference. When the field is empty, editing closes the day before the conference starts, based on the conference start date; if no start date is set either, editing stays open.
 
-While the current date is more than one month before the **Submission Editing Deadline** — or, when no deadline is set, more than one month before the conference start date — the public registration form labels the arrival and departure date fields as **Arrival Date (tentative)** and **Departure Date (tentative)**. Within the final month before that reference date the labels drop the "(tentative)" suffix.
+While the current date is more than one month before the **Submission Editing Deadline** — or, when no deadline is set, more than one month before the conference start date — the public registration form labels the arrival and departure date fields as **Arrival Date (tentative)** and **Departure Date (tentative)**. Within the final month before that reference date the labels drop the "(tentative)" suffix. The labels apply only while the conference collects the dates.
 
 ### Venue Subsection
 
@@ -699,7 +722,7 @@ When you select **Download Badges**, the system automatically downloads particip
 
 The badge data is generated automatically from published submissions of the conference you are currently administering. To change badge information, update the corresponding participant data in **Edit Participants and Abstracts**.
 
-The header of the badges PDF shows the conference badge title, or the conference title when the badge title is empty. The footer shows the conference location. To change these values, edit the logistics in **Edit Web Info**; see **Changing Conference Logistics** in **Managing Multiple Conferences**.
+The header of the badges PDF shows the conference badge title, or the conference title when the badge title is empty. The footer shows the conference location together with the stay dates stored on each submission (a single date when the arrival and departure are equal, for example for single-day conferences). To change these values, edit the logistics in **Edit Web Info**; see **Changing Conference Logistics** in **Managing Multiple Conferences**.
 
 #### Download Program PDF
 

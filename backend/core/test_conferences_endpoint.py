@@ -193,6 +193,7 @@ class TestConferenceAdminPolicy(TestCase):
         for field in (
             "title",
             "date_start",
+            "registration_collect_dates",
             "registration_deadline",
             "program_text",
             "accommodation_description",

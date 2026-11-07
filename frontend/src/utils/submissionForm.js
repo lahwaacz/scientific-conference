@@ -12,6 +12,7 @@ export function validateSubmissionForm({
   photo,
   allowedTypes,
   originalContributionType,
+  collectDates = true,
 }) {
   const errors = {};
   const contributionType = formData.contribution_type || "talk";
@@ -41,20 +42,22 @@ export function validateSubmissionForm({
     }
   }
 
-  if (!formData.arrival) {
-    errors.arrival = "Please select arrival date";
-  }
+  if (collectDates) {
+    if (!formData.arrival) {
+      errors.arrival = "Please select arrival date";
+    }
 
-  if (!formData.departure) {
-    errors.departure = "Please select departure date";
-  }
+    if (!formData.departure) {
+      errors.departure = "Please select departure date";
+    }
 
-  if (
-    formData.arrival &&
-    formData.departure &&
-    formData.departure <= formData.arrival
-  ) {
-    errors.departure = "Departure date must be after arrival date";
+    if (
+      formData.arrival &&
+      formData.departure &&
+      formData.departure <= formData.arrival
+    ) {
+      errors.departure = "Departure date must be after arrival date";
+    }
   }
 
   if (photo && photo.size > 5 * 1024 * 1024) {

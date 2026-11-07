@@ -13,7 +13,6 @@
       "short_description": "Annual workshop on scientific computing at FNSPE CTU.",
       "badge_title": "WSC 2025",
       "description": "The Workshop on Scientific Computing brings together researchers and students working at the intersection of numerical mathematics, high-performance computing, and applied science. Over two days of talks and posters, participants discuss advanced discretisation methods, parallel solvers, and software tools for large-scale simulation, alongside the practical challenges of running modern codes on current hardware.",
-      "registration_instructions": "",
       "registration_deadline": null,
       "registration_fee_note": "Conference fee is free of charge",
       "grant_text": "This workshop was supported by the Grant Agency of the Czech Technical University in Prague, grant No. SVK 44/25/F4.",
@@ -27,6 +26,7 @@
       "venue_map_embed_url": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2522.8151323874063!2d14.21346707611837!3d50.77900046365381!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47099fd1ace90813%3A0x7d351b85e2789db!2sCTU%20Decin!5e0!3m2!1sen!2scz!4v1777641891915!5m2!1sen!2scz",
       "copyright_text": "©2025 MMG, FNSPE CTU in Prague",
       "program_text": "## Registration for local participants\n\nRegistration for local participants takes place at the conference venue: Thursday: from 13:00 to 14:00 + during coffee breaks between the sessions\n\n## Regular talks\n\nOral presentation duration is 20 min = 15 min talk + 5 min for discussion.\n\n## Poster pitch talks\n\nEach poster will be briefly introduced in a short 1–3 min presentation.",
+      "registration_collect_dates": true,
       "registration_allow_talk": true,
       "registration_allow_poster": true,
       "registration_allow_attend": true
@@ -45,6 +45,7 @@
       "badge_title": "PNAW 2026",
       "hero_photo": "conferences/hero-prague.jpg",
       "description": "",
+      "registration_collect_dates": true,
       "registration_allow_talk": true,
       "registration_allow_poster": true,
       "registration_allow_attend": false
@@ -63,6 +64,7 @@
       "badge_title": "SSCP 2027",
       "hero_photo": "",
       "description": "The Summer School on Computational Physics offers a week of lectures and hands-on sessions for students who want to apply numerical methods to physical problems. Topics range from finite element and finite volume discretisations to molecular dynamics and data-driven modelling, and participants implement and test the methods themselves in guided exercises.",
+      "registration_collect_dates": true,
       "registration_allow_talk": true,
       "registration_allow_poster": true,
       "registration_allow_attend": true
@@ -81,6 +83,7 @@
       "badge_title": "WMM 2027",
       "hero_photo": "",
       "description": "",
+      "registration_collect_dates": true,
       "registration_allow_talk": true,
       "registration_allow_poster": false,
       "registration_allow_attend": true
@@ -99,6 +102,7 @@
       "badge_title": "DSS 2024",
       "hero_photo": "conferences/hero-prague.jpg",
       "description": "The Děčín Symposium on Scientific Computing is a small, discussion-oriented meeting on numerical methods and their software. It brings together researchers from the Czech Republic and abroad to present recent results, exchange ideas, and build collaborations in a relaxed setting by the river.",
+      "registration_collect_dates": true,
       "registration_allow_talk": true,
       "registration_allow_poster": false,
       "registration_allow_attend": false
@@ -117,6 +121,7 @@
       "badge_title": "PCW 2028",
       "hero_photo": "",
       "description": "A small workshop used to demonstrate poster and attendee registration without talks.",
+      "registration_collect_dates": true,
       "registration_allow_talk": false,
       "registration_allow_poster": true,
       "registration_allow_attend": true,
@@ -136,6 +141,7 @@
       "badge_title": "PSC 2028",
       "hero_photo": "",
       "description": "A poster-only demo conference: registration accepts posters but not talks or attendance-only registrations.",
+      "registration_collect_dates": true,
       "registration_allow_talk": false,
       "registration_allow_poster": true,
       "registration_allow_attend": false,
@@ -155,6 +161,7 @@
       "badge_title": "ACC 2028",
       "hero_photo": "",
       "description": "An attendance-only demo conference: registration accepts only the Just attend option.",
+      "registration_collect_dates": true,
       "registration_allow_talk": false,
       "registration_allow_poster": false,
       "registration_allow_attend": true,

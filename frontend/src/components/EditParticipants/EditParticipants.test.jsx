@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { setTestLocation } from "../../testUtils/reactRouterDomStub";
 import { fetchWithAuth } from "../../utils/api";
 import { isProgramDirty } from "../../utils/programRefresh";
@@ -249,6 +255,43 @@ describe("EditParticipants workflows", () => {
     expect(
       screen.queryByRole("button", { name: "Copy tracking link" })
     ).not.toBeInTheDocument();
+  });
+
+  test("collapses equal dates and labels zero-duration and derived stays", async () => {
+    fetchWithAuth.mockResolvedValueOnce(
+      listResponse([
+        {
+          ...pendingSubmission,
+          id: 21,
+          name: "Single Day Person",
+          arrival_date: "2026-10-01",
+          departure_date: "2026-10-01",
+          stay_duration: 0,
+        },
+        {
+          ...pendingSubmission,
+          id: 22,
+          name: "Derived Stay Person",
+          stay_dates_derived: true,
+        },
+      ])
+    );
+
+    render(<EditParticipants />);
+
+    await screen.findByText("Single Day Person");
+    const singleDayCard = within(document.getElementById("submission-21"));
+    expect(singleDayCard.getByText("Date:")).toBeInTheDocument();
+    expect(singleDayCard.getByText("October 1, 2026")).toBeInTheDocument();
+    expect(singleDayCard.queryByText("Arrival:")).not.toBeInTheDocument();
+    expect(singleDayCard.queryByText("Departure:")).not.toBeInTheDocument();
+    expect(singleDayCard.getByText("Same day")).toBeInTheDocument();
+    expect(singleDayCard.queryByText("0 days")).not.toBeInTheDocument();
+
+    const derivedCard = within(document.getElementById("submission-22"));
+    expect(derivedCard.getByText("Full conference")).toBeInTheDocument();
+    expect(derivedCard.getByText("Arrival:")).toBeInTheDocument();
+    expect(derivedCard.getByText("Departure:")).toBeInTheDocument();
   });
 
   test("a ?submission= link loads the All tab and scrolls to that card", async () => {

@@ -156,6 +156,7 @@
   color: red;
   font-family: var(--font-main);
   font-size: 15px;
+  white-space: pre-wrap;
 }
 
 /* Preview */
@@ -177,7 +178,7 @@
   font-family: var(--font-main);
   font-size: 16px;
   color: var(--text-color);
-  padding-left: 20px;
+  padding-inline-start: 2rem;
   margin: 8px 0;
 }
 

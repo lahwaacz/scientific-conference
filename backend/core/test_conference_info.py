@@ -23,7 +23,7 @@ INFO_PAYLOAD_KEYS = frozenset(
     {
         "id",
         "description",
-        "registration_instructions",
+        "registration_collect_dates",
         "registration_opening",
         "registration_deadline",
         "submission_edit_deadline",
@@ -164,6 +164,22 @@ class TestConferenceInfoEndpoint(InfoTestCase):
 
 
 class TestConferenceInfoEditValidation(InfoTestCase):
+    def test_date_collection_flag_persists(self):
+        self.conf_a.date_start = date(2026, 5, 1)
+        self.conf_a.date_end = date(2026, 5, 3)
+        self.conf_a.save()
+        staff = self.superuser_client()
+        response = staff.patch(
+            api("conference-info/edit/"),
+            {"registration_collect_dates": False},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.conf_a.refresh_from_db()
+        self.assertFalse(self.conf_a.registration_collect_dates)
+        self.assertFalse(response.json()["registration_collect_dates"])
+
     def test_contribution_flags_persist(self):
         staff = self.superuser_client()
         response = staff.patch(

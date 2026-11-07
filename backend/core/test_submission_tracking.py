@@ -213,7 +213,9 @@ class TestCreateSerializerTrackingGuards:
             "linked_user": staff.pk,
         }
 
-        serializer = ParticipantSubmissionCreateSerializer(data=payload)
+        serializer = ParticipantSubmissionCreateSerializer(
+            data=payload, context={"conference": wsc}
+        )
         assert serializer.is_valid(), serializer.errors
         submission = serializer.save(conference=wsc)
 
@@ -223,7 +225,9 @@ class TestCreateSerializerTrackingGuards:
         assert serializer_payload(serializer)["linked_user"] is None
 
     def test_create_response_exposes_token_and_reference(self, wsc):
-        serializer = ParticipantSubmissionCreateSerializer(data=CREATE_PAYLOAD)
+        serializer = ParticipantSubmissionCreateSerializer(
+            data=CREATE_PAYLOAD, context={"conference": wsc}
+        )
         assert serializer.is_valid(), serializer.errors
         submission = serializer.save(conference=wsc)
         data = serializer_payload(serializer)
@@ -319,6 +323,7 @@ class TestTrackingReadSerializer:
             "arrival_date",
             "departure_date",
             "stay_duration",
+            "stay_dates_derived",
             "status",
             "submitted_at",
             "reviewed_at",
@@ -535,6 +540,121 @@ class TestTrackingUpdateSerializer:
         assert not serializer.is_valid()
         assert "departure_date" in serializer.errors
 
+    def test_dates_off_ignores_malformed_dates_and_preserves_stay(self, wsc):
+        set_conference_fields(
+            wsc,
+            registration_collect_dates=False,
+            date_start=date(2027, 5, 10),
+            date_end=date(2027, 5, 12),
+        )
+        submission = make_submission(wsc, stay_dates_derived=True)
+
+        serializer = ParticipantTrackingUpdateSerializer(
+            submission,
+            data={
+                "arrival_date": "not-a-date",
+                "departure_date": "also-not-a-date",
+                "info": "Vegetarian",
+            },
+            partial=True,
+        )
+        assert serializer.is_valid(), serializer.errors
+        updated = serializer.save()
+
+        assert updated.info == "Vegetarian"
+        assert updated.arrival_date == date(2026, 9, 10)
+        assert updated.departure_date == date(2026, 9, 12)
+        assert updated.stay_dates_derived is True
+
+    def test_unrelated_edit_allows_legacy_equal_dates_when_collection_is_on(self, wsc):
+        submission = make_submission(
+            wsc,
+            arrival_date=date(2027, 5, 10),
+            departure_date=date(2027, 5, 10),
+            stay_dates_derived=True,
+        )
+
+        serializer = ParticipantTrackingUpdateSerializer(
+            submission, data={"info": "Vegetarian"}, partial=True
+        )
+        assert serializer.is_valid(), serializer.errors
+        updated = serializer.save()
+
+        assert updated.info == "Vegetarian"
+        assert updated.stay_dates_derived is True
+
+    def test_real_date_override_clears_provenance(self, wsc):
+        submission = make_submission(wsc, stay_dates_derived=True)
+        serializer = ParticipantTrackingUpdateSerializer(
+            submission, data={"arrival_date": "2026-09-11"}, partial=True
+        )
+
+        assert serializer.is_valid(), serializer.errors
+        updated = serializer.save()
+
+        assert updated.arrival_date == date(2026, 9, 11)
+        assert updated.departure_date == date(2026, 9, 12)
+        assert updated.stay_dates_derived is False
+
+    def test_unchanged_supplied_dates_preserve_provenance(self, wsc):
+        submission = make_submission(wsc, stay_dates_derived=True)
+        serializer = ParticipantTrackingUpdateSerializer(
+            submission,
+            data={"arrival_date": "2026-09-10", "departure_date": "2026-09-12"},
+            partial=True,
+        )
+
+        assert serializer.is_valid(), serializer.errors
+        updated = serializer.save()
+
+        assert updated.stay_dates_derived is True
+
+    def test_attend_partial_update_clears_contribution_fields(self, wsc):
+        submission = make_submission(
+            wsc, contribution_type="attend", abstract_title="", abstract_text=""
+        )
+        serializer = ParticipantTrackingUpdateSerializer(
+            submission,
+            data={
+                "abstract_title": "Injected title",
+                "abstract_text": "Injected abstract",
+                "additional_authors": "Injected authors",
+                "additional_affiliations": "Injected affiliations",
+            },
+            partial=True,
+        )
+
+        assert serializer.is_valid(), serializer.errors
+        updated = serializer.save()
+
+        for field in (
+            "abstract_title",
+            "abstract_text",
+            "additional_authors",
+            "additional_affiliations",
+        ):
+            assert getattr(updated, field) == ""
+
+    def test_supplied_affiliation_must_have_three_characters(self, wsc):
+        submission = make_submission(wsc)
+        serializer = ParticipantTrackingUpdateSerializer(
+            submission, data={"affiliation": "CU"}, partial=True
+        )
+
+        assert not serializer.is_valid()
+        assert "affiliation" in serializer.errors
+
+    def test_supplied_abstract_must_not_exceed_250_words(self, wsc):
+        submission = make_submission(wsc)
+        serializer = ParticipantTrackingUpdateSerializer(
+            submission,
+            data={"abstract_text": " ".join(["word"] * 251)},
+            partial=True,
+        )
+
+        assert not serializer.is_valid()
+        assert "abstract_text" in serializer.errors
+
     def test_absent_photo_keeps_existing_file(self, wsc):
         submission = make_submission(wsc, photo=make_image("old.jpg"))
         original_name = submission.photo.name
@@ -684,6 +804,27 @@ class TestTrackingEndpoint:
         assert body["affiliation"] == "MIT"
         assert body["participant_reference"] == submission.participant_reference
         assert "admin_notes" not in body
+
+    def test_patch_ignores_injected_dates_when_collection_is_off(self, wsc):
+        set_conference_fields(
+            wsc,
+            registration_collect_dates=False,
+            date_start=date(2027, 5, 10),
+            date_end=date(2027, 5, 12),
+        )
+        submission = make_submission(wsc, stay_dates_derived=True)
+
+        response = self.client.patch(
+            api(f"track/{submission.tracking_token}/"),
+            {"arrival_date": "2027-06-01", "departure_date": "2027-06-03"},
+            format="json",
+        )
+
+        assert response.status_code == 200, response.json()
+        submission.refresh_from_db()
+        assert submission.arrival_date == date(2026, 9, 10)
+        assert submission.departure_date == date(2026, 9, 12)
+        assert submission.stay_dates_derived is True
 
     def test_get_rejected_includes_message_and_status(self, wsc):
         submission = make_submission(wsc)

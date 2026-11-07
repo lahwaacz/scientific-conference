@@ -10,6 +10,23 @@ import Modal from "../ui/Modal/Modal";
 import Title from "../ui/Title/Title";
 import styles from "./EditParticipants.module.css";
 
+function hasEqualStayDates(submission) {
+  return Boolean(
+    submission.arrival_date &&
+      submission.departure_date &&
+      String(submission.arrival_date).slice(0, 10) ===
+        String(submission.departure_date).slice(0, 10)
+  );
+}
+
+function stayDurationLabel(submission) {
+  if (submission.stay_dates_derived) return "Full conference";
+  if (hasEqualStayDates(submission) || submission.stay_duration === 0) {
+    return "Same day";
+  }
+  return `${submission.stay_duration} days`;
+}
+
 export default function EditParticipants() {
   // Linked from Participants Info: ?submission=<id> jumps to that card on
   // the All tab (scroll only — the edit modal stays closed).
@@ -464,17 +481,26 @@ export default function EditParticipants() {
 
                   <div className={styles.cardFooter}>
                     <div className={styles.datesSection}>
-                      <div className={styles.dateInfo}>
-                        <strong>Arrival:</strong>
-                        <span>{formatDate(sub.arrival_date)}</span>
-                      </div>
-                      <div className={styles.dateInfo}>
-                        <strong>Departure:</strong>
-                        <span>{formatDate(sub.departure_date)}</span>
-                      </div>
+                      {hasEqualStayDates(sub) ? (
+                        <div className={styles.dateInfo}>
+                          <strong>Date:</strong>
+                          <span>{formatDate(sub.arrival_date)}</span>
+                        </div>
+                      ) : (
+                        <>
+                          <div className={styles.dateInfo}>
+                            <strong>Arrival:</strong>
+                            <span>{formatDate(sub.arrival_date)}</span>
+                          </div>
+                          <div className={styles.dateInfo}>
+                            <strong>Departure:</strong>
+                            <span>{formatDate(sub.departure_date)}</span>
+                          </div>
+                        </>
+                      )}
                       <div className={styles.dateInfo}>
                         <strong>Stay:</strong>
-                        <span>{sub.stay_duration} days</span>
+                        <span>{stayDurationLabel(sub)}</span>
                       </div>
                     </div>
                     <div className={styles.metadata}>

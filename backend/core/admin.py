@@ -8,16 +8,15 @@ from django.template.response import TemplateResponse
 from django.urls import path, reverse
 
 from .importing import (
-    IMPORTABLE_FIELDS,
-    REQUIRED_FIELDS,
     ImportFileError,
     create_submissions,
     decode_csv_bytes,
     field_label,
+    importable_fields,
     parse_csv,
     parsed_from_session,
     parsed_to_session,
-    resolve_date_defaults,
+    required_fields,
     resolve_mapping,
     summarise,
     validate_rows,
@@ -37,6 +36,7 @@ from .models import (
     Session,
     Talk,
 )
+from .registration import validate_date_order
 
 
 class SuperuserOnlyAdminMixin:
@@ -128,7 +128,7 @@ class ConferenceAdmin(SuperuserOnlyAdminMixin, admin.ModelAdmin):
             "Registration",
             {
                 "fields": (
-                    "registration_instructions",
+                    "registration_collect_dates",
                     "registration_opening",
                     "registration_deadline",
                     "submission_edit_deadline",
@@ -306,8 +306,42 @@ class ParticipantSubmissionImportForm(forms.Form):
         return upload
 
 
+class ParticipantSubmissionForm(forms.ModelForm):
+    class Meta:
+        model = ParticipantSubmission
+        fields = "__all__"
+
+    def clean(self):
+        cleaned_data = super().clean() or {}
+        conference = cleaned_data.get("conference")
+        arrival = cleaned_data.get("arrival_date")
+        departure = cleaned_data.get("departure_date")
+        if conference is None:
+            return cleaned_data
+
+        creating = self.instance.pk is None
+        dates_changed = creating or (
+            arrival != self.instance.arrival_date
+            or departure != self.instance.departure_date
+        )
+        errors = validate_date_order(
+            cleaned_data,
+            instance=None if creating else self.instance,
+            conference=conference,
+            dates_supplied=dates_changed,
+            creating=creating,
+        )
+        for field, field_messages in errors.items():
+            for message in field_messages:
+                self.add_error(field, message)
+        if not errors and dates_changed:
+            self.instance.stay_dates_derived = False
+        return cleaned_data
+
+
 @admin.register(ParticipantSubmission)
 class ParticipantSubmissionAdmin(SuperuserOnlyAdminMixin, admin.ModelAdmin):
+    form = ParticipantSubmissionForm
     change_list_template = "admin/core/participantsubmission/change_list.html"
     list_display = [
         "conference",
@@ -325,6 +359,7 @@ class ParticipantSubmissionAdmin(SuperuserOnlyAdminMixin, admin.ModelAdmin):
     readonly_fields = [
         "tracking_token",
         "participant_reference",
+        "stay_dates_derived",
         "submitted_at",
         "reviewed_at",
     ]
@@ -454,20 +489,15 @@ class ParticipantSubmissionAdmin(SuperuserOnlyAdminMixin, admin.ModelAdmin):
         conference, filename, parsed, manual = loaded
         manual.update(self._manual_from_post(request))
 
-        mapping = resolve_mapping(parsed.headers, manual)
-        if self._missing_required(mapping):
-            self._store_manual(request, manual)
-            return self._render_preview(request, conference, filename, parsed, manual)
-        try:
-            defaults = resolve_date_defaults(conference, mapping)
-        except ImportFileError:
+        mapping = resolve_mapping(parsed.headers, conference, manual)
+        if self._missing_required(mapping, conference):
             self._store_manual(request, manual)
             return self._render_preview(request, conference, filename, parsed, manual)
 
         request.session.pop(SESSION_KEY, None)
         with transaction.atomic():
-            results = validate_rows(parsed, mapping, conference, defaults)
-            summary = create_submissions(results, conference, defaults)
+            results = validate_rows(parsed, mapping, conference)
+            summary = create_submissions(results, conference)
 
         self.message_user(
             request,
@@ -480,22 +510,14 @@ class ParticipantSubmissionAdmin(SuperuserOnlyAdminMixin, admin.ModelAdmin):
         )
 
     def _render_preview(self, request, conference, filename, parsed, manual):
-        mapping = resolve_mapping(parsed.headers, manual)
-        missing = self._missing_required(mapping)
-
-        dates_error = None
-        results = []
-        if not missing:
-            try:
-                defaults = resolve_date_defaults(conference, mapping)
-            except ImportFileError as exc:
-                dates_error = str(exc)
-            else:
-                results = validate_rows(parsed, mapping, conference, defaults)
+        mapping = resolve_mapping(parsed.headers, conference, manual)
+        missing = self._missing_required(mapping, conference)
+        results = [] if missing else validate_rows(parsed, mapping, conference)
+        importable = importable_fields(conference)
 
         columns = [
             (name, field_label(name))
-            for name, _ in IMPORTABLE_FIELDS
+            for name, _ in importable
             if name in mapping.field_to_indices
         ]
         column_names = [name for name, _ in columns]
@@ -515,10 +537,9 @@ class ParticipantSubmissionAdmin(SuperuserOnlyAdminMixin, admin.ModelAdmin):
             "configurable": mapping.configurable,
             "recognized": mapping.recognized,
             "conflicts": mapping.conflicts,
-            "importable": IMPORTABLE_FIELDS,
+            "importable": importable,
             "columns": columns,
             "missing_required": missing,
-            "dates_error": dates_error,
             "rows": rows,
             "truncated": len(results) > PREVIEW_LIMIT,
             "summary": summarise(results) if results else None,
@@ -555,10 +576,10 @@ class ParticipantSubmissionAdmin(SuperuserOnlyAdminMixin, admin.ModelAdmin):
             manual[index] = request.POST.get(key, "").strip()
         return manual
 
-    def _missing_required(self, mapping):
+    def _missing_required(self, mapping, conference):
         return [
             field_label(name)
-            for name in REQUIRED_FIELDS
+            for name in required_fields(conference)
             if name not in mapping.field_to_indices
         ]
 

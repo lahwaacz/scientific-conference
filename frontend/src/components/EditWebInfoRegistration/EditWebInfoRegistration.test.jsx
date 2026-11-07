@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { fetchWithAuth } from "../../utils/api";
 import EditWebInfoRegistration from "./EditWebInfoRegistration";
 
@@ -17,6 +17,7 @@ const loadedInfo = {
   registration_allow_talk: true,
   registration_allow_poster: true,
   registration_allow_attend: true,
+  registration_collect_dates: true,
 };
 
 function jsonOf(payload) {
@@ -65,14 +66,108 @@ describe("EditWebInfoRegistration", () => {
     expect(call[1].method).toBe("PATCH");
     expect(JSON.parse(call[1].body)).toEqual({
       registration_fee_note: "Free of charge.",
-      registration_instructions: "Fill the form.",
       registration_opening: "2026-03-01",
       registration_deadline: "2026-04-01",
       submission_edit_deadline: "2026-04-15",
       registration_allow_talk: true,
       registration_allow_poster: true,
       registration_allow_attend: true,
+      registration_collect_dates: true,
     });
+  });
+
+  test("live preview reacts to unsaved contribution and date settings", async () => {
+    await renderLoaded();
+
+    const preview = screen.getByRole("list", {
+      name: "Required registration data preview",
+    });
+    expect(
+      within(preview).getByText("Title and abstract of your talk or poster")
+    ).toBeInTheDocument();
+    expect(
+      within(preview).getByText("Arrival and departure dates")
+    ).toBeInTheDocument();
+    expect(
+      document.querySelector('textarea[name="registration_instructions"]')
+    ).toBeNull();
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Talk" }));
+    expect(
+      within(preview).getByText("Title and abstract of your poster")
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("checkbox", {
+        name: "Collect arrival and departure dates",
+      })
+    );
+    expect(
+      within(preview).queryByText("Arrival and departure dates")
+    ).not.toBeInTheDocument();
+  });
+
+  test("saves an unchecked collect-dates flag without registration instructions", async () => {
+    const { container } = await renderLoaded();
+
+    fireEvent.click(
+      screen.getByRole("checkbox", {
+        name: "Collect arrival and departure dates",
+      })
+    );
+    fetchWithAuth.mockResolvedValueOnce(jsonOf({}));
+    fireEvent.submit(container.querySelector("form"));
+    expect(await screen.findByText("✓ Saved successfully")).toBeInTheDocument();
+
+    const payload = JSON.parse(editCall()[1].body);
+    expect(payload.registration_collect_dates).toBe(false);
+    expect(payload).not.toHaveProperty("registration_instructions");
+  });
+
+  test("shows field-specific 400 responses and allows a corrected retry", async () => {
+    const { container } = await renderLoaded();
+
+    fetchWithAuth.mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      json: async () => ({
+        registration_collect_dates: [
+          "Single-day conferences cannot collect arrival and departure dates.",
+        ],
+        non_field_errors: [
+          "Disable date collection before setting equal Home dates.",
+        ],
+      }),
+    });
+    fireEvent.submit(container.querySelector("form"));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "registration_collect_dates: Single-day conferences cannot collect arrival and departure dates."
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Disable date collection before setting equal Home dates."
+    );
+    expect(
+      screen.queryByText("Failed to save. Please try again.")
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("checkbox", {
+        name: "Collect arrival and departure dates",
+      })
+    );
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    fetchWithAuth.mockResolvedValueOnce(jsonOf({}));
+    fireEvent.submit(container.querySelector("form"));
+
+    expect(await screen.findByText("✓ Saved successfully")).toBeInTheDocument();
+    const editCalls = fetchWithAuth.mock.calls.filter(
+      ([url]) => url === "/api/conference-info/edit/"
+    );
+    expect(editCalls).toHaveLength(2);
+    expect(
+      JSON.parse(editCalls.at(-1)[1].body).registration_collect_dates
+    ).toBe(false);
   });
 
   test("rejects disabling every contribution type", async () => {

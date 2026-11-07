@@ -7,30 +7,23 @@ vi.mock("../hooks/useConferenceInfo", () => ({
   useConferenceInfo: () => holder.info,
 }));
 
+function renderedRequirements() {
+  return screen.getAllByRole("listitem").map((item) => item.textContent);
+}
+
 describe("Registration", () => {
   beforeEach(() => {
     holder.info = null;
   });
 
-  test("renders no instructions until the conference info arrives", () => {
+  test("renders no requirements until the conference info arrives", () => {
     render(<Registration />);
 
+    expect(screen.queryAllByRole("listitem")).toHaveLength(0);
     expect(screen.queryByText("Affiliation")).not.toBeInTheDocument();
-    expect(screen.queryByText(/Your e-mail/i)).not.toBeInTheDocument();
   });
 
-  test("falls back to the generic instructions when none are configured", () => {
-    holder.info = { registration_instructions: "", registration_fee_note: "" };
-
-    render(<Registration />);
-
-    expect(screen.getByText("Affiliation")).toBeInTheDocument();
-    expect(
-      screen.getByText("The abstract of your contribution")
-    ).toBeInTheDocument();
-  });
-
-  test("renders the configured instructions, one per line", () => {
+  test("renders the derived requirements instead of legacy instructions", () => {
     holder.info = {
       registration_instructions: "Bring an abstract\nPay the fee",
       registration_fee_note: "",
@@ -38,8 +31,33 @@ describe("Registration", () => {
 
     render(<Registration />);
 
-    expect(screen.getByText("Bring an abstract")).toBeInTheDocument();
-    expect(screen.getByText("Pay the fee")).toBeInTheDocument();
-    expect(screen.queryByText("Affiliation")).not.toBeInTheDocument();
+    expect(renderedRequirements()).toEqual([
+      "Name",
+      "Your e-mail",
+      "Affiliation",
+      "Participation type",
+      "Title and abstract of your talk or poster",
+      "Arrival and departure dates",
+    ]);
+    expect(screen.queryByText("Bring an abstract")).not.toBeInTheDocument();
+    expect(screen.queryByText("Pay the fee")).not.toBeInTheDocument();
+  });
+
+  test("omits participation and contribution items for attend-only registration without dates", () => {
+    holder.info = {
+      registration_allow_talk: false,
+      registration_allow_poster: false,
+      registration_allow_attend: true,
+      registration_collect_dates: false,
+      registration_fee_note: "",
+    };
+
+    render(<Registration />);
+
+    expect(renderedRequirements()).toEqual([
+      "Name",
+      "Your e-mail",
+      "Affiliation",
+    ]);
   });
 });

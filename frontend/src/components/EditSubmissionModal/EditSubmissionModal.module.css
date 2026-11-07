@@ -209,6 +209,12 @@
   cursor: pointer;
 }
 
+.provenanceNote {
+  color: #555;
+  font-family: var(--font-main);
+  font-size: 13px;
+}
+
 .wordCount {
   color: #999;
   font-weight: 400;

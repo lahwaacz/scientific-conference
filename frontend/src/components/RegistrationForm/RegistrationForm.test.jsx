@@ -11,6 +11,7 @@ const { mockInfo, holder } = vi.hoisted(() => ({
     date_start: null,
     date_end: null,
     registration_fee_note: "Conference fee is free of charge",
+    registration_collect_dates: true,
     registration_allow_talk: true,
     registration_allow_poster: true,
     registration_allow_attend: true,
@@ -47,7 +48,7 @@ const successResponse = {
   }),
 };
 
-function submitValidForm() {
+function submitValidForm({ preserveDates = false } = {}) {
   fireEvent.change(document.querySelector('input[name="name"]'), {
     target: { name: "name", value: "Alice Smith" },
   });
@@ -64,13 +65,16 @@ function submitValidForm() {
     target: { name: "abstract_title", value: "A talk" },
   });
 
-  fireEvent.change(document.querySelector('input[name="arrival"]'), {
-    target: { name: "arrival", value: "2026-09-10" },
-  });
-
-  fireEvent.change(document.querySelector('input[name="departure"]'), {
-    target: { name: "departure", value: "2026-09-12" },
-  });
+  const arrival = document.querySelector('input[name="arrival"]');
+  const departure = document.querySelector('input[name="departure"]');
+  if (!preserveDates && arrival && departure) {
+    fireEvent.change(arrival, {
+      target: { name: "arrival", value: "2026-09-10" },
+    });
+    fireEvent.change(departure, {
+      target: { name: "departure", value: "2026-09-12" },
+    });
+  }
 
   fireEvent.click(screen.getByRole("button", { name: /^submit$/i }));
 }
@@ -88,6 +92,7 @@ describe("RegistrationForm", () => {
       date_start: null,
       date_end: null,
       registration_fee_note: "Conference fee is free of charge",
+      registration_collect_dates: true,
       registration_allow_talk: true,
       registration_allow_poster: true,
       registration_allow_attend: true,
@@ -130,6 +135,66 @@ describe("RegistrationForm", () => {
       screen.getByPlaceholderText(/Brief description of your contribution/i)
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /submit/i })).toBeInTheDocument();
+  });
+
+  test("pre-fills arrival and departure with the conference dates", () => {
+    mockInfo.date_start = "2099-09-10";
+    mockInfo.date_end = "2099-09-12";
+
+    render(<RegistrationForm />);
+
+    expect(document.querySelector('input[name="arrival"]')).toHaveValue(
+      "2099-09-10"
+    );
+    expect(document.querySelector('input[name="departure"]')).toHaveValue(
+      "2099-09-12"
+    );
+  });
+
+  test("single-day registration without collected dates hides dates and submits without them", async () => {
+    mockInfo.date_start = "2099-09-10";
+    mockInfo.date_end = "2099-09-10";
+    mockInfo.registration_collect_dates = false;
+    globalThis.fetch.mockResolvedValueOnce(successResponse);
+
+    render(<RegistrationForm />);
+
+    expect(document.querySelector('input[name="arrival"]')).toBeNull();
+    expect(document.querySelector('input[name="departure"]')).toBeNull();
+
+    submitValidForm();
+
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(1));
+    const body = globalThis.fetch.mock.calls[0][1].body;
+    expect(body.has("arrival_date")).toBe(false);
+    expect(body.has("departure_date")).toBe(false);
+    expect(
+      screen.queryByText(/Please select (arrival|departure) date/i)
+    ).not.toBeInTheDocument();
+    expect(await screen.findByText("wsc2026-0042")).toBeInTheDocument();
+  });
+
+  test("submits the prefilled conference dates when dates are collected", async () => {
+    mockInfo.date_start = "2099-09-10";
+    mockInfo.date_end = "2099-09-12";
+    globalThis.fetch.mockResolvedValueOnce(successResponse);
+
+    render(<RegistrationForm />);
+
+    expect(document.querySelector('input[name="arrival"]')).toHaveValue(
+      "2099-09-10"
+    );
+    expect(document.querySelector('input[name="departure"]')).toHaveValue(
+      "2099-09-12"
+    );
+
+    submitValidForm({ preserveDates: true });
+
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(1));
+    const body = globalThis.fetch.mock.calls[0][1].body;
+    expect(body.get("arrival_date")).toBe("2099-09-10");
+    expect(body.get("departure_date")).toBe("2099-09-12");
+    expect(await screen.findByText("wsc2026-0042")).toBeInTheDocument();
   });
 
   test("defaults the participation type to Talk", () => {
@@ -249,6 +314,31 @@ describe("RegistrationForm", () => {
 
     expect(screen.getByText("Arrival Date (tentative)")).toBeInTheDocument();
     expect(screen.getByText("Departure Date (tentative)")).toBeInTheDocument();
+  });
+
+  test("shows the effective submission-edit deadline in the abstract hint", () => {
+    mockInfo.submission_edit_deadline = "2099-12-31";
+
+    render(<RegistrationForm />);
+
+    expect(
+      screen.getByText(
+        "Required for the final contribution — you can add it later until 31 December 2099."
+      )
+    ).toBeInTheDocument();
+  });
+
+  test("does not promise later abstract editing after the edit deadline", () => {
+    mockInfo.submission_edit_deadline = "2020-01-01";
+
+    render(<RegistrationForm />);
+
+    expect(
+      screen.getByText(
+        "The abstract can no longer be added online; contact the organizers."
+      )
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/you can add it later/i)).not.toBeInTheDocument();
   });
 
   test("renders no form or notice until the conference info arrives", () => {

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { buildMediaUrl, fetchWithAuth } from "../../utils/api";
+import { formatFieldErrors } from "../../utils/formatFieldErrors";
 import PhotoCropModal from "../PhotoCropModal/PhotoCropModal";
 import Loader from "../ui/Loader/Loader";
 import Title from "../ui/Title/Title";
@@ -40,6 +41,10 @@ export default function EditWebInfoHome() {
         registration_opening,
         registration_deadline,
         submission_edit_deadline,
+        registration_allow_talk,
+        registration_allow_poster,
+        registration_allow_attend,
+        registration_collect_dates,
         ...formInfo
       } = info;
       setCardPhoto(card_photo || null);
@@ -90,6 +95,31 @@ export default function EditWebInfoHome() {
         method: "PATCH",
         body: fd,
       });
+      if (res.status === 400) {
+        let payload = null;
+        try {
+          payload = await res.json();
+        } catch {
+          payload = null;
+        }
+        if (payload?.registration_collect_dates) {
+          const value = payload.registration_collect_dates;
+          const reason = Array.isArray(value) ? value.join(" ") : String(value);
+          if (reason) {
+            setError(
+              `${reason}\n\nTo save this date change, open Edit Registration and turn off "Collect arrival and departure dates", then set the same start and end date here again.`
+            );
+            return;
+          }
+        }
+        const fieldErrors = formatFieldErrors(payload);
+        setError(
+          fieldErrors
+            ? `The server rejected these settings:\n${fieldErrors}`
+            : "The server rejected these settings; check the dates and try again."
+        );
+        return;
+      }
       if (!res.ok) throw new Error();
       setSaved(true);
     } catch {

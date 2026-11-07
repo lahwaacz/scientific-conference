@@ -363,6 +363,56 @@ class TestPdfDownloads(TestCase):
     @pytest.mark.skipif(
         shutil.which("pdftotext") is None, reason="pdftotext not available"
     )
+    def test_badges_pdf_uses_the_stored_date_range(self):
+        conference = wsc_conference()
+        conference.date_start = date(2030, 1, 1)
+        conference.date_end = date(2030, 1, 2)
+        conference.location = "Prague"
+        conference.save()
+        ParticipantSubmission.objects.create(
+            conference=conference,
+            name="Range Person",
+            email="range@example.com",
+            affiliation="CTU",
+            status="approved",
+            arrival_date=date(2027, 9, 10),
+            departure_date=date(2027, 9, 12),
+        )
+
+        response = self._client(is_staff=True).get(api("admin/badges/download/"))
+
+        text = pdf_text(response.content)
+        self.assertIn("10 Sep – 12 Sep 2027", text)
+        self.assertNotIn("1 Jan – 2 Jan 2030", text)
+
+    @pytest.mark.skipif(
+        shutil.which("pdftotext") is None, reason="pdftotext not available"
+    )
+    def test_badges_pdf_prints_one_full_date_for_a_single_day_stay(self):
+        conference = wsc_conference()
+        conference.location = "Prague"
+        conference.save()
+        ParticipantSubmission.objects.create(
+            conference=conference,
+            name="Single Day Person",
+            email="single@example.com",
+            affiliation="CTU",
+            status="approved",
+            arrival_date=date(2027, 9, 10),
+            departure_date=date(2027, 9, 10),
+            stay_dates_derived=True,
+        )
+
+        response = self._client(is_staff=True).get(api("admin/badges/download/"))
+
+        text = pdf_text(response.content)
+        self.assertIn("10 September 2027", text)
+        self.assertNotIn("10 Sep – 10 Sep 2027", text)
+        self.assertIn("Prague", text)
+
+    @pytest.mark.skipif(
+        shutil.which("pdftotext") is None, reason="pdftotext not available"
+    )
     def test_badges_pdf_orders_by_surname(self):
         for name in ["Zdeněk Zeman", "Lucie Šimková", "Jana Novotná"]:
             ParticipantSubmission.objects.create(

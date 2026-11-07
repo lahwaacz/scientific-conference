@@ -9,6 +9,9 @@ import Modal from "../ui/Modal/Modal";
 import Title from "../ui/Title/Title";
 import styles from "./EditSubmissionModal.module.css";
 
+const LEGACY_EQUAL_DATE_MESSAGE =
+  "This submission used the full conference day; set a departure date after arrival to save changes.";
+
 function formatApiError(text, status) {
   try {
     const parsed = JSON.parse(text);
@@ -56,6 +59,7 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
   });
 
   const info = useConferenceInfo();
+  const collectDates = info?.registration_collect_dates !== false;
   const allowedTypes = allowedContributionTypes(
     info,
     submission?.contribution_type
@@ -239,18 +243,44 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
     }
   };
 
+  const hasEqualFormDates = Boolean(
+    formData.arrival_date &&
+      formData.departure_date &&
+      formData.arrival_date === formData.departure_date
+  );
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (collectDates && hasEqualFormDates) {
+      openModal({
+        title: "Date repair required",
+        message: LEGACY_EQUAL_DATE_MESSAGE,
+        type: "danger",
+        onConfirm: closeModal,
+      });
+      return;
+    }
     setLoading(true);
+
+    const requestData =
+      formData.contribution_type === "attend"
+        ? {
+            ...formData,
+            abstract_title: "",
+            abstract_text: "",
+            additional_authors: "",
+            additional_affiliations: "",
+          }
+        : formData;
 
     try {
       let response;
 
       if (photo) {
         const submitData = new FormData();
-        Object.keys(formData).forEach((key) => {
-          if (formData[key] !== null && formData[key] !== undefined) {
-            submitData.append(key, formData[key]);
+        Object.keys(requestData).forEach((key) => {
+          if (requestData[key] !== null && requestData[key] !== undefined) {
+            submitData.append(key, requestData[key]);
           }
         });
         submitData.append("photo", photo);
@@ -267,7 +297,7 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
           `/api/admin/submissions/${submission.id}/`,
           {
             method: "PATCH",
-            body: JSON.stringify(formData),
+            body: JSON.stringify(requestData),
           }
         );
       }
@@ -330,6 +360,12 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
         )}
 
         <form onSubmit={handleSubmit} className={styles.form}>
+          {collectDates && hasEqualFormDates && (
+            <p className={styles.approvedNotice} role="alert">
+              {LEGACY_EQUAL_DATE_MESSAGE}
+            </p>
+          )}
+
           <div className={styles.photoSection}>
             {photoPreview ? (
               <div className={styles.photoPreview}>
@@ -477,6 +513,15 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
                   />
                 </div>
               </>
+            )}
+
+            {submission.stay_dates_derived && (
+              <div className={styles.fieldFull}>
+                <small className={styles.provenanceNote}>
+                  Full conference stay: these dates were derived automatically.
+                  You can override them here; the server owns this provenance.
+                </small>
+              </div>
             )}
 
             <div className={styles.field}>
