@@ -3,6 +3,7 @@
 import shutil
 import tempfile
 from datetime import date, time
+from io import BytesIO
 from unittest.mock import patch
 
 from django.contrib import admin as django_admin
@@ -10,6 +11,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import RequestFactory, TestCase, override_settings
+from PIL import Image
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -50,6 +52,12 @@ def make_submission(**overrides):
     data.update(overrides)
     data.setdefault("conference", wsc_conference())
     return ParticipantSubmission.objects.create(**data)
+
+
+def make_image(name="photo.jpg"):
+    buffer = BytesIO()
+    Image.new("RGB", (2, 2), (10, 20, 30)).save(buffer, format="JPEG")
+    return SimpleUploadedFile(name, buffer.getvalue(), content_type="image/jpeg")
 
 
 class TestPublishBranches(TestCase):
@@ -598,6 +606,23 @@ class TestSubmissionAdminAPI(TestCase):
         self.assertEqual(participant.name, "Jane Changed")
         self.assertEqual(abstract.title, "New Title")
         self.assertEqual(talk.title, "New Title")
+
+    def test_put_new_photo_returns_photo_in_response(self):
+        submission = make_submission(photo=make_image("old.jpg"))
+
+        response = self.client.put(
+            SUBMISSION_URL.format(submission.id),
+            self.payload(photo=make_image("new.jpg")),
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertTrue(response.data["photo"])
+        self.assertIn("submissions/photos/new", response.data["photo"])
+
+        list_response = self.client.get(api("admin/submissions/?status=pending"))
+        row = next(item for item in list_response.data if item["id"] == submission.id)
+        self.assertEqual(row["photo"], response.data["photo"])
 
     def test_patch_clearing_talk_title_is_rejected_and_keeps_records(self):
         submission = make_submission()

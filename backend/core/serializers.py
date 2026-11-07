@@ -359,14 +359,9 @@ class ParticipantSubmissionSerializer(serializers.ModelSerializer):
         old_photo = None
         if "photo" in validated_data:
             photo = validated_data.pop("photo")
-
-            if photo is None and instance.photo:
+            if instance.photo:
                 old_photo = instance.photo
-                instance.photo = None
-            elif photo:
-                if instance.photo:
-                    old_photo = instance.photo
-                instance.photo = photo
+            instance.photo = photo
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -383,7 +378,9 @@ class ParticipantSubmissionSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(detail) from exc
 
         if old_photo:
-            old_photo.delete(save=False)
+            # FieldFile.delete() also clears instance.photo, which would null
+            # the replacement in the response; delete the old file directly.
+            old_photo.storage.delete(old_photo.name)
 
         return instance
 
