@@ -539,7 +539,9 @@ describe("Tracking", () => {
     }
 
     async function openCropDialog() {
-      fireEvent.click(await screen.findByRole("button", { name: "Crop…" }));
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Reframe Photo" })
+      );
       return screen.findByRole("dialog", { name: "Crop photo" });
     }
 
@@ -551,7 +553,7 @@ describe("Tracking", () => {
       });
     }
 
-    test("does not offer Crop… for the existing server-side photo", async () => {
+    test("does not offer Reframe Photo for the existing server-side photo", async () => {
       await renderWithSubmission(pendingSubmission);
       await openEditForm();
 
@@ -560,25 +562,25 @@ describe("Tracking", () => {
         "http://localhost:8000/media/photos/alice.jpg"
       );
       expect(
-        screen.queryByRole("button", { name: "Crop…" })
+        screen.queryByRole("button", { name: "Reframe Photo" })
       ).not.toBeInTheDocument();
     });
 
-    test("offers the Crop… button only after a local photo is picked", async () => {
+    test("offers the Reframe Photo button only after a local photo is picked", async () => {
       await openEditWithoutPhoto();
 
       expect(
-        screen.queryByRole("button", { name: "Crop…" })
+        screen.queryByRole("button", { name: "Reframe Photo" })
       ).not.toBeInTheDocument();
 
       pickImageFile();
 
       expect(
-        await screen.findByRole("button", { name: "Crop…" })
+        await screen.findByRole("button", { name: "Reframe Photo" })
       ).toBeInTheDocument();
     });
 
-    test("clicking Crop… opens the crop dialog", async () => {
+    test("clicking Reframe Photo opens the crop dialog", async () => {
       await openEditWithoutPhoto();
       pickImageFile();
 

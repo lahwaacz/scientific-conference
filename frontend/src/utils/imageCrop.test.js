@@ -1,4 +1,8 @@
-import { cropToSquareFile, defaultSquareCrop } from "./imageCrop";
+import {
+  cropToSquareFile,
+  defaultSquareCrop,
+  fetchImageAsFile,
+} from "./imageCrop";
 
 // jsdom has no real canvas: getContext returns null and toBlob is not
 // implemented. These stubs capture the drawing calls instead.
@@ -41,6 +45,94 @@ function makeImage({ naturalWidth, naturalHeight, width, height }) {
 
 afterEach(() => {
   vi.restoreAllMocks();
+});
+
+describe("fetchImageAsFile", () => {
+  test("fetches with credentials and wraps the stored Blob in a File", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      status: 200,
+      blob: async () => new Blob(["image-bytes"], { type: "image/png" }),
+    });
+
+    const file = await fetchImageAsFile("/media/photos/jane.png");
+
+    expect(fetchMock).toHaveBeenCalledWith("/media/photos/jane.png", {
+      credentials: "include",
+    });
+    expect(file).toBeInstanceOf(File);
+    expect(file.name).toBe("photo.png");
+    expect(file.type).toBe("image/png");
+  });
+
+  test("passes an abort signal to fetch when provided", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      status: 200,
+      blob: async () => new Blob(["image-bytes"], { type: "image/png" }),
+    });
+    const controller = new AbortController();
+
+    await fetchImageAsFile("/media/photos/jane.png", {
+      signal: controller.signal,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith("/media/photos/jane.png", {
+      credentials: "include",
+      signal: controller.signal,
+    });
+  });
+
+  test("falls back to the URL extension for an empty Blob type", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      status: 200,
+      blob: async () => new Blob(["gif-bytes"], { type: "" }),
+    });
+
+    const file = await fetchImageAsFile(
+      "/media/photos/JANE.GIF?size=large#top"
+    );
+
+    expect(file.name).toBe("photo.gif");
+    expect(file.type).toBe("image/gif");
+  });
+
+  test("keeps a safe extension for an unmapped image MIME type", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      status: 200,
+      blob: async () => new Blob(["heic-bytes"], { type: "image/heic" }),
+    });
+
+    const file = await fetchImageAsFile("/media/photos/jane.heic");
+
+    expect(file.name).toBe("photo.heic");
+    expect(file.type).toBe("image/heic");
+  });
+
+  test("rejects a non-OK response with its status", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: false,
+      status: 404,
+    });
+
+    await expect(fetchImageAsFile("/media/photos/missing.jpg")).rejects.toThrow(
+      "Failed to load image (404)."
+    );
+  });
+
+  test("rejects a response whose Blob is not an image", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      status: 200,
+      blob: async () => new Blob(["not an image"], { type: "text/plain" }),
+    });
+
+    await expect(fetchImageAsFile("/media/photos/jane.jpg")).rejects.toThrow(
+      "The stored file is not an image."
+    );
+  });
 });
 
 describe("defaultSquareCrop", () => {

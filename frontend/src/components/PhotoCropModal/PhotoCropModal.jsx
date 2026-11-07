@@ -138,6 +138,7 @@ export default function PhotoCropModal({ file, onApply, onCancel }) {
         {imageUrl && (
           <div className={styles.cropArea}>
             <ReactCrop
+              className={styles.cropRoot}
               crop={crop}
               // react-image-crop v11 always reports the first argument in
               // px and the second in %, regardless of the crop prop's unit

@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { fetchWithAuth } from "../../utils/api";
 import { cropToSquareFile } from "../../utils/imageCrop";
 import EditSubmissionModal from "./EditSubmissionModal";
@@ -44,6 +50,7 @@ describe("EditSubmissionModal save paths", () => {
 
   beforeEach(() => {
     localStorage.clear();
+    global.fetch = vi.fn();
     conferenceInfo.value = {
       registration_allow_talk: true,
       registration_allow_poster: true,
@@ -352,7 +359,9 @@ describe("EditSubmissionModal save paths", () => {
     }
 
     async function openCropDialog() {
-      fireEvent.click(await screen.findByRole("button", { name: "Crop…" }));
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Reframe Photo" })
+      );
       return screen.findByRole("dialog", { name: "Crop photo" });
     }
 
@@ -364,21 +373,42 @@ describe("EditSubmissionModal save paths", () => {
       });
     }
 
-    test("offers the Crop… button only after a local photo is picked", async () => {
+    function deferStoredPhoto() {
+      let resolve;
+      let signal;
+      global.fetch.mockImplementationOnce((_url, options) => {
+        signal = options.signal;
+        return new Promise((res) => {
+          resolve = res;
+        });
+      });
+      return {
+        settle: () =>
+          resolve({
+            ok: true,
+            status: 200,
+            blob: async () =>
+              new Blob(["stored-bytes"], { type: "image/jpeg" }),
+          }),
+        signal: () => signal,
+      };
+    }
+
+    test("offers the Reframe Photo button only after a local photo is picked", async () => {
       renderModal();
 
       expect(
-        screen.queryByRole("button", { name: "Crop…" })
+        screen.queryByRole("button", { name: "Reframe Photo" })
       ).not.toBeInTheDocument();
 
       pickImageFile();
 
       expect(
-        await screen.findByRole("button", { name: "Crop…" })
+        await screen.findByRole("button", { name: "Reframe Photo" })
       ).toBeInTheDocument();
     });
 
-    test("does not offer Crop… for the existing server-side photo", () => {
+    test("offers Reframe Photo for the existing server-side photo", () => {
       renderModal({ photo: "/media/photos/jane.jpg" });
 
       expect(screen.getByRole("img", { name: "Preview" })).toHaveAttribute(
@@ -386,11 +416,275 @@ describe("EditSubmissionModal save paths", () => {
         "http://localhost:8000/media/photos/jane.jpg"
       );
       expect(
-        screen.queryByRole("button", { name: "Crop…" })
+        screen.getByRole("button", { name: "Reframe Photo" })
+      ).toBeInTheDocument();
+    });
+
+    test("loads the stored photo with credentials and opens the crop dialog", async () => {
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        blob: async () => new Blob(["stored-bytes"], { type: "image/jpeg" }),
+      });
+      renderModal({ photo: "/media/photos/jane.jpg" });
+
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Reframe Photo" })
+      );
+
+      expect(
+        await screen.findByRole("dialog", { name: "Crop photo" })
+      ).toBeInTheDocument();
+      expect(global.fetch).toHaveBeenCalledWith(
+        "http://localhost:8000/media/photos/jane.jpg",
+        {
+          credentials: "include",
+          signal: expect.any(AbortSignal),
+        }
+      );
+      await waitFor(() => expect(URL.createObjectURL).toHaveBeenCalledTimes(1));
+      const storedFile = URL.createObjectURL.mock.calls[0][0];
+      expect(storedFile).toBeInstanceOf(File);
+      expect(storedFile.name).toBe("photo.jpg");
+      expect(storedFile.type).toBe("image/jpeg");
+    });
+
+    test("disables Save and Remove while the stored photo is loading", async () => {
+      const { settle } = deferStoredPhoto();
+      renderModal({ photo: "/media/photos/jane.jpg" });
+
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Reframe Photo" })
+      );
+
+      expect(
+        screen.getByRole("button", { name: "Save Changes" })
+      ).toBeDisabled();
+      expect(
+        screen.getByRole("button", { name: "Remove Photo" })
+      ).toBeDisabled();
+      expect(screen.getByRole("button", { name: "Loading…" })).toBeDisabled();
+
+      await act(async () => settle());
+
+      expect(
+        await screen.findByRole("dialog", { name: "Crop photo" })
+      ).toBeInTheDocument();
+    });
+
+    test("changing the photo while the stored photo loads ignores the stale load", async () => {
+      const { settle } = deferStoredPhoto();
+      fetchWithAuth.mockResolvedValueOnce({
+        ok: true,
+        json: async () => submission,
+      });
+      renderModal({ photo: "/media/photos/jane.jpg" });
+
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Reframe Photo" })
+      );
+
+      const localFile = new File(["local-bytes"], "local.png", {
+        type: "image/png",
+      });
+      fireEvent.change(document.querySelector('input[type="file"]'), {
+        target: { files: [localFile] },
+      });
+
+      await act(async () => settle());
+
+      expect(
+        screen.queryByRole("dialog", { name: "Crop photo" })
+      ).not.toBeInTheDocument();
+
+      fireEvent.submit(document.querySelector("form"));
+
+      await waitFor(() => expect(fetchWithAuth).toHaveBeenCalledTimes(1));
+      expect(fetchWithAuth.mock.calls[0][1].body.get("photo")).toBe(localFile);
+    });
+
+    test("changing the submission resets crop preparation and preview state", async () => {
+      const { settle } = deferStoredPhoto();
+      const { rerender } = renderModal({ photo: "/media/photos/jane.jpg" });
+
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Reframe Photo" })
+      );
+      expect(screen.getByRole("button", { name: "Loading…" })).toBeDisabled();
+
+      rerender(
+        <EditSubmissionModal
+          submission={{ ...submission, id: 8, name: "John Doe", photo: null }}
+          onClose={onClose}
+          onSave={onSave}
+        />
+      );
+
+      await waitFor(() =>
+        expect(
+          screen.getByRole("button", { name: "Save Changes" })
+        ).toBeEnabled()
+      );
+      expect(
+        screen.queryByRole("button", { name: "Loading…" })
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "Reframe Photo" })
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "Remove Photo" })
+      ).not.toBeInTheDocument();
+
+      await act(async () => settle());
+
+      expect(
+        screen.queryByRole("dialog", { name: "Crop photo" })
       ).not.toBeInTheDocument();
     });
 
-    test("clicking Crop… opens the crop dialog", async () => {
+    test("unmounting during the stored photo load aborts the fetch", async () => {
+      const { settle, signal } = deferStoredPhoto();
+      const { unmount } = renderModal({ photo: "/media/photos/jane.jpg" });
+
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Reframe Photo" })
+      );
+      unmount();
+
+      expect(signal().aborted).toBe(true);
+
+      await act(async () => settle());
+
+      expect(
+        screen.queryByRole("dialog", { name: "Crop photo" })
+      ).not.toBeInTheDocument();
+    });
+
+    test("closing the modal aborts a pending stored photo load", async () => {
+      const { settle, signal } = deferStoredPhoto();
+      renderModal({ photo: "/media/photos/jane.jpg" });
+
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Reframe Photo" })
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+      expect(signal().aborted).toBe(true);
+      expect(onClose).toHaveBeenCalledTimes(1);
+
+      await act(async () => settle());
+
+      expect(
+        screen.queryByRole("dialog", { name: "Crop photo" })
+      ).not.toBeInTheDocument();
+    });
+
+    test("keeping the original stored photo still PATCHes without uploading", async () => {
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        blob: async () => new Blob(["stored-bytes"], { type: "image/jpeg" }),
+      });
+      fetchWithAuth.mockResolvedValueOnce({
+        ok: true,
+        json: async () => submission,
+      });
+      renderModal({ photo: "/media/photos/jane.jpg" });
+
+      await openCropDialog();
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Keep Original" })
+      );
+      await waitForDialogClose();
+
+      fireEvent.submit(document.querySelector("form"));
+
+      await waitFor(() => expect(fetchWithAuth).toHaveBeenCalledTimes(1));
+      const [, opts] = fetchWithAuth.mock.calls[0];
+      expect(opts.method).toBe("PATCH");
+      expect(opts.body).not.toBeInstanceOf(FormData);
+    });
+
+    test("encoding failure falls back to the fetched file with a matching type", async () => {
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        blob: async () => new Blob(["gif-bytes"], { type: "image/gif" }),
+      });
+      cropToSquareFile.mockRejectedValueOnce(new Error("encode failed"));
+      fetchWithAuth.mockResolvedValueOnce({
+        ok: true,
+        json: async () => submission,
+      });
+      renderModal({ photo: "/media/photos/jane.gif" });
+
+      await openCropDialog();
+      fireEvent.load(await screen.findByRole("img", { name: "Crop preview" }));
+      fireEvent.click(screen.getByRole("button", { name: "Crop & Save" }));
+      await waitForDialogClose();
+
+      fireEvent.submit(document.querySelector("form"));
+
+      await waitFor(() => expect(fetchWithAuth).toHaveBeenCalledTimes(1));
+      const uploaded = fetchWithAuth.mock.calls[0][1].body.get("photo");
+      expect(uploaded).toBeInstanceOf(File);
+      expect(uploaded.name).toBe("photo.gif");
+      expect(uploaded.type).toBe("image/gif");
+    });
+
+    test("applying a crop of the stored photo PUTs it as multipart photo", async () => {
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        blob: async () => new Blob(["stored-bytes"], { type: "image/jpeg" }),
+      });
+      const croppedFile = new File(["cropped-bytes"], "photo.jpg", {
+        type: "image/jpeg",
+      });
+      cropToSquareFile.mockResolvedValue(croppedFile);
+      fetchWithAuth.mockResolvedValueOnce({
+        ok: true,
+        json: async () => submission,
+      });
+      renderModal({ photo: "/media/photos/jane.jpg" });
+
+      await openCropDialog();
+      fireEvent.load(await screen.findByRole("img", { name: "Crop preview" }));
+      fireEvent.click(screen.getByRole("button", { name: "Crop & Save" }));
+      await waitForDialogClose();
+      expect(cropToSquareFile).toHaveBeenCalledTimes(1);
+
+      fireEvent.submit(document.querySelector("form"));
+
+      await waitFor(() => expect(fetchWithAuth).toHaveBeenCalledTimes(1));
+      const [url, opts] = fetchWithAuth.mock.calls[0];
+      expect(url).toBe("/api/admin/submissions/7/");
+      expect(opts.method).toBe("PUT");
+      expect(opts.body).toBeInstanceOf(FormData);
+      expect(opts.body.get("photo")).toBe(croppedFile);
+    });
+
+    test("a failed stored-photo load shows an error without opening crop", async () => {
+      global.fetch.mockResolvedValueOnce({ ok: false, status: 404 });
+      renderModal({ photo: "/media/photos/jane.jpg" });
+
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Reframe Photo" })
+      );
+
+      expect(
+        await screen.findByText("Could not load photo")
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(/Use Change Photo to pick a new photo/)
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole("dialog", { name: "Crop photo" })
+      ).not.toBeInTheDocument();
+    });
+
+    test("clicking Reframe Photo opens the crop dialog", async () => {
       renderModal();
       pickImageFile();
 
@@ -459,6 +753,7 @@ describe("EditSubmissionModal save paths", () => {
 describe("nested scroll lock with the crop dialog", () => {
   beforeEach(() => {
     localStorage.clear();
+    global.fetch = vi.fn();
     fetchWithAuth.mockReset();
     cropToSquareFile.mockReset();
     URL.createObjectURL = vi.fn(() => "blob:crop-preview");
@@ -495,7 +790,9 @@ describe("nested scroll lock with the crop dialog", () => {
         ],
       },
     });
-    fireEvent.click(await screen.findByRole("button", { name: "Crop…" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Reframe Photo" })
+    );
     expect(
       await screen.findByRole("dialog", { name: "Crop photo" })
     ).toBeInTheDocument();

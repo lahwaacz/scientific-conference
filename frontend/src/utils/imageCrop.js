@@ -10,6 +10,71 @@ const FILE_EXTENSIONS = {
   "image/webp": "webp",
 };
 
+const STORED_IMAGE_EXTENSIONS = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+  "image/bmp": "bmp",
+  "image/tiff": "tiff",
+  "image/avif": "avif",
+};
+
+const EXTENSION_MIME_TYPES = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  gif: "image/gif",
+  bmp: "image/bmp",
+  tif: "image/tiff",
+  tiff: "image/tiff",
+  avif: "image/avif",
+};
+
+/**
+ * Fetch a stored photo with the admin's cookies and wrap it as a File.
+ * PhotoCropModal turns the File into a same-origin Blob URL, which avoids
+ * the canvas taint caused by drawing a cross-origin media URL directly.
+ *
+ * @param {string} url stored media URL
+ * @param {{name?: string, signal?: AbortSignal}} options output File name
+ *   without its extension and an optional abort signal
+ * @returns {Promise<File>}
+ */
+export async function fetchImageAsFile(url, { name = "photo", signal } = {}) {
+  const response = await fetch(url, {
+    credentials: "include",
+    ...(signal ? { signal } : {}),
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to load image (${response.status}).`);
+  }
+
+  const blob = await response.blob();
+  const extension = /\.([^.]+)$/
+    .exec(url.split(/[?#]/, 1)[0])?.[1]
+    ?.toLowerCase();
+  const declaredType = blob.type
+    ? blob.type.split(";")[0].trim().toLowerCase()
+    : "";
+  const mimeType = declaredType || EXTENSION_MIME_TYPES[extension];
+  if (!mimeType?.startsWith("image/")) {
+    throw new Error("The stored file is not an image.");
+  }
+
+  // Never label unconverted bytes with a made-up extension: fall back to
+  // the MIME subtype (image/heic -> heic, image/svg+xml -> svg).
+  const fileExtension =
+    STORED_IMAGE_EXTENSIONS[mimeType] ||
+    mimeType
+      .slice("image/".length)
+      .split("+")[0]
+      .replace(/[^a-z0-9]/g, "") ||
+    "img";
+  return new File([blob], `${name}.${fileExtension}`, { type: mimeType });
+}
+
 /**
  * Largest centered square over an image, as a ReactCrop crop in percent
  * units, so the selection survives layout resizes (react-image-crop

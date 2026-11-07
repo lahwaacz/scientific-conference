@@ -62,8 +62,12 @@
 }
 
 .cropArea {
-  display: flex;
-  justify-content: center;
+  /* Block layout, not flex: a flex item would stretch the ReactCrop root
+     vertically, so the percentage crop overlay (positioned against the
+     root) would no longer match the image box and a square crop would
+     render as a rectangle. */
+  display: block;
+  text-align: center;
   background: #f5f5f5;
   border: 1px solid #e0e0e0;
   padding: 16px;
@@ -71,9 +75,16 @@
   overflow: hidden;
 }
 
+.cropRoot {
+  /* react-image-crop's child wrapper and image inherit this max-height,
+     which keeps the root box identical to the displayed image box. */
+  max-width: 100%;
+  max-height: calc(55vh - 34px);
+}
+
 .image {
   max-width: 100%;
-  max-height: calc(55vh - 32px);
+  max-height: calc(55vh - 34px);
 }
 
 .actions {

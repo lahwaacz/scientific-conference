@@ -100,7 +100,7 @@ export default function SubmissionFields({
                   onClick={onCropPhoto}
                   className={styles.cropPhoto}
                 >
-                  Crop…
+                  Reframe Photo
                 </button>
               )}
               <button

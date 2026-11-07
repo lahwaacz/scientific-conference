@@ -536,7 +536,7 @@ describe("EditWebInfoHome people photo crop", () => {
     // server image would draw a cross-origin image to the canvas, taint it,
     // and make toBlob throw — so the button must stay hidden.
     expect(
-      screen.queryByRole("button", { name: "Crop…" })
+      screen.queryByRole("button", { name: "Reframe Photo" })
     ).not.toBeInTheDocument();
   });
 
@@ -545,14 +545,16 @@ describe("EditWebInfoHome people photo crop", () => {
     await screen.findByDisplayValue("Jane Doe");
 
     expect(
-      screen.queryByRole("button", { name: "Crop…" })
+      screen.queryByRole("button", { name: "Reframe Photo" })
     ).not.toBeInTheDocument();
 
     await pickPersonPhoto(
       new File(["fake"], "portrait.png", { type: "image/png" })
     );
 
-    expect(screen.getByRole("button", { name: "Crop…" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Reframe Photo" })
+    ).toBeInTheDocument();
   });
 
   test("Crop & Save replaces the picked file with the cropped one", async () => {
@@ -564,7 +566,7 @@ describe("EditWebInfoHome people photo crop", () => {
     });
     await pickPersonPhoto(picked);
 
-    fireEvent.click(screen.getByRole("button", { name: "Crop…" }));
+    fireEvent.click(screen.getByRole("button", { name: "Reframe Photo" }));
     expect(screen.getByTestId("crop-dialog")).toHaveTextContent("portrait.png");
 
     fireEvent.click(screen.getByRole("button", { name: "Apply crop" }));
@@ -585,7 +587,7 @@ describe("EditWebInfoHome people photo crop", () => {
     });
     await pickPersonPhoto(picked);
 
-    fireEvent.click(screen.getByRole("button", { name: "Crop…" }));
+    fireEvent.click(screen.getByRole("button", { name: "Reframe Photo" }));
     fireEvent.click(screen.getByRole("button", { name: "Cancel crop" }));
     expect(screen.queryByTestId("crop-dialog")).not.toBeInTheDocument();
 
@@ -602,7 +604,7 @@ describe("EditWebInfoHome people photo crop", () => {
     fireEvent.change(screen.getAllByLabelText("Change photo")[1], {
       target: { files: [picked] },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Crop…" }));
+    fireEvent.click(screen.getByRole("button", { name: "Reframe Photo" }));
     expect(screen.getByTestId("crop-dialog")).toHaveTextContent(
       "portrait-john.png"
     );
@@ -651,7 +653,7 @@ describe("EditWebInfoHome people photo crop", () => {
     await pickPersonPhoto(
       new File(["original"], "portrait.png", { type: "image/png" })
     );
-    fireEvent.click(screen.getByRole("button", { name: "Crop…" }));
+    fireEvent.click(screen.getByRole("button", { name: "Reframe Photo" }));
     expect(screen.getByTestId("crop-dialog")).toBeInTheDocument();
 
     // Delete the very row the dialog is bound to: no correct target

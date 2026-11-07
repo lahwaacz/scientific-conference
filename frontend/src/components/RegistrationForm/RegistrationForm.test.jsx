@@ -740,7 +740,9 @@ describe("RegistrationForm", () => {
     }
 
     async function openCropDialog() {
-      fireEvent.click(await screen.findByRole("button", { name: "Crop…" }));
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Reframe Photo" })
+      );
       return screen.findByRole("dialog", { name: "Crop photo" });
     }
 
@@ -752,21 +754,21 @@ describe("RegistrationForm", () => {
       });
     }
 
-    test("offers the Crop… button only after a local photo is picked", async () => {
+    test("offers the Reframe Photo button only after a local photo is picked", async () => {
       render(<RegistrationForm />);
 
       expect(
-        screen.queryByRole("button", { name: "Crop…" })
+        screen.queryByRole("button", { name: "Reframe Photo" })
       ).not.toBeInTheDocument();
 
       pickImageFile();
 
       expect(
-        await screen.findByRole("button", { name: "Crop…" })
+        await screen.findByRole("button", { name: "Reframe Photo" })
       ).toBeInTheDocument();
     });
 
-    test("clicking Crop… opens the crop dialog", async () => {
+    test("clicking Reframe Photo opens the crop dialog", async () => {
       render(<RegistrationForm />);
       pickImageFile();
 

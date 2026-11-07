@@ -1,6 +1,13 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { cropToSquareFile } from "../../utils/imageCrop";
 import PhotoCropModal from "./PhotoCropModal";
+
+const cssSource = readFileSync(
+  resolve("src/components/PhotoCropModal/PhotoCropModal.module.css"),
+  "utf8"
+);
 
 vi.mock("../../utils/imageCrop", async () => ({
   ...(await vi.importActual("../../utils/imageCrop")),
@@ -45,6 +52,20 @@ describe("PhotoCropModal", () => {
       />
     );
   }
+
+  test("keeps the non-stretching crop layout used for 1:1 selections", () => {
+    renderModal();
+
+    expect(document.querySelector(".ReactCrop").className).toMatch(/cropRoot/);
+
+    // jsdom cannot measure layout, so pin the CSS contract that keeps the
+    // ReactCrop root box identical to the image box.
+    expect(cssSource).toMatch(/\.cropArea\s*\{[^}]*display:\s*block/s);
+    expect(cssSource).not.toMatch(/\.cropArea\s*\{[^}]*display:\s*flex/s);
+    expect(cssSource).toMatch(
+      /\.cropRoot\s*\{[^}]*max-height:\s*calc\(55vh - 34px\)/s
+    );
+  });
 
   test("renders the preview image, the framing hint, and both actions", () => {
     renderModal();

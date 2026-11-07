@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import avatar from "../../assets/avatar.png";
 import { buildMediaUrl, fetchWithAuth } from "../../utils/api.js";
 import { allowedContributionTypes } from "../../utils/contributionTypes";
+import { fetchImageAsFile } from "../../utils/imageCrop.js";
 import { useConferenceInfo } from "../hooks/useConferenceInfo";
 import PhotoCropModal from "../PhotoCropModal/PhotoCropModal";
 import Modal from "../ui/Modal/Modal";
@@ -46,6 +47,9 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
 
   const [photo, setPhoto] = useState(null);
   const [cropFile, setCropFile] = useState(null);
+  const [preparingCrop, setPreparingCrop] = useState(false);
+  const cropRequestRef = useRef(0);
+  const cropAbortRef = useRef(null);
 
   const [photoPreview, setPhotoPreview] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -77,11 +81,27 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
     setModal((prev) => ({ ...prev, isOpen: false }));
   }
 
+  const cancelPendingCrop = () => {
+    cropRequestRef.current += 1;
+    cropAbortRef.current?.abort();
+    cropAbortRef.current = null;
+  };
+
+  const handleClose = () => {
+    cancelPendingCrop();
+    onClose();
+  };
+
   useEffect(() => {
     document.body.style.overflow = "hidden";
     const scrollbarWidth =
       window.innerWidth - document.documentElement.clientWidth;
     document.body.style.paddingRight = `${scrollbarWidth}px`;
+
+    setPhoto(null);
+    setCropFile(null);
+    setPreparingCrop(false);
+    setPhotoPreview(submission?.photo ? buildMediaUrl(submission.photo) : null);
 
     if (submission) {
       setFormData({
@@ -100,10 +120,6 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
         admin_notes: submission.admin_notes || "",
       });
 
-      if (submission.photo) {
-        setPhotoPreview(buildMediaUrl(submission.photo));
-      }
-
       if (submission.abstract_text) {
         const words = submission.abstract_text
           .trim()
@@ -116,6 +132,9 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
     return () => {
       document.body.style.overflow = "";
       document.body.style.paddingRight = "";
+      cropRequestRef.current += 1;
+      cropAbortRef.current?.abort();
+      cropAbortRef.current = null;
     };
   }, [submission]);
 
@@ -136,6 +155,8 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
   };
 
   const handlePhotoChange = (e) => {
+    cancelPendingCrop();
+    setPreparingCrop(false);
     const file = e.target.files[0];
 
     if (file) {
@@ -169,8 +190,47 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
     }
   };
 
-  // Only a locally picked File may be cropped: a server photo rendered via
-  // buildMediaUrl is cross-origin and would taint the crop canvas.
+  const handleCropClick = async () => {
+    if (preparingCrop) return;
+    if (photo) {
+      setCropFile(photo);
+      return;
+    }
+    if (!submission.photo) return;
+
+    cancelPendingCrop();
+    const requestId = cropRequestRef.current;
+    const controller = new AbortController();
+    cropAbortRef.current = controller;
+    setPreparingCrop(true);
+
+    try {
+      const file = await fetchImageAsFile(buildMediaUrl(submission.photo), {
+        signal: controller.signal,
+      });
+      if (cropRequestRef.current !== requestId) return;
+      setCropFile(file);
+    } catch {
+      if (controller.signal.aborted || cropRequestRef.current !== requestId) {
+        return;
+      }
+      openModal({
+        title: "Could not load photo",
+        message:
+          "The stored photo could not be loaded. Use Change Photo to pick a new photo, then try cropping again.",
+        type: "danger",
+        onConfirm: closeModal,
+      });
+    } finally {
+      if (cropRequestRef.current === requestId) {
+        cropAbortRef.current = null;
+        setPreparingCrop(false);
+      }
+    }
+  };
+
+  // Stored photos are fetched into Files first; PhotoCropModal then uses a
+  // same-origin Blob URL, so the source image cannot taint the crop canvas.
   const handleCropApply = (croppedFile) => {
     setPhoto(croppedFile);
 
@@ -189,6 +249,9 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
   };
 
   const removePhoto = async () => {
+    cancelPendingCrop();
+    setPreparingCrop(false);
+    setCropFile(null);
     setLoading(true);
 
     try {
@@ -251,6 +314,8 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    cancelPendingCrop();
+    setPreparingCrop(false);
     if (collectDates && hasEqualFormDates) {
       openModal({
         title: "Date repair required",
@@ -338,7 +403,7 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
 
   // biome-ignore-start lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: backdrop close/stopPropagation are redundant with the close button; dialog role carries semantics.
   return createPortal(
-    <div className={styles.overlay} onClick={onClose} role="presentation">
+    <div className={styles.overlay} onClick={handleClose} role="presentation">
       <div
         className={styles.modal}
         onClick={(e) => e.stopPropagation()}
@@ -346,7 +411,7 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
         aria-modal="true"
         aria-label="Edit submission"
       >
-        <button className={styles.closeBtn} onClick={onClose} type="button">
+        <button className={styles.closeBtn} onClick={handleClose} type="button">
           ×
         </button>
 
@@ -385,19 +450,20 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
                   type="file"
                   accept="image/*"
                   onChange={handlePhotoChange}
+                  disabled={loading}
                   style={{ display: "none" }}
                 />
                 Change Photo
               </label>
 
-              {photo && (
+              {(photo || photoPreview) && (
                 <button
                   type="button"
-                  onClick={() => setCropFile(photo)}
+                  onClick={handleCropClick}
                   className={styles.cropButton}
-                  disabled={loading}
+                  disabled={loading || preparingCrop}
                 >
-                  Crop…
+                  {preparingCrop ? "Loading…" : "Reframe Photo"}
                 </button>
               )}
 
@@ -406,7 +472,7 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
                   type="button"
                   onClick={removePhoto}
                   className={styles.removeButton}
-                  disabled={loading}
+                  disabled={loading || preparingCrop}
                 >
                   Remove Photo
                 </button>
@@ -583,12 +649,16 @@ export default function EditSubmissionModal({ submission, onClose, onSave }) {
           </div>
 
           <div className={styles.actions}>
-            <button type="submit" disabled={loading} className={styles.saveBtn}>
+            <button
+              type="submit"
+              disabled={loading || preparingCrop}
+              className={styles.saveBtn}
+            >
               {loading ? "Saving..." : "Save Changes"}
             </button>
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className={styles.cancelBtn}
             >
               Cancel

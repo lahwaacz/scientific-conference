@@ -466,7 +466,7 @@ function PersonSection({
                 className={styles.cropButton}
                 onClick={() => setCropTarget(person)}
               >
-                Crop…
+                Reframe Photo
               </button>
             )}
           </div>
