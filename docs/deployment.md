@@ -100,6 +100,65 @@ Password sign-in remains usable for testing and demo deployments and as a break-
 
 If GitLab becomes unavailable, re-enable the variable and restart the backend to restore password sign-in; the passwords of existing local accounts keep working.
 
+## Email and the Notification Worker
+
+Participant confirmation e-mails — the message a participant receives after submitting through the public registration form, and the confirmation sent after they edit their submission through the tracking link — are rendered and sent by a background worker. The web process never talks to the mail server on these paths: it only writes a `Notification` row and queues the send task after the database transaction commits. Every message is recorded on that row (status, attempts, last error), so nothing is lost when the worker or the broker is unavailable.
+
+### Broker
+
+The worker consumes its tasks from a **Redis or Valkey** service, configured with `CELERY_BROKER_URL` (default `redis://localhost:6379/0`). The service must be reachable from both the web container (which enqueues a task after each submission) and the worker container (which consumes them). No result backend is used — task results are not stored; the `Notification` row is the record.
+
+### Running the Worker
+
+Run the **same backend image** a second time with `--entrypoint /app/docker-entrypoint-worker.sh`; do not build a third image. The worker entrypoint starts `celery -A backend worker` with the concurrency taken from `CELERY_CONCURRENCY` (default `2`) and recycles each worker process after 100 tasks. The container needs the same environment and the same database volume as the web container; it serves no HTTP and publishes no port.
+
+Start the worker only after the web container has applied its migrations. The web entrypoint runs `manage.py migrate` at startup; a worker that starts first can hit missing tables, because the `Notification` table arrives with a migration.
+
+### SQLite Concurrency
+
+The SQLite database file at `DJANGO_DB_PATH` must be on a local volume that both containers can open. The backend enables WAL journaling and a 20-second busy timeout on every connection, so the web process and the worker can write at the same time; worker concurrency stays low (`CELERY_CONCURRENCY`, default `2`) for the same reason. WAL is not reliable on some network filesystems, so keep the database file on local storage.
+
+### Environment Variables
+
+Django 6.1 configures mail through the `MAILERS` setting; the deployment only ever sets environment variables, never Django settings. `EMAIL_BACKEND` is not a Django setting here — it no longer exists once `MAILERS` is configured. `MAIL_BACKEND` is the environment variable that overrides the backend path.
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `MAIL_BACKEND` | `django.core.mail.backends.console.EmailBackend` when `DJANGO_DEBUG=True`, otherwise `django.core.mail.backends.smtp.EmailBackend` | Mail backend path override. |
+| `EMAIL_HOST` | `localhost` | SMTP server hostname. |
+| `EMAIL_PORT` | `25` | SMTP server port. |
+| `EMAIL_HOST_USER` | (empty) | SMTP username; passed to the backend only when set. |
+| `EMAIL_HOST_PASSWORD` | (empty) | SMTP password; passed to the backend only when set. |
+| `EMAIL_USE_TLS` | `False` | Use TLS for the SMTP connection. |
+| `EMAIL_TIMEOUT` | `10` | SMTP timeout in seconds. |
+| `DEFAULT_FROM_EMAIL` | `noreply@conference.local` | Sender address of every outgoing message. |
+| `PUBLIC_BASE_URL` | `http://localhost:3000/` | Public SPA root **including** the deployment subpath (for example `https://mmg-webapps.fjfi.cvut.cz/conference/`); used to build the tracking link inside e-mails. |
+| `CELERY_BROKER_URL` | `redis://localhost:6379/0` | Broker address for the notification worker. |
+| `CELERY_TASK_ALWAYS_EAGER` | `True` when `DJANGO_DEBUG=True`, otherwise `False` | Development mode: tasks run synchronously in the web process, with no broker and no retries. Keep at `False` in production. |
+| `CELERY_CONCURRENCY` | `2` | Worker process count (worker entrypoint only). |
+
+In production, set `PUBLIC_BASE_URL` to the public SPA root **including** the deployment subpath — `https://mmg-webapps.fjfi.cvut.cz/conference/` in the reference deployment — or the tracking links inside e-mails point at the wrong address.
+
+### Operations
+
+If the broker or the worker is down, submissions keep working: the web process still writes its `Notification` rows, which stay `pending`, and the worker's failed sends end as `failed` once their retries are exhausted. After fixing the problem, drain the backlog from the backend container:
+
+```bash
+python manage.py send_pending_notifications
+```
+
+The command accepts `--dry-run` (report without sending), `--limit` (default `500`) and `--status` (default `pending,failed`). It never re-queues rows that already have a retry scheduled (`retrying`) and never re-sends rows that are `sent`; it is safe to run repeatedly.
+
+A quick health check is `celery -A backend inspect active` in the worker container, or the Django administration's Notifications page (superusers only). Messages are not retried forever — after three retries a row is terminal `failed` and waits for the drain command or a manual resend from the administration.
+
+### Rollback
+
+Stopping the worker loses nothing: unsent rows remain in SQLite, and the drain command can send them later once the worker is back. Rolling back the image requires restoring the pre-migration database backup, as with any migration, because `Notification` is a new table.
+
+### The Publish E-mail
+
+The existing publish e-mail (`core/signals.py`, sent when a submission is approved) is still sent synchronously by the web process, so it does not depend on the worker or the broker. It now really uses SMTP in production — previously the backend always printed mail to the console — so an unavailable mail server can fail the publish action; retry the publish after the mail server is fixed.
+
 ## Upgrades and Backups
 
 The backend entrypoint applies `manage.py migrate` every time the container starts. A new image therefore upgrades the database automatically, and an older image started against an already-upgraded database can fail: migrations may remove tables or columns that the old code still queries.
