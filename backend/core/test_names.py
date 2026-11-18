@@ -21,6 +21,11 @@ class ComputeSortKeyTests(SimpleTestCase):
             "novak jan",
         )
 
+    def test_czech_post_nominals_and_generations_stay_out_of_the_key(self):
+        self.assertEqual(compute_sort_key("Petr Malý ml."), "maly petr")
+        self.assertEqual(compute_sort_key("Josef Novák st."), "novak josef")
+        self.assertEqual(compute_sort_key("Jan Novák, DrSc."), "novak jan")
+
     def test_mononym_sorts_by_its_only_name(self):
         self.assertEqual(compute_sort_key("Cher"), "cher")
 

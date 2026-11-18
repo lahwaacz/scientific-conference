@@ -19,8 +19,14 @@ import unicodedata
 from nameparser import Lexicon, Parser
 
 # Czech post-nominals and generational suffixes. nameparser already knows
-# "csc"; these additions cover the rest of the common Czech forms.
-_CZECH_LEXICON = Lexicon.default().add(suffix_acronyms={"csc", "drsc", "ml", "st"})
+# "csc" (as a credential); these readings cover the rest of the common Czech
+# forms. Since nameparser 3.0 a Lexicon is extended with readings instead of
+# the removed ``suffix_acronyms`` field.
+_CZECH_LEXICON = (
+    Lexicon.default()
+    .add("drsc", kind="credential")
+    .add("ml", "st", kind="generation", acronym=True)
+)
 _PARSER = Parser(lexicon=_CZECH_LEXICON)
 
 
