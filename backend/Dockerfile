@@ -3,7 +3,7 @@
 # (the builder tag pins the uv version that wrote uv.lock)
 
 # first, build the application in the /app directory
-FROM ghcr.io/astral-sh/uv:0.13.7-trixie-slim@sha256:f6da342fe598dc462a7e6f61e7b3bf7fc84e381467efbdf29ccc1d32f2fc68a4 AS builder
+FROM ghcr.io/astral-sh/uv:0.13.9-trixie-slim@sha256:9b7790faef7a3f2b9ba8f2f7c48b959c1359fe2bd51c44804b6ca61766fbacdf AS builder
 
 # compile bytecode while installing (faster startup), copy files from the
 # cache mount instead of hardlinking (it is a separate filesystem)
