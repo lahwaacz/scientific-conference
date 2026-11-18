@@ -9,7 +9,9 @@ def populate_sort_keys(apps, schema_editor):
     from nameparser import Lexicon, Parser
 
     parser = Parser(
-        lexicon=Lexicon.default().add(suffix_acronyms={"csc", "drsc", "ml", "st"})
+        lexicon=Lexicon.default()
+        .add("drsc", kind="credential")
+        .add("ml", "st", kind="generation", acronym=True)
     )
 
     def fold(value):

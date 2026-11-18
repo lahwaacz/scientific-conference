@@ -946,7 +946,7 @@ requires-dist = [
     { name = "djangorestframework", specifier = ">=3.16" },
     { name = "djangorestframework-simplejwt", specifier = ">=5.5" },
     { name = "gunicorn", specifier = ">=26.2.0" },
-    { name = "nameparser", specifier = ">=2.4.2,<4" },
+    { name = "nameparser", specifier = ">=3.0.1,<4" },
     { name = "python-dotenv", specifier = ">=1.2.4" },
     { name = "reportlab", specifier = ">=4.5" },
 ]
