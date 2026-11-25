@@ -21,6 +21,12 @@ const sections = [
     description: "Edit registration instructions and deadline",
   },
   {
+    to: "/admin-panel/edit-web-info/sponsors",
+    icon: "fa-solid fa-handshake",
+    title: "Sponsors",
+    description: "Edit sponsor logos, links and order",
+  },
+  {
     to: "/admin-panel/edit-web-info/venue",
     icon: "fa-solid fa-location-dot",
     title: "Venue",

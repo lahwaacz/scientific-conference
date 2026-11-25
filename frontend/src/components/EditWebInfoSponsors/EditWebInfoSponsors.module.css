@@ -1,0 +1,248 @@
+.container {
+  margin: 0 auto;
+  background-color: var(--accent-color);
+}
+
+.backButton {
+  display: inline-block;
+  background-color: var(--secondary-color);
+  color: white;
+  padding: 10px 24px;
+  text-decoration: none;
+  font-family: var(--font-main);
+  font-size: 15px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+  transition: background-color 0.3s ease;
+}
+
+.backButton:hover {
+  background-color: #004494;
+}
+
+.fadeIn {
+  opacity: 0;
+  animation: fadeInAnim 0.4s ease forwards;
+}
+
+@keyframes fadeInAnim {
+  to {
+    opacity: 1;
+  }
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  border: 1px solid #1e73be;
+  padding: 30px;
+}
+
+.sectionTitle {
+  font-family: var(--font-title);
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: var(--primary-color);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+}
+
+.field label {
+  font-family: var(--font-main);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.field input {
+  font-family: var(--font-main);
+  font-size: 15px;
+  padding: 10px 14px;
+  border: 1px solid #ccc;
+  background: white;
+  color: var(--text-color);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.field input:focus {
+  border-color: var(--secondary-color);
+}
+
+.row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.orderField {
+  flex: 0 0 80px;
+}
+
+.saveButton {
+  background-color: var(--secondary-color);
+  color: white;
+  border: none;
+  padding: 12px 50px;
+  font-size: 16px;
+  font-weight: 300;
+  font-family: var(--font-main);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.saveButton:hover {
+  background-color: #004494;
+}
+
+.saveButton:disabled {
+  background-color: #aaa;
+  cursor: not-allowed;
+}
+
+.savedMsg {
+  font-family: var(--font-main);
+  font-size: 15px;
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+.emptyMsg {
+  font-family: var(--font-main);
+  font-size: 15px;
+  color: #888;
+}
+
+.sponsorRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 20px 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.logoCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+}
+
+.sponsorLogo {
+  width: 120px;
+  height: 80px;
+  padding: 8px;
+  object-fit: contain;
+  background: white;
+  border: 1px solid #ddd;
+}
+
+.logoPlaceholder {
+  width: 120px;
+  height: 80px;
+  background-color: #d0d0d0;
+}
+
+.logoLabel {
+  font-family: var(--font-main);
+  font-size: 12px;
+  color: var(--secondary-color);
+  cursor: pointer;
+  text-align: center;
+  text-decoration: underline;
+}
+
+.fileInputHidden {
+  display: none;
+}
+
+.sponsorFields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+.deleteButton {
+  background: none;
+  border: none;
+  color: #cc0000;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  align-self: flex-start;
+  transition: color 0.2s;
+}
+
+.deleteButton:hover {
+  color: #990000;
+}
+
+.sponsorActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 20px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.saveRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.addButton {
+  background: none;
+  border: 1px solid var(--secondary-color);
+  color: var(--secondary-color);
+  padding: 10px 24px;
+  font-family: var(--font-main);
+  font-size: 14px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.addButton:hover {
+  background-color: #e2ebf6;
+}
+
+@media (max-width: 640px) {
+  .section {
+    padding: 20px;
+  }
+
+  .sponsorRow {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .sponsorFields {
+    flex-basis: 100%;
+    order: 3;
+  }
+
+  .deleteButton {
+    margin-left: auto;
+  }
+
+  .saveRow {
+    flex-wrap: wrap;
+  }
+}

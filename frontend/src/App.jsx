@@ -12,6 +12,7 @@ import EditWebInfoFooter from "./components/EditWebInfoFooter/EditWebInfoFooter"
 import EditWebInfoHiking from "./components/EditWebInfoHiking/EditWebInfoHiking";
 import EditWebInfoHome from "./components/EditWebInfoHome/EditWebInfoHome";
 import EditWebInfoRegistration from "./components/EditWebInfoRegistration/EditWebInfoRegistration";
+import EditWebInfoSponsors from "./components/EditWebInfoSponsors/EditWebInfoSponsors";
 import EditWebInfoVenue from "./components/EditWebInfoVenue/EditWebInfoVenue";
 import Footer from "./components/Footer/Footer";
 import Header from "./components/Header/Header";
@@ -142,6 +143,14 @@ function ConferenceApp() {
               element={
                 <ProtectedRoute>
                   <EditWebInfoRegistration />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin-panel/edit-web-info/sponsors"
+              element={
+                <ProtectedRoute>
+                  <EditWebInfoSponsors />
                 </ProtectedRoute>
               }
             />
