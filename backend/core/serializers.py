@@ -17,6 +17,7 @@ from .models import (
     Person,
     Role,
     Session,
+    Sponsor,
     Talk,
 )
 from .registration import (
@@ -264,6 +265,18 @@ class AccommodationOptionWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = AccommodationOption
         fields = ["id", "name", "description", "url", "photo", "order"]
+
+
+class SponsorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Sponsor
+        fields = ["id", "name", "url", "logo", "order"]
+
+
+class SponsorWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Sponsor
+        fields = ["id", "name", "url", "logo", "order"]
 
 
 class ParticipantSubmissionSerializer(serializers.ModelSerializer):

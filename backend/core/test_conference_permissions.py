@@ -27,6 +27,7 @@ from .models import (
     ParticipantSubmission,
     Person,
     Session,
+    Sponsor,
     Talk,
 )
 from .test_conference_isolation import EXPECTED_ROUTE_TAILS
@@ -46,6 +47,7 @@ PUBLIC_TAIL_PATTERNS = {
     "talks/<int:pk>/",
     "people/",
     "accommodation/",
+    "sponsors/",
     "conference-info/",
     "submit/",
     "track/<str:tracking_token>/",
@@ -77,6 +79,9 @@ ADMIN_ROUTES = [
     ("patch", "admin/accommodation/", {}, None),
     ("post", "admin/accommodation/options/", {}, None),
     ("patch", "admin/accommodation/options/<int:pk>/", {}, "option"),
+    ("post", "admin/sponsors/", {}, None),
+    ("patch", "admin/sponsors/<int:pk>/", {}, "sponsor"),
+    ("delete", "admin/sponsors/<int:pk>/", None, "sponsor"),
     ("patch", "conference-info/edit/", {}, None),
     ("post", "hiking/admin/", {}, None),
     ("post", "hiking/stops/", {}, None),
@@ -120,6 +125,7 @@ class ConferencePermissionTestCase(TestCase):
         self.option = AccommodationOption.objects.create(
             conference=self.wsc, name="Hotel"
         )
+        self.sponsor = Sponsor.objects.create(conference=self.wsc, name="Sponsor")
         self.route = HikingRoute.objects.create(conference=self.wsc, name="Route")
         self.stop = HikingStop.objects.create(
             conference=self.wsc, route=self.route, name="Stop"
@@ -210,6 +216,7 @@ class ConferencePermissionTestCase(TestCase):
             "talks/",
             "people/",
             "accommodation/",
+            "sponsors/",
             "conference-info/",
             "hiking/",
         ):

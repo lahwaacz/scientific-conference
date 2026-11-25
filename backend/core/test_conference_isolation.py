@@ -30,6 +30,7 @@ from .models import (
     Person,
     Role,
     Session,
+    Sponsor,
     Talk,
 )
 
@@ -117,6 +118,9 @@ def make_conference_data(conference, mark):
     acco_option = AccommodationOption.objects.create(
         conference=conference, name=f"Hotel {mark}", order=1
     )
+    sponsor = Sponsor.objects.create(
+        conference=conference, name=f"Sponsor {mark}", order=1
+    )
     route = HikingRoute.objects.create(conference=conference, name=f"Route {mark}")
     stop = HikingStop.objects.create(
         conference=conference, route=route, name=f"Stop {mark}", order=1
@@ -142,6 +146,7 @@ def make_conference_data(conference, mark):
         unscheduled_talk=unscheduled_talk,
         person=person,
         acco_option=acco_option,
+        sponsor=sponsor,
         route=route,
         stop=stop,
         submission=submission,
@@ -176,6 +181,9 @@ EXPECTED_ROUTE_TAILS = frozenset(
         "admin/accommodation/",
         "admin/accommodation/options/",
         "admin/accommodation/options/<int:pk>/",
+        "sponsors/",
+        "admin/sponsors/",
+        "admin/sponsors/<int:pk>/",
         "conference-info/",
         "conference-info/edit/",
         "submit/",
@@ -236,6 +244,7 @@ class TestGetRouteMatrix(ConferencePairTestCase):
             "people/",
             f"people/{data.person.pk}/",
             "accommodation/",
+            "sponsors/",
             "conference-info/",
             "hiking/",
             "admin/submissions/",
@@ -296,6 +305,10 @@ UNKNOWN_SLUG_MATRIX = [
     ("post", "admin/accommodation/options/", {"name": "x", "order": 1}),
     ("patch", "admin/accommodation/options/1/", {"name": "x"}),
     ("delete", "admin/accommodation/options/1/", None),
+    ("get", "sponsors/", None),
+    ("post", "admin/sponsors/", {"name": "x"}),
+    ("patch", "admin/sponsors/1/", {"name": "x"}),
+    ("delete", "admin/sponsors/1/", None),
     ("get", "conference-info/", None),
     ("patch", "conference-info/edit/", {"grant_text": "x"}),
     (

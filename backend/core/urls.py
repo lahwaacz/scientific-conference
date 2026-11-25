@@ -23,6 +23,8 @@ from .views import (
     SessionCreateView,
     SessionListView,
     SessionUpdateTimeView,
+    SponsorAdminView,
+    SponsorListView,
     SubmissionCreateView,
     SubmissionDetailView,
     SubmissionListView,
@@ -67,6 +69,9 @@ urlpatterns = [
     path(
         "admin/accommodation/options/<int:pk>/", AccommodationOptionEditView.as_view()
     ),
+    path("sponsors/", SponsorListView.as_view(), name="sponsor-list"),
+    path("admin/sponsors/", SponsorAdminView.as_view()),
+    path("admin/sponsors/<int:pk>/", SponsorAdminView.as_view()),
     path("conference-info/", ConferenceInfoView.as_view()),
     path("conference-info/edit/", ConferenceInfoEditView.as_view()),
     # Public submission form

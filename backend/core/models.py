@@ -16,6 +16,7 @@ from .registration import (
     validate_conference_configuration,
     validate_date_order,
 )
+from .validators import validate_sponsor_logo
 
 RESERVED_SLUGS = {"auth", "admin", "api", "conferences", "media", "static"}
 
@@ -392,6 +393,27 @@ class AccommodationOption(models.Model):
 
     class Meta:
         ordering = ["order"]
+
+    def __str__(self):
+        return self.name
+
+
+class Sponsor(models.Model):
+    conference = models.ForeignKey(
+        Conference, related_name="sponsors", on_delete=models.CASCADE
+    )
+    name = models.CharField(max_length=200)
+    url = models.URLField(blank=True)
+    logo = models.FileField(
+        upload_to="sponsors/",
+        blank=True,
+        null=True,
+        validators=[validate_sponsor_logo],
+    )
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["order", "id"]
 
     def __str__(self):
         return self.name

@@ -23,6 +23,7 @@ from .models import (
     ParticipantSubmission,
     Person,
     Session,
+    Sponsor,
     Talk,
 )
 
@@ -214,6 +215,7 @@ class TestIsReferenced(TestCase):
                 route=HikingRoute.objects.create(conference=c, name="Route"),
                 name="Stop",
             ),
+            "Sponsor": lambda c: Sponsor.objects.create(conference=c, name="Sponsor"),
             "ConferenceManagers": lambda c: ConferenceManagers.objects.create(
                 conference=c,
                 user=get_user_model().objects.create_user(

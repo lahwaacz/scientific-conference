@@ -33,6 +33,7 @@ from .models import (
     ParticipantSubmission,
     Person,
     Session,
+    Sponsor,
     Talk,
 )
 from .permissions import IsConferenceManager, can_manage_conference
@@ -54,6 +55,8 @@ from .serializers import (
     PersonAdminSerializer,
     PersonSerializer,
     SessionSerializer,
+    SponsorSerializer,
+    SponsorWriteSerializer,
     TalkSerializer,
 )
 
@@ -386,6 +389,36 @@ class AccommodationOptionEditView(ConferenceScopedMixin, APIView):
 
 
 accommodation_info_view = AccommodationInfoView.as_view()
+
+
+class SponsorListView(ConferenceScopedMixin, generics.ListAPIView):
+    serializer_class = SponsorSerializer
+    queryset = Sponsor.objects.all()
+
+
+class SponsorAdminView(ConferenceScopedMixin, APIView):
+    authentication_classes = [JWTCookieAuthentication]
+    permission_classes = [IsConferenceManager]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def post(self, request, *args, **kwargs):
+        serializer = SponsorWriteSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(conference=self.conference)
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+    def patch(self, request, pk, *args, **kwargs):
+        sponsor = get_object_or_404(Sponsor, pk=pk, conference=self.conference)
+        serializer = SponsorWriteSerializer(sponsor, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+    def delete(self, request, pk, *args, **kwargs):
+        get_object_or_404(Sponsor, pk=pk, conference=self.conference).delete()
+        return Response(status=204)
 
 
 def generate_badges_pdf(request, conference_slug):

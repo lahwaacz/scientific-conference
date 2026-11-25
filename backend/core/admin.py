@@ -34,6 +34,7 @@ from .models import (
     Person,
     Role,
     Session,
+    Sponsor,
     Talk,
 )
 from .registration import validate_date_order
@@ -594,6 +595,13 @@ class ParticipantSubmissionAdmin(SuperuserOnlyAdminMixin, admin.ModelAdmin):
 
 @admin.register(AccommodationOption)
 class AccommodationOptionAdmin(SuperuserOnlyAdminMixin, admin.ModelAdmin):
+    list_display = ("conference", "name", "order")
+    list_filter = ("conference",)
+    list_select_related = ("conference",)
+
+
+@admin.register(Sponsor)
+class SponsorAdmin(SuperuserOnlyAdminMixin, admin.ModelAdmin):
     list_display = ("conference", "name", "order")
     list_filter = ("conference",)
     list_select_related = ("conference",)
