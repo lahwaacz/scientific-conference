@@ -95,6 +95,14 @@ trap cleanup EXIT
 (cd "$BACKEND" && uv run python manage.py migrate --run-syncdb --noinput)
 (cd "$BACKEND" && uv run python manage.py loaddata conferences.json participants.json program.json)
 
+# --- demo sponsors: the fixtures predate the Sponsors feature, so seed two
+# text-only rows to exercise the homepage section and the admin editor.
+(cd "$BACKEND" && uv run python manage.py shell -c \
+  "from core.models import Conference, Sponsor; \
+   c = Conference.objects.get(slug='wsc2026'); \
+   Sponsor.objects.get_or_create(conference=c, name='CTU FNSPE', defaults={'url': 'https://www.cvut.cz', 'order': 0}); \
+   Sponsor.objects.get_or_create(conference=c, name='Conference Partner', defaults={'order': 1})")
+
 # --- demo tracking token: the fixtures seed wsc2026 submissions and the
 # token is auto-generated, so resolve it from the DB to capture the public
 # tracking page below. tail strips Django 5.2's shell auto-import notice
@@ -255,6 +263,7 @@ capture admin-program-info     /admin-panel/edit-program/info
 capture admin-web-info         /admin-panel/edit-web-info
 capture admin-web-info-home    /admin-panel/edit-web-info/home
 capture admin-web-info-registration /admin-panel/edit-web-info/registration
+capture admin-web-info-sponsors /admin-panel/edit-web-info/sponsors
 capture admin-web-info-venue  /admin-panel/edit-web-info/venue
 capture admin-web-info-accommodation /admin-panel/edit-web-info/accommodation
 capture admin-web-info-hiking  /admin-panel/edit-web-info/hiking

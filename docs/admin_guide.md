@@ -602,6 +602,29 @@ The **Submission Editing Deadline** is an independent optional date that control
 
 While the current date is more than one month before the **Submission Editing Deadline** — or, when no deadline is set, more than one month before the conference start date — the public registration form labels the arrival and departure date fields as **Arrival Date (tentative)** and **Departure Date (tentative)**. Within the final month before that reference date the labels drop the "(tentative)" suffix. The labels apply only while the conference collects the dates.
 
+### Sponsors Subsection
+
+Use the **Sponsors** subsection to manage the sponsor list shown on the conference homepage, between the registration call-to-action and the organising committee.
+
+The section is optional and appears automatically: when the conference has no sponsors, the public homepage shows no Sponsors heading and no empty space. Adding the first sponsor makes the section appear; deleting the last one hides it again.
+
+Each sponsor has the following fields:
+
+- **Logo** — optional PNG, JPEG, or SVG image shown on the homepage. Use **Change Logo** to upload or replace it.
+- **Name** — the sponsor name. It is also the accessible description of the logo and is shown as plain text when no logo is uploaded.
+- **Order** — the display order. The sponsor with the lowest order number is shown first, followed by the next one.
+- **Website URL** — optional link opened in a new browser tab when a visitor selects the sponsor. Leave it empty for sponsors without a website.
+
+Available actions:
+
+- Add a sponsor using **Add Sponsor** at the bottom of the card.
+- Delete a sponsor using the cross icon on the right side of the record.
+- Change the order using the **Order** input.
+
+After making changes, select **Save** at the end of the card. Text, order, and logo changes are not applied to the public website until the card is saved. Deleting a sponsor is immediate and applies even if the card has unsaved changes.
+
+Sponsor names are always plain text. Logos are scaled to fit within a maximum height and are never cropped, so upload images with a transparent or plain background for the best result.
+
 ### Venue Subsection
 
 Use the **Venue** subsection to update the venue description, the optional venue photo, and the embedded map. The venue description supports Markdown formatting (headings, lists, emphasis, links); it is rendered as formatted text on the public Venue page and in the editor's live preview. This description is independent of the footer's **Venue Text** (see **Footer Subsection**), which is a separate plain-text field. The venue photo is shown on the public Venue page between the description and the map.
